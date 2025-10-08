@@ -1,39 +1,387 @@
-"use client"
+"use client";
 
-import { Search, MapPin, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useState } from "react"
-import { LocationModal } from "./location-modal"
-import { AuthModal } from "./auth-modal"
+import {
+  Search,
+  MapPin,
+  Menu,
+  X,
+  Loader2,
+  User,
+  LogOut,
+  ChevronDown,
+  ShoppingCart,
+  BookOpen,
+  History,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { LocationModal } from "./location-modal";
+import { AuthModal } from "./auth-modal";
+import { AddressBookModal } from "./address-book-modal";
+import { useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
+import { AddressBookResponse } from "@/lib/types";
+
+interface UserLocation {
+  city: string;
+  fullAddress: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  addressDetails: {
+    street?: string;
+    houseNumber?: string;
+    postalCode?: string;
+    locality?: string;
+    country?: string;
+  };
+}
 
 export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const { user, isAuthenticated, logout } = useAuth();
+  const { locationCarts, globalSummary, removeItem, updateQuantity } =
+    useCart();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
+  const [selectedAddressForEdit, setSelectedAddressForEdit] = useState<
+    string | undefined
+  >(undefined);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isCartSidebarOpen, setIsCartSidebarOpen] = useState(false);
+  const [activeCartTab, setActiveCartTab] = useState<"carts" | "orders">(
+    "carts"
+  );
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoadingAddressBook, setIsLoadingAddressBook] = useState(false);
+
+  // Check if we're on a restaurant or location page
+  const isRestaurantPage =
+    pathname.startsWith("/restaurant/") || pathname.startsWith("/location/");
+
+  // Handle scroll for background transparency (only on restaurant pages)
+  useEffect(() => {
+    if (!isRestaurantPage) return;
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const threshold = viewportHeight * 0.1; // 30vw
+      setIsScrolled(scrollTop > threshold);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isRestaurantPage]);
+
+  // Load saved location from localStorage on component mount
+  useEffect(() => {
+    console.log("🚀 Page loaded - checking for saved location...");
+    const savedLocation = localStorage.getItem("userLocation");
+    if (savedLocation) {
+      try {
+        const parsedLocation = JSON.parse(savedLocation);
+        console.log("💾 Restored saved location:", parsedLocation);
+        console.log("📍 Saved Coordinates:", {
+          latitude: parsedLocation.coordinates.latitude,
+          longitude: parsedLocation.coordinates.longitude,
+        });
+        setUserLocation(parsedLocation);
+      } catch (error) {
+        console.error("Error parsing saved location:", error);
+      }
+    } else {
+      console.log("ℹ️ No saved location found - user needs to set location");
+    }
+  }, []);
+
+  // Save location to localStorage whenever it changes
+  useEffect(() => {
+    if (userLocation) {
+      console.log("💾 Saving location to localStorage:", userLocation);
+      localStorage.setItem("userLocation", JSON.stringify(userLocation));
+    }
+  }, [userLocation]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isUserDropdownOpen) {
+        const target = event.target as Element;
+        if (!target.closest(".user-dropdown")) {
+          setIsUserDropdownOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isUserDropdownOpen]);
+
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setLocationError(null);
+
+    try {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000, // 5 minutes
+          });
+        }
+      );
+
+      const { latitude, longitude } = position.coords;
+
+      // Log coordinates for debugging
+      console.log("📍 Current Location Coordinates:");
+      console.log("Latitude:", latitude);
+      console.log("Longitude:", longitude);
+
+      // Reverse geocoding to get detailed address information
+      const addressInfo = await reverseGeocode(latitude, longitude);
+
+      const location: UserLocation = {
+        city: addressInfo.city,
+        fullAddress: addressInfo.fullAddress,
+        coordinates: { latitude, longitude },
+        addressDetails: addressInfo.addressDetails,
+      };
+
+      console.log("🏠 Full Address Details:", location);
+      setUserLocation(location);
+    } catch (error) {
+      console.error("Error getting location:", error);
+      if (error instanceof GeolocationPositionError) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError("Location access denied by user");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError("Location information unavailable");
+            break;
+          case error.TIMEOUT:
+            setLocationError("Location request timed out");
+            break;
+          default:
+            setLocationError("An unknown error occurred");
+            break;
+        }
+      } else {
+        setLocationError("Failed to get location");
+      }
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const reverseGeocode = async (
+    latitude: number,
+    longitude: number
+  ): Promise<{
+    city: string;
+    fullAddress: string;
+    addressDetails: {
+      street?: string;
+      houseNumber?: string;
+      postalCode?: string;
+      locality?: string;
+      country?: string;
+    };
+  }> => {
+    try {
+      // Using a free reverse geocoding service with more detailed results
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+      );
+
+      if (!response.ok) {
+        throw new Error("Reverse geocoding failed");
+      }
+
+      const data = await response.json();
+
+      // Extract detailed address information
+      const city =
+        data.city || data.locality || data.countryName || "Unknown Location";
+      const street = data.street || data.principalSubdivision || "";
+      const houseNumber = data.houseNumber || "";
+      const postalCode = data.postcode || "";
+      const locality = data.locality || "";
+      const country = data.countryName || "";
+
+      // Build full address string
+      const addressParts = [];
+      if (street) addressParts.push(street);
+      if (houseNumber) addressParts.push(houseNumber);
+      if (locality && locality !== city) addressParts.push(locality);
+      if (city) addressParts.push(city);
+      if (postalCode) addressParts.push(postalCode);
+      if (country) addressParts.push(country);
+
+      const fullAddress = addressParts.join(", ");
+
+      return {
+        city,
+        fullAddress,
+        addressDetails: {
+          street,
+          houseNumber,
+          postalCode,
+          locality,
+          country,
+        },
+      };
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+      return {
+        city: "Unknown Location",
+        fullAddress: "Unknown Location",
+        addressDetails: {},
+      };
+    }
+  };
+
+  const handleLocationClick = () => {
+    console.log("🖱️ Location button clicked");
+    if (!userLocation && !isGettingLocation) {
+      console.log("📍 Requesting current location...");
+      getCurrentLocation();
+    } else {
+      console.log("📍 Opening location modal...");
+      setIsLocationModalOpen(true);
+    }
+  };
+
+  const handleLocationSet = (coordinates: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    console.log("📍 Location set from modal:", coordinates);
+    // Trigger a page refresh or update the restaurant grid
+    window.location.reload();
+  };
+
+  const handleAddressBookClick = () => {
+    // Close the dropdown and open the address book modal
+    setIsUserDropdownOpen(false);
+    setIsAddressBookModalOpen(true);
+  };
+
+  const handleOrderHistoryClick = () => {
+    // Close the dropdown and navigate to order history page
+    setIsUserDropdownOpen(false);
+    router.push("/order-history");
+  };
+
+  const handleAddressSelect = (address: any) => {
+    console.log("Selected address:", address);
+    // Update user location with selected address
+    if (address.coordinates) {
+      const locationData = {
+        city: address.address.split(",")[0] || address.address,
+        fullAddress: address.address,
+        coordinates: address.coordinates,
+        addressDetails: {},
+      };
+      localStorage.setItem("userLocation", JSON.stringify(locationData));
+      setUserLocation(locationData);
+      // Reload to update restaurant grid
+      window.location.reload();
+    }
+  };
+
+  const handleAddNewAddress = () => {
+    // Close address book modal and open location modal for new address
+    setIsAddressBookModalOpen(false);
+    setSelectedAddressForEdit(undefined); // Clear any selected address
+    setIsLocationModalOpen(true);
+  };
+
+  const handleEditAddress = (address: any) => {
+    // Close address book modal and open location modal with selected address
+    console.log("🔍 Selected address for edit:", address);
+    console.log("🔍 Address.address:", address.address);
+    setIsAddressBookModalOpen(false);
+    setSelectedAddressForEdit(address.address);
+    setIsLocationModalOpen(true);
+  };
 
   return (
     <>
-      <header className="bg-background border-b border-border sticky top-0 z-50">
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isRestaurantPage && isScrolled
+            ? "bg-background border-b border-border"
+            : isRestaurantPage
+            ? "bg-transparent border-b border-transparent"
+            : "bg-background border-b border-border"
+        }`}
+      >
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo and Location */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push("/")}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">W</span>
+                  <span className="text-primary-foreground font-bold text-lg">
+                    W
+                  </span>
                 </div>
                 <span className="text-xl font-bold text-foreground">Wolt</span>
-              </div>
+              </button>
 
               <button
                 className="hidden md:flex items-center gap-1 text-sm hover:text-primary transition-colors"
-                onClick={() => setIsLocationModalOpen(true)}
+                onClick={handleLocationClick}
+                disabled={isGettingLocation}
+                title={
+                  userLocation
+                    ? userLocation.fullAddress
+                    : "Click to set location"
+                }
               >
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-foreground">Αθήνα</span>
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                {isGettingLocation ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4 text-primary" />
+                )}
+                <span className="text-foreground">
+                  {userLocation ? userLocation.city : "Αθήνα"}
+                </span>
+                <svg
+                  className="w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             </div>
@@ -49,19 +397,106 @@ export function Header() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <Button
-                variant="ghost"
-                className="text-foreground hover:text-primary"
-                onClick={() => setIsAuthModalOpen(true)}
-              >
-                Σύνδεση
-              </Button>
-              <Button
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => setIsAuthModalOpen(true)}
-              >
-                Εγγραφή
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  {/* Cart Button */}
+                  <button
+                    onClick={() => setIsCartSidebarOpen(true)}
+                    className="flex items-center gap-2 text-sm hover:text-primary transition-colors relative"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span className="text-foreground">
+                      Καλάθι{" "}
+                      {globalSummary.totalItems > 0 &&
+                        `(${globalSummary.totalItems})`}
+                    </span>
+                    {globalSummary.totalItems > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {globalSummary.totalItems}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* User Dropdown */}
+                  <div className="relative user-dropdown">
+                    <button
+                      onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      <span className="text-foreground">Το Προφιλ μου</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+
+                    {isUserDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                        <div className="py-2">
+                          <div className="px-4 py-2 text-sm text-muted-foreground border-b border-border">
+                            {(() => {
+                              console.log("🔍 User data in dropdown:", user);
+                              const fullName =
+                                user?.name ||
+                                `${user?.first_name || ""} ${
+                                  user?.last_name || ""
+                                }`.trim();
+                              console.log(
+                                "🔍 Full name constructed:",
+                                fullName
+                              );
+                              return fullName || user?.email;
+                            })()}
+                          </div>
+                          <button
+                            onClick={handleAddressBookClick}
+                            disabled={isLoadingAddressBook}
+                            className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isLoadingAddressBook ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <BookOpen className="w-4 h-4" />
+                            )}
+                            My Address Book
+                          </button>
+                          <button
+                            onClick={handleOrderHistoryClick}
+                            className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                          >
+                            <History className="w-4 h-4" />
+                            Ιστορικό Παραγγελιών
+                          </button>
+                          <button
+                            onClick={() => {
+                              logout();
+                              setIsUserDropdownOpen(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Αποσύνδεση
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    Σύνδεση
+                  </Button>
+                  <Button
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    Εγγραφή
+                  </Button>
+                </>
+              )}
             </div>
 
             <Button
@@ -70,7 +505,11 @@ export function Header() {
               className="md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </Button>
           </div>
 
@@ -88,12 +527,34 @@ export function Header() {
 
               <button
                 className="flex items-center gap-1 text-sm mb-4 px-2 hover:text-primary transition-colors"
-                onClick={() => setIsLocationModalOpen(true)}
+                onClick={handleLocationClick}
+                disabled={isGettingLocation}
+                title={
+                  userLocation
+                    ? userLocation.fullAddress
+                    : "Click to set location"
+                }
               >
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-foreground">Αθήνα</span>
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                {isGettingLocation ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4 text-primary" />
+                )}
+                <span className="text-foreground">
+                  {userLocation ? userLocation.city : "Αθήνα"}
+                </span>
+                <svg
+                  className="w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -117,8 +578,226 @@ export function Header() {
         </div>
       </header>
 
-      <LocationModal isOpen={isLocationModalOpen} onClose={() => setIsLocationModalOpen(false)} />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <LocationModal
+        isOpen={isLocationModalOpen}
+        onClose={() => {
+          setIsLocationModalOpen(false);
+          setSelectedAddressForEdit(undefined);
+        }}
+        onLocationSet={handleLocationSet}
+        initialAddress={selectedAddressForEdit}
+      />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+      <AddressBookModal
+        isOpen={isAddressBookModalOpen}
+        onClose={() => setIsAddressBookModalOpen(false)}
+        onAddressSelect={handleAddressSelect}
+        onAddNewAddress={handleAddNewAddress}
+        onEditAddress={handleEditAddress}
+      />
+
+      {/* Cart Sidebar */}
+      {isCartSidebarOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsCartSidebarOpen(false)}
+          />
+
+          {/* Sidebar */}
+          <div className="absolute right-0 top-0 h-full w-96 bg-[#1a1a1a] border-l border-border shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h2 className="text-xl font-bold text-white">
+                Οι παραγγελίες σου
+              </h2>
+              <button
+                onClick={() => setIsCartSidebarOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setActiveCartTab("carts")}
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                  activeCartTab === "carts"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Καλάθια αγορών
+              </button>
+              <button
+                onClick={() => setActiveCartTab("orders")}
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                  activeCartTab === "orders"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Παραγγελία ξανά
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {activeCartTab === "carts" ? (
+                <div className="space-y-4">
+                  {locationCarts.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                      <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Δεν υπάρχουν καλάθια αγορών</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Location Carts */}
+                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                        {locationCarts.map((locationCart) => (
+                          <div
+                            key={locationCart.locationId}
+                            className="bg-gray-800 rounded-lg p-4"
+                          >
+                            {/* Location Header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-white font-medium">
+                                {locationCart.locationName}
+                              </h3>
+                              <span className="text-gray-400 text-sm">
+                                {locationCart.summary.count}{" "}
+                                {locationCart.summary.count === 1
+                                  ? "αντικείμενο"
+                                  : "αντικείμενα"}
+                              </span>
+                            </div>
+
+                            {/* Location Items */}
+                            <div className="space-y-2">
+                              {locationCart.items.map((item) => (
+                                <div
+                                  key={item.rowId}
+                                  className="flex items-center justify-between p-2 bg-gray-700 rounded"
+                                >
+                                  <div className="flex-1">
+                                    <h4 className="text-white text-sm font-medium">
+                                      {item.name}
+                                    </h4>
+                                    <p className="text-gray-400 text-xs">
+                                      €{item.price.toFixed(2)}
+                                    </p>
+                                    {item.comment && (
+                                      <p className="text-gray-500 text-xs mt-1">
+                                        Σχόλιο: {item.comment}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() =>
+                                        updateQuantity(
+                                          locationCart.locationId,
+                                          item.rowId,
+                                          item.qty - 1
+                                        )
+                                      }
+                                      className="w-5 h-5 rounded-full bg-gray-600 text-white hover:bg-gray-500 flex items-center justify-center text-xs"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="text-white text-sm w-6 text-center">
+                                      {item.qty}
+                                    </span>
+                                    <button
+                                      onClick={() =>
+                                        updateQuantity(
+                                          locationCart.locationId,
+                                          item.rowId,
+                                          item.qty + 1
+                                        )
+                                      }
+                                      className="w-5 h-5 rounded-full bg-gray-600 text-white hover:bg-gray-500 flex items-center justify-center text-xs"
+                                    >
+                                      +
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        removeItem(
+                                          locationCart.locationId,
+                                          item.rowId
+                                        )
+                                      }
+                                      className="ml-1 text-red-400 hover:text-red-300 text-xs"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Location Summary */}
+                            <div className="mt-3 pt-3 border-t border-gray-600">
+                              <div className="flex justify-between items-center mb-3">
+                                <span className="text-gray-300 text-sm">
+                                  Σύνολο:
+                                </span>
+                                <span className="text-white font-medium">
+                                  €{locationCart.summary.total.toFixed(2)}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/checkout?locationId=${locationCart.locationId}`
+                                  )
+                                }
+                                className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
+                              >
+                                Ολοκληρωση παραγγελιας
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Global Cart Summary */}
+                      <div className="border-t border-gray-700 pt-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-white font-medium">
+                            Συνολικό ποσό ({globalSummary.totalLocations}{" "}
+                            {globalSummary.totalLocations === 1
+                              ? "εστιατόριο"
+                              : "εστιατόρια"}
+                            ):
+                          </span>
+                          <span className="text-white font-bold">
+                            €{globalSummary.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                          Συνέχεια παραγγελίας
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Δεν υπάρχουν προηγούμενες παραγγελίες</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
-  )
+  );
 }

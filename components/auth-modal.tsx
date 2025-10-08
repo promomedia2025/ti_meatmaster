@@ -1,27 +1,66 @@
-"use client"
+"use client";
 
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/lib/auth-context";
+import { useState } from "react";
 
 interface AuthModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  if (!isOpen) return null
+  const { login, isLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const result = await login(email, password, remember);
+      if (result.success) {
+        onClose();
+        setEmail("");
+        setPassword("");
+        setRemember(false);
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (error) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-[#1a1a1a] rounded-lg w-full max-w-md p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
           <X className="w-6 h-6" />
         </button>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">Δημιούργησε λογαριασμό ή συνδέσου</h2>
-          <p className="text-gray-400 text-sm">Συνδέσου παρακάτω ή δημιούργησε έναν νέο λογαριασμό Wolt.</p>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Δημιούργησε λογαριασμό ή συνδέσου
+          </h2>
+          <p className="text-gray-400 text-sm">
+            Συνδέσου παρακάτω ή δημιούργησε έναν νέο λογαριασμό Wolt.
+          </p>
         </div>
 
         <div className="space-y-3 mb-6">
@@ -71,30 +110,70 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </Button>
         </div>
 
-        <div className="mb-4">
-          <p className="text-gray-400 text-sm mb-3">Σύνδεση μέσω email</p>
-          <Input
-            type="email"
-            placeholder="Email"
-            className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <p className="text-gray-400 text-sm mb-3">Σύνδεση μέσω email</p>
+            <div className="space-y-3">
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+              />
+              <Input
+                type="password"
+                placeholder="Κωδικός πρόσβασης"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+              />
+            </div>
 
-        <Button className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white h-12 mb-4">Επόμενο</Button>
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center space-x-2 mt-3">
+              <Checkbox
+                id="remember"
+                checked={remember}
+                onCheckedChange={(checked) => setRemember(checked === true)}
+              />
+              <label
+                htmlFor="remember"
+                className="text-sm text-gray-300 cursor-pointer"
+              >
+                Θυμήσου με
+              </label>
+            </div>
+
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoading}
+            className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white h-12 mb-4 disabled:opacity-50"
+          >
+            {isSubmitting ? "Συνδέομαι..." : "Επόμενο"}
+          </Button>
+        </form>
 
         <div className="text-xs text-gray-500 leading-relaxed">
           Δες τη{" "}
           <a href="#" className="text-[#009DE0] hover:underline">
             Δήλωση Προστασίας Προσωπικών Δεδομένων Wolt
           </a>{" "}
-          στα Αγγλικά, ώστε να μάθεις σχετικά με την επεξεργασία προσωπικών δεδομένων στη Wolt. Μπορείς να δεις επίσης
-          στην ενότητα Ιδιωτικότητα. Ισχύει η{" "}
+          στα Αγγλικά, ώστε να μάθεις σχετικά με την επεξεργασία προσωπικών
+          δεδομένων στη Wolt. Μπορείς να δεις επίσης στην ενότητα Ιδιωτικότητα.
+          Ισχύει η{" "}
           <a href="#" className="text-[#009DE0] hover:underline">
             Πολιτική Απορρήτου
           </a>{" "}
-          που σχετίζεται με τον λογαριασμό σου στη Wolt στην επόμενη φάση της εγγραφής σου, όταν θα λάβεις δηλώσεις
-          δικαιωμάτων. Ισχύουν οι προϋποθέσεις χώρας και γλώσσας που ισχύουν σε εσένα. Η ιστοσελίδα προστατεύεται από το
-          reCaptcha. Ισχύει η{" "}
+          που σχετίζεται με τον λογαριασμό σου στη Wolt στην επόμενη φάση της
+          εγγραφής σου, όταν θα λάβεις δηλώσεις δικαιωμάτων. Ισχύουν οι
+          προϋποθέσεις χώρας και γλώσσας που ισχύουν σε εσένα. Η ιστοσελίδα
+          προστατεύεται από το reCaptcha. Ισχύει η{" "}
           <a href="#" className="text-[#009DE0] hover:underline">
             Πολιτική Απορρήτου
           </a>{" "}
@@ -106,5 +185,5 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

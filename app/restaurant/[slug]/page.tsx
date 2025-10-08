@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation"
-import RestaurantHeader from "@/components/restaurant-header"
-import RestaurantInfo from "@/components/restaurant-info"
-import RestaurantMenu from "@/components/restaurant-menu"
+import { notFound } from "next/navigation";
+import RestaurantHeader from "@/components/restaurant-header";
+import RestaurantInfo from "@/components/restaurant-info";
+import RestaurantMenu from "@/components/restaurant-menu";
 
 // Mock restaurant data - in a real app this would come from a database
 const restaurants = {
@@ -38,21 +38,29 @@ const restaurants = {
     deliveryTime: "15-25",
     deliveryFee: "0.50",
     minOrder: "5.00",
-    categories: ["Δημοφιλή", "OFFERS", "BURGERS", "CHICKEN", "BREAKFAST", "DESSERTS", "DRINKS"],
+    categories: [
+      "Δημοφιλή",
+      "OFFERS",
+      "BURGERS",
+      "CHICKEN",
+      "BREAKFAST",
+      "DESSERTS",
+      "DRINKS",
+    ],
   },
-}
+};
 
 interface RestaurantPageProps {
   params: {
-    slug: string
-  }
+    slug: string;
+  };
 }
 
 export default function RestaurantPage({ params }: RestaurantPageProps) {
-  const restaurant = restaurants[params.slug as keyof typeof restaurants]
+  const restaurant = restaurants[params.slug as keyof typeof restaurants];
 
   if (!restaurant) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -61,5 +69,5 @@ export default function RestaurantPage({ params }: RestaurantPageProps) {
       <RestaurantInfo restaurant={restaurant} />
       <RestaurantMenu restaurant={restaurant} />
     </div>
-  )
+  );
 }
