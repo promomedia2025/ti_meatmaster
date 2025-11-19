@@ -3,18 +3,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Location, LocationsResponse } from "@/lib/types";
 import { useRestaurantUpdates } from "@/lib/pusher-context";
+import { useLocation } from "@/lib/location-context";
 import {
   getRestaurantStatusDisplay,
   getStatusBadgeClasses,
 } from "@/lib/restaurant-status";
 
-export function RestaurantGrid() {
+interface RestaurantGridProps {
+  radius?: number;
+}
+
+export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  console.log("🔍 Locations:", locations);
+  const { coordinates } = useLocation();
+  const searchParams = useSearchParams();
   // Real-time updates from Pusher
   const { restaurants: realTimeRestaurants } = useRestaurantUpdates();
 
@@ -52,45 +59,44 @@ export function RestaurantGrid() {
       try {
         setLoading(true);
 
-        // Get saved location coordinates
-        const savedLocation = localStorage.getItem("userLocation");
-        let apiUrl = "/api/locations";
+        // Build query parameters
+        const params = new URLSearchParams();
 
-        if (savedLocation) {
-          try {
-            const parsedLocation = JSON.parse(savedLocation);
-            if (parsedLocation.coordinates) {
-              const { latitude, longitude } = parsedLocation.coordinates;
-              apiUrl = `/api/locations?latitude=${latitude}&longitude=${longitude}&radius=5`;
-              console.log("📍 Fetching locations with coordinates:", {
-                latitude,
-                longitude,
-              });
-            }
-          } catch (error) {
-            console.error("Error parsing saved location:", error);
-          }
+        // Add coordinates if available
+        if (coordinates) {
+          const { latitude, longitude } = coordinates;
+          params.set("latitude", latitude.toString());
+          params.set("longitude", longitude.toString());
+          params.set("radius", radius.toString());
         }
+
+        // Add tags filter if available
+        const tagsParam = searchParams.get("tags");
+        if (tagsParam) {
+          params.set("tags", tagsParam);
+        }
+
+        const apiUrl = `/api/locations${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
 
         const response = await fetch(apiUrl);
         const data: LocationsResponse = await response.json();
 
         if (data.success) {
           setLocations(data.data.locations);
-          console.log("📍 Fetched locations:", data.data.locations.length);
         } else {
           setError(data.message || "Failed to fetch locations");
         }
       } catch (err) {
         setError("Failed to fetch locations");
-        console.error("Error fetching locations:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchLocations();
-  }, []);
+  }, [coordinates, searchParams, radius]);
 
   // Helper function to generate a slug from the restaurant name
   const generateSlug = (name: string, id: number) => {
@@ -216,6 +222,9 @@ export function RestaurantGrid() {
                   alt={location.name}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  priority
+                  fetchPriority="high"
                 />
                 <div className="absolute top-3 left-3 bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium">
                   {promotion}

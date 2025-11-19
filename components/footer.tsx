@@ -1,13 +1,22 @@
-import { Apple, Play } from "lucide-react"
+import { Apple, Play } from "lucide-react";
+import { type Locale } from "@/lib/i18n/config";
 
-export function Footer() {
+interface FooterProps {
+  lang: Locale;
+  dict: any;
+}
+
+export function Footer({ lang, dict }: FooterProps) {
   return (
-    <footer className="text-gray-300 py-12 mt-16" style={{ backgroundColor: "#141414" }}>
+    <footer
+      className="text-gray-300 py-12 mt-16"
+      style={{ backgroundColor: "#141414" }}
+    >
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
           {/* Logo and App Downloads */}
           <div className="md:col-span-1">
-            <div className="text-2xl font-bold text-white mb-6">Wolt</div>
+            <div className="text-2xl font-bold text-white mb-6">FoodHub</div>
             <div className="space-y-3">
               <button className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors w-full">
                 <Apple className="w-5 h-5" />
@@ -28,7 +37,7 @@ export function Footer() {
 
           {/* Partnership Column */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Συνεργασία με τη Wolt</h3>
+            <h3 className="text-white font-semibold mb-4">Συνεργασία</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="hover:text-white transition-colors">
@@ -87,31 +96,31 @@ export function Footer() {
 
           {/* Products Column */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Προϊόντα</h3>
+            <h3 className="text-white font-semibold mb-4">Υπηρεσίες</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Wolt Drive
+                  Γρήγορη Διανομή
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Αγορά Wolt
+                  Αγορά Προϊόντων
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Wolt+
+                  Premium Membership
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Wolt for Work
+                  Εταιρικές Υπηρεσίες
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Wolt Ads
+                  Διαφήμιση
                 </a>
               </li>
               <li>
@@ -200,7 +209,7 @@ export function Footer() {
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Wolt Life
+                  FoodHub Life
                 </a>
               </li>
             </ul>
@@ -211,10 +220,18 @@ export function Footer() {
         <div className="border-t border-gray-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-6 text-sm">
-              <button className="hover:text-white transition-colors">🇬🇷 Ελλάδα</button>
-              <button className="hover:text-white transition-colors">🌐 Ελληνικά</button>
-              <button className="hover:text-white transition-colors">📍 Αποδοχές</button>
-              <button className="hover:text-white transition-colors">🍪 Cookies</button>
+              <button className="hover:text-white transition-colors">
+                🇬🇷 Ελλάδα
+              </button>
+              <button className="hover:text-white transition-colors">
+                🌐 Ελληνικά
+              </button>
+              <button className="hover:text-white transition-colors">
+                📍 Αποδοχές
+              </button>
+              <button className="hover:text-white transition-colors">
+                🍪 Cookies
+              </button>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
               <a href="#" className="hover:text-white transition-colors">
@@ -227,10 +244,10 @@ export function Footer() {
                 Δήλωση προστασίας προσωπικών δεδομένων
               </a>
             </div>
-            <div className="text-sm text-gray-400">© Wolt 2025</div>
+            <div className="text-sm text-gray-400">© FoodHub 2025</div>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

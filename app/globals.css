@@ -122,6 +122,24 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Prevent Google Translate from interfering with our i18n */
+  .notranslate {
+    -webkit-transform: none !important;
+    -moz-transform: none !important;
+    -ms-transform: none !important;
+    -o-transform: none !important;
+    transform: none !important;
+  }
+
+  /* Hide scrollbar for draggable carousel */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 }
 
 /* Google Places Autocomplete Styling */
@@ -139,7 +157,17 @@
 }
 
 .pac-container:after {
-  display: none !important;
+  /* Keep Google branding visible per Terms of Service */
+  content: "" !important;
+  background-image: url(https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  display: block !important;
+  width: 120px !important;
+  height: 20px !important;
+  margin: 12px auto 8px !important;
+  filter: brightness(0.9) !important;
 }
 
 .pac-item {
@@ -193,7 +221,15 @@
 }
 
 .pac-logo:after {
-  display: none !important;
+  /* Keep Google branding visible per Terms of Service */
+  content: "" !important;
+  background-image: url(https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  display: block !important;
+  width: 120px !important;
+  height: 20px !important;
+  filter: brightness(0.9) !important;
 }
 
 /* Loading state styling */
@@ -250,4 +286,108 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Range slider styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.slider:hover {
+  transform: scaleY(1.2);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(0, 157, 224);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(0, 157, 224);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom scrollbar for category navigation */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(156, 163, 175, 1);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.8) rgba(55, 65, 81, 0.3);
+}
+
+/* Custom scrollbar for cart sidebar */
+.cart-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb {
+  background: #3f3f3f;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox scrollbar styling for cart */
+.cart-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f #1a1a1a;
 }

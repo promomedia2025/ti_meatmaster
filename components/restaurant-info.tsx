@@ -35,7 +35,7 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
 
   return (
     <div className="bg-gray-900 border-b border-gray-800 px-4 py-3">
-      <div className="flex items-center gap-6 text-sm text-gray-300">
+      <div className="flex items-center gap-6 text-sm text-gray-300 flex-wrap">
         <div className="flex items-center gap-1">
           <MapPin className="w-4 h-4 text-blue-400" />
           <span>Επιλογή τοποθεσίας</span>

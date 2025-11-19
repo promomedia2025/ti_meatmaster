@@ -36,17 +36,14 @@ export function PusherProvider({ children }: PusherProviderProps) {
 
     // Set up connection event listeners
     pusherClient.connection.bind("connected", () => {
-      console.log("🔌 Pusher connected");
       setIsConnected(true);
     });
 
     pusherClient.connection.bind("disconnected", () => {
-      console.log("🔌 Pusher disconnected");
       setIsConnected(false);
     });
 
     pusherClient.connection.bind("error", (error: any) => {
-      console.error("❌ Pusher connection error:", error);
       setIsConnected(false);
     });
 
@@ -60,21 +57,17 @@ export function PusherProvider({ children }: PusherProviderProps) {
 
   const subscribe = (channelName: string) => {
     if (!pusher) {
-      console.warn("Pusher not initialized");
       return null;
     }
 
-    console.log(`📡 Subscribing to channel: ${channelName}`);
     return pusher.subscribe(channelName);
   };
 
   const unsubscribe = (channelName: string) => {
     if (!pusher) {
-      console.warn("Pusher not initialized");
       return;
     }
 
-    console.log(`📡 Unsubscribing from channel: ${channelName}`);
     pusher.unsubscribe(channelName);
   };
 

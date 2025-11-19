@@ -10,6 +10,14 @@ import React, {
 import { toast } from "sonner";
 import { useLocationFromUrl } from "./use-location-from-url";
 
+export interface CartItemOptionValue {
+  menu_option_id: number;
+  menu_option_value_id: number;
+  option_name: string;
+  option_value_name: string;
+  price: number;
+}
+
 export interface CartItem {
   rowId: string;
   id: number;
@@ -17,13 +25,14 @@ export interface CartItem {
   qty: number;
   price: number;
   subtotal: number;
-  options: any[];
+  option_values: CartItemOptionValue[];
   comment: string;
 }
 
 export interface LocationCart {
   locationId: number;
   locationName: string;
+  locationImage?: string; // URL to restaurant image
   items: CartItem[];
   summary: {
     count: number;
@@ -52,7 +61,7 @@ interface CartContextType {
   addItem: (
     menuId: number,
     quantity: number,
-    options?: any[],
+    optionValues?: CartItemOptionValue[],
     comment?: string,
     menuItemData?: { name: string; price: number },
     restaurantStatus?: {
@@ -83,6 +92,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { locationId, locationName } = useLocationFromUrl();
+
+  // Update global summary whenever locationCarts change
+  useEffect(() => {
+    const totalLocations = locationCarts.length;
+    const totalItems = locationCarts.reduce(
+      (sum, cart) => sum + cart.summary.count,
+      0
+    );
+    const totalAmount = locationCarts.reduce(
+      (sum, cart) => sum + cart.summary.total,
+      0
+    );
+
+    setGlobalSummary({
+      totalLocations,
+      totalItems,
+      totalAmount,
+    });
+
+    console.log("🔄 Global summary updated:", {
+      totalLocations,
+      totalItems,
+      totalAmount,
+    });
+  }, [locationCarts]);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -181,10 +215,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [locationCarts, globalSummary, isInitialized]);
 
+  // Helper function to create a unique identifier for cart items based on menu ID and options
+  const createItemUniqueId = (
+    menuId: number,
+    optionValues: CartItemOptionValue[],
+    comment: string
+  ): string => {
+    // Sort option values by menu_option_id and menu_option_value_id for consistent ordering
+    const sortedOptions = [...optionValues].sort((a, b) => {
+      if (a.menu_option_id !== b.menu_option_id) {
+        return a.menu_option_id - b.menu_option_id;
+      }
+      return a.menu_option_value_id - b.menu_option_value_id;
+    });
+
+    // Create a string representation of the options
+    const optionsString = sortedOptions
+      .map(
+        (option) => `${option.menu_option_id}:${option.menu_option_value_id}`
+      )
+      .join(",");
+
+    // Include comment in the unique ID
+    const commentString = comment.trim();
+
+    // Create unique identifier: menuId + options + comment
+    return `${menuId}_${optionsString}_${commentString}`;
+  };
+
   const addItem = async (
     menuId: number,
     quantity: number,
-    options: any[] = [],
+    optionValues: CartItemOptionValue[] = [],
     comment: string = "",
     menuItemData?: { name: string; price: number },
     restaurantStatus?: {
@@ -207,8 +269,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
+      // Create unique identifier for this specific item configuration
+      const itemUniqueId = createItemUniqueId(menuId, optionValues, comment);
+      console.log("🛒 Creating cart item with unique ID:", itemUniqueId, {
+        menuId,
+        optionValues,
+        comment,
+      });
+
       // Generate a unique row ID for the cart item
-      const rowId = `${locationId}_${menuId}_${Date.now()}_${Math.random()
+      const rowId = `${locationId}_${itemUniqueId}_${Date.now()}_${Math.random()
         .toString(36)
         .substr(2, 9)}`;
 
@@ -218,14 +288,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         price: 10.99,
       };
 
+      // Calculate total price including option values
+      const optionTotal = optionValues.reduce(
+        (sum, option) => sum + option.price,
+        0
+      );
+      const itemTotalPrice = menuItem.price + optionTotal;
+
       const newItem: CartItem = {
         rowId,
         id: menuId,
         name: menuItem.name,
         qty: quantity,
-        price: menuItem.price,
-        subtotal: menuItem.price * quantity,
-        options: options || [],
+        price: itemTotalPrice,
+        subtotal: itemTotalPrice * quantity,
+        option_values: optionValues || [],
         comment: comment || "",
       };
 
@@ -240,19 +317,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const updatedCarts = [...prevCarts];
           const locationCart = updatedCarts[existingLocationIndex];
 
-          // Check if item already exists in this location's cart
-          const existingItemIndex = locationCart.items.findIndex(
-            (item) => item.id === newItem.id
-          );
+          // Check if item with same configuration already exists in this location's cart
+          const existingItemIndex = locationCart.items.findIndex((item) => {
+            // Create unique ID for existing item
+            const existingItemUniqueId = createItemUniqueId(
+              item.id,
+              item.option_values,
+              item.comment
+            );
+            return existingItemUniqueId === itemUniqueId;
+          });
 
           if (existingItemIndex >= 0) {
-            // Update existing item quantity
+            // Update existing item quantity (same configuration found)
+            console.log(
+              "🛒 Updating existing item quantity:",
+              locationCart.items[existingItemIndex].name
+            );
             locationCart.items[existingItemIndex].qty += newItem.qty;
             locationCart.items[existingItemIndex].subtotal =
               locationCart.items[existingItemIndex].qty *
               locationCart.items[existingItemIndex].price;
           } else {
-            // Add new item to location cart
+            // Add new item to location cart (different configuration)
+            console.log(
+              "🛒 Adding new item with different configuration:",
+              newItem.name
+            );
             locationCart.items.push(newItem);
           }
 
@@ -288,25 +379,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      // Update global summary
-      setGlobalSummary((prevSummary) => {
-        const updatedCarts = locationCarts;
-        const totalLocations = updatedCarts.length;
-        const totalItems = updatedCarts.reduce(
-          (sum, cart) => sum + cart.summary.count,
-          0
-        );
-        const totalAmount = updatedCarts.reduce(
-          (sum, cart) => sum + cart.summary.total,
-          0
-        );
-
-        return {
-          totalLocations,
-          totalItems,
-          totalAmount,
-        };
-      });
+      // Global summary will be updated automatically by useEffect
 
       console.log("🛒 Item added to location cart:", {
         locationId,
@@ -365,25 +438,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return updatedCarts.filter((cart) => cart.items.length > 0);
     });
 
-    // Update global summary
-    setGlobalSummary((prevSummary) => {
-      const updatedCarts = locationCarts;
-      const totalLocations = updatedCarts.length;
-      const totalItems = updatedCarts.reduce(
-        (sum, cart) => sum + cart.summary.count,
-        0
-      );
-      const totalAmount = updatedCarts.reduce(
-        (sum, cart) => sum + cart.summary.total,
-        0
-      );
-
-      return {
-        totalLocations,
-        totalItems,
-        totalAmount,
-      };
-    });
+    // Global summary will be updated automatically by useEffect
   };
 
   const updateQuantity = (
@@ -422,25 +477,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    // Update global summary
-    setGlobalSummary((prevSummary) => {
-      const updatedCarts = locationCarts;
-      const totalLocations = updatedCarts.length;
-      const totalItems = updatedCarts.reduce(
-        (sum, cart) => sum + cart.summary.count,
-        0
-      );
-      const totalAmount = updatedCarts.reduce(
-        (sum, cart) => sum + cart.summary.total,
-        0
-      );
-
-      return {
-        totalLocations,
-        totalItems,
-        totalAmount,
-      };
-    });
+    // Global summary will be updated automatically by useEffect
   };
 
   const clearLocationCart = (locationId: number) => {

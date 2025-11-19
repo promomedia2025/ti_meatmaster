@@ -1,0 +1,90 @@
+{
+  "navigation": {
+    "restaurants": "Εστιατόρια",
+    "search": "Αναζήτηση στη Wolt...",
+    "login": "Σύνδεση",
+    "register": "Εγγραφή",
+    "logout": "Αποσύνδεση",
+    "profile": "Το Προφιλ μου",
+    "addressBook": "My Address Book",
+    "orderHistory": "Ιστορικό Παραγγελιών",
+    "cart": "Καλάθι",
+    "viewOrder": "Δες την παραγγελία σου",
+    "language": "Γλώσσα: Ελληνικά",
+    "contactSupport": "Επικοινώνησε με την υποστήριξη",
+    "loginOrRegister": "Σύνδεση ή Εγγραφή"
+  },
+  "location": {
+    "clickToFind": "Πατηστε για εύρεση τοποθεσίας σας",
+    "enableLocation": "Ενεργοποιήστε την πρόσβαση τοποθεσίας",
+    "trackingLocation": "Εντοπισμός τοποθεσίας...",
+    "gettingAddress": "Λήψη διεύθυνσης...",
+    "locationUnavailable": "Η τοποθεσία δεν είναι διαθέσιμη"
+  },
+  "home": {
+    "title": "Εστιατόρια κοντά μου",
+    "transportWalking": "με τα πόδια",
+    "transportBike": "με ποδήλατο",
+    "transportCar": "με αυτοκίνητο",
+    "discoverFlavors": "Ανακαλύψτε νέες γεύσεις",
+    "orderFromFavorites": "Παραγγείλτε από τα αγαπημένα σας εστιατόρια",
+    "fastDelivery": "Γρήγορη παράδοση",
+    "hotAndFresh": "Το φαγητό σας φτάνει ζεστό και φρέσκο",
+    "specialOffers": "Προσφορές για εσάς",
+    "specialDeals": "Απολαύστε ειδικές εκπτώσεις σε επιλεγμένα εστιατόρια",
+    "loadingCategories": "Loading categories...",
+    "loadingRestaurants": "Loading restaurants..."
+  },
+  "restaurant": {
+    "deliveryTime": "Χρόνος παράδοσης",
+    "deliveryFee": "Κόστος παράδοσης",
+    "minOrder": "Ελάχιστη παραγγελία",
+    "free": "Δωρεάν",
+    "closed": "Κλειστό",
+    "opensAt": "Ανοίγει στις",
+    "closesAt": "Κλείνει στις"
+  },
+  "cart": {
+    "yourOrders": "Οι παραγγελίες σου",
+    "shoppingCarts": "Καλάθια αγορών",
+    "orderAgain": "Παραγγελία ξανά",
+    "noItems": "Δεν υπάρχουν καλάθια αγορών",
+    "noPreviousOrders": "Δεν υπάρχουν προηγούμενες παραγγελίες",
+    "item": "αντικείμενο",
+    "items": "αντικείμενα",
+    "total": "Σύνολο:",
+    "completeOrder": "Ολοκληρωση παραγγελιας",
+    "totalAmount": "Συνολικό ποσό",
+    "restaurant": "εστιατόριο",
+    "restaurants": "εστιατόρια",
+    "continueOrder": "Συνέχεια παραγγελίας",
+    "comment": "Σχόλιο:"
+  },
+  "common": {
+    "loading": "Φόρτωση...",
+    "error": "Σφάλμα",
+    "save": "Αποθήκευση",
+    "cancel": "Ακύρωση",
+    "delete": "Διαγραφή",
+    "edit": "Επεξεργασία",
+    "confirm": "Επιβεβαίωση",
+    "close": "Κλείσιμο"
+  },
+  "locationModal": {
+    "title": "Ορίστε την τοποθεσία σας",
+    "savedAddresses": "Αποθηκευμένες διευθύνσεις",
+    "selectAddress": "Επιλέξτε διεύθυνση",
+    "enterAddress": "Εισάγετε διεύθυνση",
+    "searchPlaceholder": "Αναζήτηση διεύθυνσης...",
+    "useCurrentLocation": "Χρήση τρέχουσας τοποθεσίας",
+    "confirmLocation": "Επιβεβαίωση τοποθεσίας",
+    "locationDetails": "Λεπτομέρειες τοποθεσίας",
+    "street": "Οδός",
+    "houseNumber": "Αριθμός",
+    "floor": "Όροφος",
+    "apartment": "Διαμέρισμα",
+    "instructions": "Οδηγίες παράδοσης",
+    "saveAddress": "Αποθήκευση διεύθυνσης",
+    "gettingLocation": "Λήψη τοποθεσίας..."
+  }
+}

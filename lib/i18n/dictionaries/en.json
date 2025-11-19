@@ -1,0 +1,90 @@
+{
+  "navigation": {
+    "restaurants": "Restaurants",
+    "search": "Search for restaurants...",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "profile": "My Profile",
+    "addressBook": "My Address Book",
+    "orderHistory": "Order History",
+    "cart": "Cart",
+    "viewOrder": "View your order",
+    "language": "Language: English",
+    "contactSupport": "Contact support",
+    "loginOrRegister": "Login or Register"
+  },
+  "location": {
+    "clickToFind": "Click to find your location",
+    "enableLocation": "Enable location access",
+    "trackingLocation": "Tracking location...",
+    "gettingAddress": "Getting address...",
+    "locationUnavailable": "Location unavailable"
+  },
+  "home": {
+    "title": "Restaurants near me",
+    "transportWalking": "walking",
+    "transportBike": "bike",
+    "transportCar": "car",
+    "discoverFlavors": "Discover new flavors",
+    "orderFromFavorites": "Order from your favorite restaurants",
+    "fastDelivery": "Fast delivery",
+    "hotAndFresh": "Your food arrives hot and fresh",
+    "specialOffers": "Special offers for you",
+    "specialDeals": "Enjoy special discounts at selected restaurants",
+    "loadingCategories": "Loading categories...",
+    "loadingRestaurants": "Loading restaurants..."
+  },
+  "restaurant": {
+    "deliveryTime": "Delivery time",
+    "deliveryFee": "Delivery fee",
+    "minOrder": "Minimum order",
+    "free": "Free",
+    "closed": "Closed",
+    "opensAt": "Opens at",
+    "closesAt": "Closes at"
+  },
+  "cart": {
+    "yourOrders": "Your orders",
+    "shoppingCarts": "Shopping carts",
+    "orderAgain": "Order again",
+    "noItems": "No shopping carts",
+    "noPreviousOrders": "No previous orders",
+    "item": "item",
+    "items": "items",
+    "total": "Total:",
+    "completeOrder": "Complete order",
+    "totalAmount": "Total amount",
+    "restaurant": "restaurant",
+    "restaurants": "restaurants",
+    "continueOrder": "Continue order",
+    "comment": "Comment:"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "locationModal": {
+    "title": "Set your location",
+    "savedAddresses": "Saved addresses",
+    "selectAddress": "Select address",
+    "enterAddress": "Enter address",
+    "searchPlaceholder": "Search address...",
+    "useCurrentLocation": "Use current location",
+    "confirmLocation": "Confirm location",
+    "locationDetails": "Location details",
+    "street": "Street",
+    "houseNumber": "Number",
+    "floor": "Floor",
+    "apartment": "Apartment",
+    "instructions": "Delivery instructions",
+    "saveAddress": "Save address",
+    "gettingLocation": "Getting location..."
+  }
+}

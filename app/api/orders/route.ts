@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -14,13 +16,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Make request to the external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/user/${userId}/orders?page=${page}`;
+    const apiUrl = `https://multitake.bettersolution.gr/api/user/${userId}/orders`;
 
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     });
 
     if (!response.ok) {

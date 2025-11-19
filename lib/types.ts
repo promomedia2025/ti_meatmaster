@@ -162,6 +162,15 @@ export interface MenuItem {
   order_restriction: string | null;
   currency: string;
   categories: MenuItemCategory[];
+  image?: {
+    url: string;
+    path: string;
+    name: string;
+    size: number | null;
+    type: string;
+    width: number | null;
+    height: number | null;
+  };
 }
 
 export interface MenuItemsResponse {

@@ -1,30 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
-    // Extract user_id from query parameters or headers
+    // Extract customer_id from query parameters or headers
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get("user_id");
+    const customerId = searchParams.get("customer_id");
 
-    if (!userId) {
+    if (!customerId) {
       return NextResponse.json(
         {
           success: false,
-          message: "User ID is required",
-          error: "Missing user_id parameter",
+          message: "Customer ID is required",
+          error: "Missing customer_id parameter",
         },
         { status: 400 }
       );
     }
 
-    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/${userId}`;
+    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/${customerId}`;
     console.log("🔍 API URL:", apiUrl);
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      cache: "no-store", // Don't cache - always fetch fresh data
     });
 
     if (!response.ok) {

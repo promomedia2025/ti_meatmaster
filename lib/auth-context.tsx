@@ -7,6 +7,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+// Location context is handled separately
 
 interface User {
   id: number;
@@ -14,7 +15,14 @@ interface User {
   name?: string;
   first_name?: string;
   last_name?: string;
-  // Add other user properties as needed
+  phone?: string;
+  telephone?: string;
+  date_of_birth?: string;
+  address?: string;
+  city?: string;
+  postcode?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +33,14 @@ interface AuthContextType {
     email: string,
     password: string,
     remember?: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+    password_confirmation: string,
+    telephone: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -39,6 +55,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Location tracking is handled automatically by LocationProvider
 
   // Check if user is authenticated
   const isAuthenticated = !!user;
@@ -93,11 +110,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: result.data.data?.user?.name,
           first_name: result.data.data?.user?.first_name,
           last_name: result.data.data?.user?.last_name,
+          phone:
+            result.data.data?.user?.phone || result.data.data?.user?.telephone,
+          telephone: result.data.data?.user?.telephone,
+          date_of_birth: result.data.data?.user?.date_of_birth,
+          address: result.data.data?.user?.address,
+          city: result.data.data?.user?.city,
+          postcode: result.data.data?.user?.postcode,
+          created_at: result.data.data?.user?.created_at,
+          updated_at: result.data.data?.user?.updated_at,
         };
 
         console.log("🔍 User data to store:", userData);
 
         setUser(userData);
+
+        // Location tracking will be handled automatically by LocationProvider
 
         // Store based on remember preference
         if (remember) {
@@ -123,6 +151,67 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Register function
+  const register = async (
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+    password_confirmation: string,
+    telephone: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+
+      // Make register request to our API route
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name,
+          last_name,
+          email,
+          password,
+          password_confirmation,
+          telephone,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Store user data (adjust based on actual API response structure)
+
+        const userData: User = {
+          id: result.data.data?.user?.id || 1,
+          email: result.data.data?.user?.email || email,
+          name: result.data.data?.user?.name,
+          first_name: result.data.data?.user?.first_name || first_name,
+          last_name: result.data.data?.user?.last_name || last_name,
+        };
+
+        setUser(userData);
+
+        // Location tracking will be handled automatically by LocationProvider
+
+        // Store in sessionStorage by default (not persistent)
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        console.log("💾 User data saved to sessionStorage (registration)");
+
+        return { success: true };
+      } else {
+        return { success: false, error: result.error || "Registration failed" };
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      return { success: false, error: "Network error occurred" };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Logout function
   const logout = async () => {
     try {
@@ -140,9 +229,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       // Always clear local state and both storage types
       setUser(null);
+      // Location tracking will be cleared automatically by LocationProvider
       localStorage.removeItem("user");
       sessionStorage.removeItem("user");
-      console.log("🗑️ User data cleared from storage");
     }
   };
 
@@ -159,10 +248,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check localStorage and sessionStorage for existing user on app load
   useEffect(() => {
-    const checkStoredUser = () => {
+    const checkStoredUser = async () => {
       try {
         setIsLoading(true);
-        console.log("🔍 Checking storage for user...");
 
         // Check localStorage first (remember me), then sessionStorage (session only)
         const storedUser =
@@ -174,7 +262,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (storedUser) {
           const userData = JSON.parse(storedUser);
           setUser(userData);
-          console.log(`✅ User restored from ${storageType}:`, userData);
+
+          // Location tracking will be handled automatically by LocationProvider
         } else {
           console.log("ℹ️ No stored user found - user needs to login");
         }
@@ -195,6 +284,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated,
     login,
+    register,
     logout,
     refreshUser,
   };

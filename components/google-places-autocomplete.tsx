@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import { usePathname } from "next/navigation";
+import { loadGoogleMaps } from "@/lib/google-maps-loader";
 
 interface GooglePlacesAutocompleteProps {
   onPlaceSelect: (place: google.maps.places.PlaceResult) => void;
@@ -22,24 +23,14 @@ export default function GooglePlacesAutocomplete({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pathname = usePathname();
+  const urlLocale = (pathname.split("/")[1] || "el").toLowerCase();
+  const language = ["el", "en"].includes(urlLocale) ? urlLocale : "el";
 
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-        if (!apiKey || apiKey === "your_google_api_key_here") {
-          setError("Google Maps API key not configured");
-          return;
-        }
-
-        const loader = new Loader({
-          apiKey,
-          version: "weekly",
-          libraries: ["places"],
-        });
-
-        await loader.load();
+        await loadGoogleMaps(language);
         setIsLoaded(true);
         setError(null);
       } catch (err) {
@@ -49,7 +40,7 @@ export default function GooglePlacesAutocomplete({
     };
 
     initializeGoogleMaps();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (isLoaded && inputRef.current && !autocompleteRef.current) {
@@ -65,6 +56,7 @@ export default function GooglePlacesAutocomplete({
             "geometry",
             "address_components",
             "name",
+            "adr_address", // Includes postal code in display
           ],
         }
       );

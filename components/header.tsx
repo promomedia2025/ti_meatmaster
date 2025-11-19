@@ -13,6 +13,7 @@ import {
   BookOpen,
   History,
 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -21,7 +22,9 @@ import { LocationModal } from "./location-modal";
 import { AuthModal } from "./auth-modal";
 import { AddressBookModal } from "./address-book-modal";
 import { useAuth } from "@/lib/auth-context";
-import { useCart } from "@/lib/cart-context";
+import { useServerCart } from "@/lib/server-cart-context";
+import { useLocation } from "@/lib/location-context";
+import { useLocationFromUrl } from "@/lib/use-location-from-url";
 import { AddressBookResponse } from "@/lib/types";
 
 interface UserLocation {
@@ -43,12 +46,14 @@ interface UserLocation {
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { locationCarts, globalSummary, removeItem, updateQuantity } =
-    useCart();
+    useServerCart();
+  const { setCoordinates } = useLocation();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
   const [selectedAddressForEdit, setSelectedAddressForEdit] = useState<
     string | undefined
@@ -63,10 +68,57 @@ export function Header() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoadingAddressBook, setIsLoadingAddressBook] = useState(false);
+  const [locationImages, setLocationImages] = useState<Map<number, string>>(
+    new Map()
+  );
 
   // Check if we're on a restaurant or location page
   const isRestaurantPage =
     pathname.startsWith("/restaurant/") || pathname.startsWith("/location/");
+
+  // Debug log to help troubleshoot
+  console.log("🔍 Header Debug:", {
+    pathname,
+    isRestaurantPage,
+    isAuthenticated,
+  });
+
+  // Fetch location images for carts
+  useEffect(() => {
+    const fetchLocationImages = async () => {
+      if (locationCarts.length === 0) return;
+
+      const locationIds = locationCarts.map((cart) => cart.locationId);
+      const missingIds = locationIds.filter(
+        (id) => !locationImages.has(id) && !locationCarts.find(c => c.locationId === id)?.locationImage
+      );
+
+      if (missingIds.length === 0) return;
+
+      try {
+        // Fetch all locations and filter by the ones we need
+        const response = await fetch("/api/locations");
+        const data = await response.json();
+
+        if (data.success && data.data?.locations) {
+          const newImages = new Map(locationImages);
+          data.data.locations.forEach((location: any) => {
+            if (
+              missingIds.includes(location.id) &&
+              location.images?.thumbnail?.url
+            ) {
+              newImages.set(location.id, location.images.thumbnail.url);
+            }
+          });
+          setLocationImages(newImages);
+        }
+      } catch (error) {
+        console.error("Error fetching location images:", error);
+      }
+    };
+
+    fetchLocationImages();
+  }, [locationCarts, locationImages]);
 
   // Handle scroll for background transparency (only on restaurant pages)
   useEffect(() => {
@@ -83,34 +135,16 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isRestaurantPage]);
 
-  // Load saved location from localStorage on component mount
+  // Close auth modal when navigating to forgot-password route
   useEffect(() => {
-    console.log("🚀 Page loaded - checking for saved location...");
-    const savedLocation = localStorage.getItem("userLocation");
-    if (savedLocation) {
-      try {
-        const parsedLocation = JSON.parse(savedLocation);
-        console.log("💾 Restored saved location:", parsedLocation);
-        console.log("📍 Saved Coordinates:", {
-          latitude: parsedLocation.coordinates.latitude,
-          longitude: parsedLocation.coordinates.longitude,
-        });
-        setUserLocation(parsedLocation);
-      } catch (error) {
-        console.error("Error parsing saved location:", error);
-      }
-    } else {
-      console.log("ℹ️ No saved location found - user needs to set location");
+    if (pathname?.includes("/forgot-password")) {
+      setIsAuthModalOpen(false);
     }
-  }, []);
+  }, [pathname]);
 
-  // Save location to localStorage whenever it changes
-  useEffect(() => {
-    if (userLocation) {
-      console.log("💾 Saving location to localStorage:", userLocation);
-      localStorage.setItem("userLocation", JSON.stringify(userLocation));
-    }
-  }, [userLocation]);
+  // Removed localStorage loading - location is managed in real-time only
+
+  // Removed localStorage saving - location is managed in real-time only
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -168,6 +202,9 @@ export function Header() {
 
       console.log("🏠 Full Address Details:", location);
       setUserLocation(location);
+
+      // Update coordinates in context for filtering
+      setCoordinates({ latitude, longitude });
     } catch (error) {
       console.error("Error getting location:", error);
       if (error instanceof GeolocationPositionError) {
@@ -208,36 +245,42 @@ export function Header() {
     };
   }> => {
     try {
-      // Using a free reverse geocoding service with more detailed results
+      // Using our server-side API to avoid CORS
       const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        `/api/geocode?lat=${latitude}&lon=${longitude}`
       );
 
       if (!response.ok) {
         throw new Error("Reverse geocoding failed");
       }
 
-      const data = await response.json();
+      const result = await response.json();
 
-      // Extract detailed address information
+      if (!result.success || !result.data) {
+        throw new Error("No data returned from geocoding");
+      }
+
+      const data = result.data;
+
+      // Extract detailed address information from Nominatim response
+      const address = data.address || {};
+      // Prioritize suburb/neighbourhood for more specific location, then city/town/village, then municipality as fallback
       const city =
-        data.city || data.locality || data.countryName || "Unknown Location";
-      const street = data.street || data.principalSubdivision || "";
-      const houseNumber = data.houseNumber || "";
-      const postalCode = data.postcode || "";
-      const locality = data.locality || "";
-      const country = data.countryName || "";
+        address.suburb ||
+        address.neighbourhood ||
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        "Unknown Location";
+      const street = address.road || "";
+      const houseNumber = address.house_number || "";
+      const postalCode = address.postcode || "";
+      const locality = address.suburb || address.neighbourhood || "";
+      const country = address.country || "";
 
       // Build full address string
-      const addressParts = [];
-      if (street) addressParts.push(street);
-      if (houseNumber) addressParts.push(houseNumber);
-      if (locality && locality !== city) addressParts.push(locality);
-      if (city) addressParts.push(city);
-      if (postalCode) addressParts.push(postalCode);
-      if (country) addressParts.push(country);
-
-      const fullAddress = addressParts.join(", ");
+      const fullAddress = data.display_name || "Unknown Location";
 
       return {
         city,
@@ -276,8 +319,7 @@ export function Header() {
     longitude: number;
   }) => {
     console.log("📍 Location set from modal:", coordinates);
-    // Trigger a page refresh or update the restaurant grid
-    window.location.reload();
+    // No need to reload - coordinates are in context and RestaurantGrid will auto-update
   };
 
   const handleAddressBookClick = () => {
@@ -302,10 +344,12 @@ export function Header() {
         coordinates: address.coordinates,
         addressDetails: {},
       };
-      localStorage.setItem("userLocation", JSON.stringify(locationData));
       setUserLocation(locationData);
-      // Reload to update restaurant grid
-      window.location.reload();
+
+      // Update coordinates in context for filtering
+      setCoordinates(address.coordinates);
+
+      // No need to reload - coordinates are in context and RestaurantGrid will auto-update
     }
   };
 
@@ -336,13 +380,13 @@ export function Header() {
             : "bg-background border-b border-border"
         }`}
       >
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+        <div className="w-full mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
             {/* Logo and Location */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-shrink-0 min-w-0">
               <button
                 onClick={() => router.push("/")}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
               >
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">
@@ -352,8 +396,9 @@ export function Header() {
                 <span className="text-xl font-bold text-foreground">Wolt</span>
               </button>
 
+              {/* Location button - visible on desktop, horizontal next to logo */}
               <button
-                className="hidden md:flex items-center gap-1 text-sm hover:text-primary transition-colors"
+                className="hidden md:flex items-center gap-1 text-sm hover:text-primary transition-colors flex-shrink-0"
                 onClick={handleLocationClick}
                 disabled={isGettingLocation}
                 title={
@@ -367,8 +412,16 @@ export function Header() {
                 ) : (
                   <MapPin className="w-4 h-4 text-primary" />
                 )}
-                <span className="text-foreground">
-                  {userLocation ? userLocation.city : "Αθήνα"}
+                <span className="text-foreground whitespace-nowrap">
+                  {userLocation
+                    ? `${
+                        userLocation.addressDetails.street +
+                        " " +
+                        userLocation.addressDetails.houseNumber +
+                        ", " +
+                        userLocation.addressDetails.postalCode
+                      }`
+                    : "Πατηστε για εύρεση τοποθεσίας σας"}
                 </span>
                 <svg
                   className="w-4 h-4 text-muted-foreground"
@@ -397,34 +450,47 @@ export function Header() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
+              {/* Cart Button - Only show on restaurant pages */}
+              {isRestaurantPage && (
+                <button
+                  onClick={() => setIsCartSidebarOpen(true)}
+                  className="flex items-center gap-2 lg:gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 lg:py-3 px-3 lg:px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
+                >
+                  {globalSummary.totalItems > 0 && (
+                    <span className="bg-white text-blue-500 text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                      {globalSummary.totalItems}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4" />
+                    {/* Show icon only on md, full text on lg+ */}
+                    <span className="hidden lg:inline">
+                      Δες την παραγγελία σου
+                    </span>
+                  </div>
+                  {globalSummary.totalAmount > 0 && (
+                    <div className="text-right">
+                      <div className="text-sm font-bold">
+                        €{globalSummary.totalAmount.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                </button>
+              )}
+
               {isAuthenticated ? (
                 <>
-                  {/* Cart Button */}
-                  <button
-                    onClick={() => setIsCartSidebarOpen(true)}
-                    className="flex items-center gap-2 text-sm hover:text-primary transition-colors relative"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span className="text-foreground">
-                      Καλάθι{" "}
-                      {globalSummary.totalItems > 0 &&
-                        `(${globalSummary.totalItems})`}
-                    </span>
-                    {globalSummary.totalItems > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {globalSummary.totalItems}
-                      </span>
-                    )}
-                  </button>
-
                   {/* User Dropdown */}
                   <div className="relative user-dropdown">
                     <button
                       onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                      className="flex items-center gap-1 lg:gap-2 text-sm hover:text-primary transition-colors"
                     >
                       <User className="w-4 h-4" />
-                      <span className="text-foreground">Το Προφιλ μου</span>
+                      {/* Show full text only on lg+ screens */}
+                      <span className="hidden lg:inline text-foreground">
+                        Το Προφιλ μου
+                      </span>
                       <ChevronDown className="w-4 h-4" />
                     </button>
 
@@ -484,14 +550,22 @@ export function Header() {
                 <>
                   <Button
                     variant="ghost"
+                    size="sm"
                     className="text-foreground hover:text-primary"
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={() => {
+                      setAuthMode("login");
+                      setIsAuthModalOpen(true);
+                    }}
                   >
                     Σύνδεση
                   </Button>
                   <Button
+                    size="sm"
                     className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={() => {
+                      setAuthMode("register");
+                      setIsAuthModalOpen(true);
+                    }}
                   >
                     Εγγραφή
                   </Button>
@@ -558,21 +632,85 @@ export function Header() {
                 </svg>
               </button>
 
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="ghost"
-                  className="text-foreground hover:text-primary justify-start"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  Σύνδεση
-                </Button>
-                <Button
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  Εγγραφή
-                </Button>
-              </div>
+              {isAuthenticated ? (
+                <div className="flex flex-col gap-2">
+                  {/* Cart Button */}
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary justify-start"
+                    onClick={() => {
+                      setIsCartSidebarOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Καλάθι{" "}
+                    {globalSummary.totalItems > 0 &&
+                      `(${globalSummary.totalItems})`}
+                  </Button>
+
+                  {/* Address Book */}
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary justify-start"
+                    onClick={() => {
+                      handleAddressBookClick();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    My Address Book
+                  </Button>
+
+                  {/* Order History */}
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary justify-start"
+                    onClick={() => {
+                      handleOrderHistoryClick();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <History className="w-4 h-4 mr-2" />
+                    Ιστορικό Παραγγελιών
+                  </Button>
+
+                  {/* Profile/Logout */}
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary justify-start"
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Αποσύνδεση
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="ghost"
+                    className="text-foreground hover:text-primary justify-start"
+                    onClick={() => {
+                      setAuthMode("login");
+                      setIsAuthModalOpen(true);
+                    }}
+                  >
+                    Σύνδεση
+                  </Button>
+                  <Button
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => {
+                      setAuthMode("register");
+                      setIsAuthModalOpen(true);
+                    }}
+                  >
+                    Εγγραφή
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -590,6 +728,7 @@ export function Header() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        mode={authMode}
       />
       <AddressBookModal
         isOpen={isAddressBookModalOpen}
@@ -667,10 +806,23 @@ export function Header() {
                           >
                             {/* Location Header */}
                             <div className="flex items-center justify-between mb-3">
-                              <h3 className="text-white font-medium">
-                                {locationCart.locationName}
-                              </h3>
-                              <span className="text-gray-400 text-sm">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {(locationCart.locationImage || locationImages.get(locationCart.locationId)) && (
+                                  <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                                    <Image
+                                      src={locationCart.locationImage || locationImages.get(locationCart.locationId) || ""}
+                                      alt={locationCart.locationName}
+                                      fill
+                                      className="object-cover"
+                                      sizes="48px"
+                                    />
+                                  </div>
+                                )}
+                                <h3 className="text-white font-medium truncate">
+                                  {locationCart.locationName}
+                                </h3>
+                              </div>
+                              <span className="text-gray-400 text-sm flex-shrink-0">
                                 {locationCart.summary.count}{" "}
                                 {locationCart.summary.count === 1
                                   ? "αντικείμενο"

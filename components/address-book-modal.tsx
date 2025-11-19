@@ -71,7 +71,7 @@ export function AddressBookModal({
         if (userData && userData.id) {
           console.log("🔍 User ID:", userData.id);
 
-          const apiUrl = `/api/address-book?user_id=${userData.id}`;
+          const apiUrl = `/api/address-book/${userData.id}`;
           console.log("🔍 Making API request to:", apiUrl);
 
           const response = await fetch(apiUrl, {

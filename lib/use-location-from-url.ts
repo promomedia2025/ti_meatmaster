@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 
 // Function to get location ID from slug (same as in location page)
-function getLocationIdFromSlug(slug: string): number | null {
+export function getLocationIdFromSlug(slug: string): number | null {
   // Extract ID from slug (format: "restaurant-name-123")
   const parts = slug.split("-");
   const lastPart = parts[parts.length - 1];
@@ -16,9 +16,10 @@ export function useLocationFromUrl() {
   const pathname = usePathname();
 
   const locationInfo = useMemo(() => {
-    // Check if we're on a location page
-    if (pathname.startsWith("/location/")) {
-      const slug = pathname.replace("/location/", "");
+    // Match 'location' anywhere in the pathname after an optional language prefix
+    const locMatch = pathname.match(/\/location\/(.+)$/);
+    if (locMatch) {
+      const slug = locMatch[1];
       const locationId = getLocationIdFromSlug(slug);
 
       if (locationId) {
@@ -30,11 +31,10 @@ export function useLocationFromUrl() {
       }
     }
 
-    // Check if we're on a restaurant page (for backward compatibility)
-    if (pathname.startsWith("/restaurant/")) {
-      const slug = pathname.replace("/restaurant/", "");
-      // For restaurant pages, we'll use a default location ID based on the slug
-      // This is for backward compatibility with existing restaurant pages
+    // Match 'restaurant' anywhere in the pathname after an optional language prefix
+    const restMatch = pathname.match(/\/restaurant\/(.+)$/);
+    if (restMatch) {
+      const slug = restMatch[1];
       const defaultLocationId =
         slug === "kfc-syntagma"
           ? 1
@@ -60,4 +60,3 @@ export function useLocationFromUrl() {
 
   return locationInfo;
 }
-

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -64,6 +66,26 @@ export async function POST(request: NextRequest) {
       console.log("🍪 Set-Cookie header from external API:", setCookieHeader);
 
       if (setCookieHeader) {
+        // Extract and log cookie expiration information
+        const maxAgeMatch = setCookieHeader.match(/Max-Age=(\d+)/i);
+        const expiresMatch = setCookieHeader.match(/Expires=([^;]+)/i);
+
+        if (maxAgeMatch) {
+          const maxAgeSeconds = parseInt(maxAgeMatch[1]);
+          const maxAgeHours = Math.floor(maxAgeSeconds / 3600);
+          const maxAgeDays = Math.floor(maxAgeHours / 24);
+          console.log(
+            `🍪 Cookie Max-Age: ${maxAgeSeconds} seconds (${maxAgeHours} hours, ${maxAgeDays} days)`
+          );
+        }
+
+        if (expiresMatch) {
+          const expiresDate = new Date(expiresMatch[1]);
+          console.log(
+            `🍪 Cookie Expires: ${expiresDate.toISOString()} (${expiresDate.toLocaleString()})`
+          );
+        }
+
         // Parse and modify Laravel session cookies for localhost
         const cookies = setCookieHeader.split(",").map((cookie) => {
           // Remove domain restrictions and make it work for localhost

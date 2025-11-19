@@ -4,7 +4,7 @@ import { Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useCart } from "@/lib/cart-context";
+import { useServerCart } from "@/lib/server-cart-context";
 
 interface MenuSectionProps {
   title: string;
@@ -15,7 +15,7 @@ export default function MenuSection({
   title,
   isOffers = false,
 }: MenuSectionProps) {
-  const { addItem } = useCart();
+  const { addItem } = useServerCart();
   const [loadingItemId, setLoadingItemId] = useState<number | null>(null);
 
   const handleAddToCart = async (
@@ -120,6 +120,8 @@ export default function MenuSection({
               alt="French Fries"
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+              loading="lazy"
             />
           </div>
           <div className="p-4">
@@ -151,6 +153,8 @@ export default function MenuSection({
               alt="Hot Bucket"
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+              loading="lazy"
             />
           </div>
           <div className="p-4">
@@ -190,6 +194,8 @@ export default function MenuSection({
               alt="Feast for 2"
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+              loading="lazy"
             />
           </div>
           <div className="p-4">

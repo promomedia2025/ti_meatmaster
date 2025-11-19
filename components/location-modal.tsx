@@ -11,7 +11,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import GooglePlacesAutocomplete from "./google-places-autocomplete";
+import { useLocation } from "@/lib/location-context";
+import { useAuth } from "@/lib/auth-context";
+import { useTranslations } from "@/lib/i18n/translations-provider";
+import GooglePlacesCustom from "./google-places-custom";
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -33,19 +36,6 @@ interface SavedAddress {
   };
 }
 
-interface AddressSuggestion {
-  display_name: string;
-  lat: string;
-  lon: string;
-  address: {
-    house_number?: string;
-    road?: string;
-    city?: string;
-    postcode?: string;
-    country?: string;
-  };
-}
-
 export function LocationModal({
   isOpen,
   onClose,
@@ -53,13 +43,13 @@ export function LocationModal({
   initialAddress,
 }: LocationModalProps) {
   const [address, setAddress] = useState("");
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [showAddressList, setShowAddressList] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const { setCoordinates, reverseGeocode, setFormattedAddress } = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const { lang, dict } = useTranslations();
 
   // Load saved location when modal opens
   useEffect(() => {
@@ -69,23 +59,8 @@ export function LocationModal({
         setAddress(initialAddress);
         console.log("📍 Using initial address:", initialAddress);
       } else {
-        // Otherwise, load from localStorage
-        const savedLocation = localStorage.getItem("userLocation");
-        if (savedLocation) {
-          try {
-            const parsedLocation = JSON.parse(savedLocation);
-            setAddress(parsedLocation.fullAddress);
-            console.log(
-              "📍 Loaded saved address in modal:",
-              parsedLocation.fullAddress
-            );
-          } catch (error) {
-            console.error("Error loading saved location:", error);
-          }
-        } else {
-          // Clear address if no saved location and no initial address
-          setAddress("");
-        }
+        // Clear address if no initial address
+        setAddress("");
       }
     } else {
       // Clear address when modal closes
@@ -97,11 +72,9 @@ export function LocationModal({
   const loadSavedAddresses = async () => {
     setLoadingAddresses(true);
     try {
-      const user = localStorage.getItem("user");
-      if (user) {
-        const userData = JSON.parse(user);
+      if (isAuthenticated && user?.id) {
         const response = await fetch(
-          `/api/address-book?user_id=${userData.id}`,
+          `/api/address-book?customer_id=${user.id}`,
           {
             method: "GET",
             headers: {
@@ -123,6 +96,7 @@ export function LocationModal({
                 apiAddress.name ||
                 "Address",
               address:
+                apiAddress.formatted_address ||
                 apiAddress.address ||
                 apiAddress.full_address ||
                 apiAddress.address_1,
@@ -144,47 +118,52 @@ export function LocationModal({
     }
   };
 
-  // Address autocomplete function
-  const searchAddresses = async (query: string) => {
-    if (query.length < 3) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Using Nominatim (OpenStreetMap) for free geocoding
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}&countrycodes=gr&limit=5&addressdetails=1`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setSuggestions(data);
-        setShowSuggestions(true);
-      }
-    } catch (error) {
-      console.error("Error searching addresses:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Handle address input change
   const handleAddressChange = (value: string) => {
     setAddress(value);
-    searchAddresses(value);
+    // Google Places autocomplete handles suggestions
   };
 
-  // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: AddressSuggestion) => {
-    setAddress(suggestion.display_name);
-    setShowSuggestions(false);
-    setSuggestions([]);
-    console.log("📍 Selected address:", suggestion);
+  // Handle Google Places selection
+  const handleGooglePlaceSelect = async (place: any) => {
+    if (place.formatted_address && place.geometry?.location) {
+      const address = place.formatted_address;
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+
+      console.log("📍 Google Places selected:", { address, lat, lng });
+
+      // Update the address input
+      setAddress(address);
+
+      // Hide saved addresses list
+      setShowAddressList(false);
+
+      // Update coordinates in context
+      const coordinates = { latitude: lat, longitude: lng };
+      setCoordinates(coordinates);
+
+      // Trigger reverse geocoding to get formatted address
+      try {
+        const formattedAddress = await reverseGeocode(lat, lng, lang);
+        if (formattedAddress) {
+          setFormattedAddress(formattedAddress);
+          console.log("📍 Formatted address set:", formattedAddress);
+        }
+      } catch (error) {
+        console.error("❌ Error during reverse geocoding:", error);
+      }
+
+      // Call the callback to update parent component
+      if (onLocationSet) {
+        onLocationSet(coordinates);
+      }
+
+      // Close the modal automatically
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    }
   };
 
   // Get current location and autocomplete address
@@ -209,17 +188,40 @@ export function LocationModal({
       const { latitude, longitude } = position.coords;
       console.log("📍 Current coordinates:", { latitude, longitude });
 
-      // Reverse geocoding to get address
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-      );
+      // Set coordinates in context
+      const coordinates = { latitude, longitude };
+      setCoordinates(coordinates);
 
-      if (response.ok) {
-        const data = await response.json();
-        const fullAddress = data.display_name;
-        setAddress(fullAddress);
-        console.log("📍 Autocompleted address:", fullAddress);
+      // Trigger reverse geocoding to get formatted address
+      try {
+        const formattedAddress = await reverseGeocode(
+          latitude,
+          longitude,
+          lang
+        );
+        if (formattedAddress) {
+          setFormattedAddress(formattedAddress);
+          setAddress(formattedAddress.fullAddress);
+          console.log(
+            "📍 Formatted address set from current location:",
+            formattedAddress
+          );
+        }
+      } catch (error) {
+        console.error("❌ Error during reverse geocoding:", error);
+        // Fallback to coordinates if geocoding fails
+        setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
       }
+
+      // Call the callback to update parent component
+      if (onLocationSet) {
+        onLocationSet(coordinates);
+      }
+
+      // Close the modal automatically
+      setTimeout(() => {
+        onClose();
+      }, 500); // Small delay so user can see the address was filled
     } catch (error) {
       console.error("Error getting location:", error);
       alert("Failed to get your location");
@@ -232,18 +234,17 @@ export function LocationModal({
   const geocodeAddress = async (address: string) => {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address
-        )}&countrycodes=gr&limit=1&addressdetails=1`
+        `/api/geocode?address=${encodeURIComponent(address)}&lang=${lang}`
       );
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.length > 0) {
-          const result = data[0];
+        const result = await response.json();
+        if (result.success && result.data && result.data.length > 0) {
+          const firstResult = result.data[0];
+          console.log("📍 Geocoded address:", firstResult.display_name);
           return {
-            latitude: parseFloat(result.lat),
-            longitude: parseFloat(result.lon),
+            latitude: parseFloat(firstResult.lat),
+            longitude: parseFloat(firstResult.lon),
           };
         }
       }
@@ -254,56 +255,104 @@ export function LocationModal({
     }
   };
 
-  const handleSavedAddressSelect = (savedAddress: SavedAddress) => {
+  const handleSavedAddressSelect = async (savedAddress: SavedAddress) => {
     // Fill the input field with the selected address
     setAddress(savedAddress.address);
     setShowAddressList(false);
 
-    // Hide suggestions when selecting a saved address
-    setShowSuggestions(false);
-
     console.log("📍 Selected saved address:", savedAddress.address);
-  };
 
-  // Handle Google Places selection
-  const handleGooglePlaceSelect = (place: google.maps.places.PlaceResult) => {
-    if (place.formatted_address && place.geometry?.location) {
-      const address = place.formatted_address;
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
+    // If the saved address has coordinates, use them directly
+    if (savedAddress.coordinates) {
+      const coordinates = savedAddress.coordinates;
+      console.log("📍 Using saved address coordinates:", coordinates);
 
-      console.log("📍 Google Places selected:", { address, lat, lng });
+      // Update coordinates in context
+      setCoordinates(coordinates);
 
-      // Update the address input
-      setAddress(address);
-
-      // Hide suggestions
-      setShowSuggestions(false);
-      setShowAddressList(false);
-
-      // Save location to localStorage
-      const locationData = {
-        city: address.split(",")[0] || address,
-        fullAddress: address,
-        coordinates: { latitude: lat, longitude: lng },
-        addressDetails: {},
-      };
-      localStorage.setItem("userLocation", JSON.stringify(locationData));
+      // Trigger reverse geocoding to get formatted address
+      try {
+        const formattedAddress = await reverseGeocode(
+          coordinates.latitude,
+          coordinates.longitude,
+          lang
+        );
+        if (formattedAddress) {
+          setFormattedAddress(formattedAddress);
+          console.log(
+            "📍 Formatted address set from saved address:",
+            formattedAddress
+          );
+        }
+      } catch (error) {
+        console.error("❌ Error during reverse geocoding:", error);
+      }
 
       // Call the callback to update parent component
       if (onLocationSet) {
-        onLocationSet({ latitude: lat, longitude: lng });
+        onLocationSet(coordinates);
       }
 
-      // Close the modal
-      onClose();
+      // Close the modal automatically
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    } else {
+      // If no coordinates, geocode the address
+      try {
+        const coordinates = await geocodeAddress(savedAddress.address);
+        console.log("📍 Geocoded saved address:", coordinates);
+
+        // Update coordinates in context
+        setCoordinates(coordinates);
+
+        // Trigger reverse geocoding to get formatted address
+        try {
+          const formattedAddress = await reverseGeocode(
+            coordinates.latitude,
+            coordinates.longitude,
+            lang
+          );
+          if (formattedAddress) {
+            setFormattedAddress(formattedAddress);
+            console.log(
+              "📍 Formatted address set from geocoded saved address:",
+              formattedAddress
+            );
+          }
+        } catch (error) {
+          console.error("❌ Error during reverse geocoding:", error);
+        }
+
+        // Call the callback to update parent component
+        if (onLocationSet) {
+          onLocationSet(coordinates);
+        }
+
+        // Close the modal automatically
+        setTimeout(() => {
+          onClose();
+        }, 300);
+      } catch (error) {
+        console.error("❌ Error geocoding saved address:", error);
+        alert("Αποτυχία επεξεργασίας της αποθηκευμένης διεύθυνσης");
+      }
     }
   };
 
   // Handle continue button click
   const handleContinue = async () => {
     if (!address.trim()) {
-      alert("Please enter an address");
+      alert("Παρακαλώ εισάγετε μια διεύθυνση");
+      return;
+    }
+
+    // Validate that postal code is included (Greek format: 5 digits, optionally with space)
+    const postalCodePattern = /\b\d{3}\s?\d{2}\b/;
+    if (!postalCodePattern.test(address)) {
+      alert(
+        "Παρακαλώ συμπεριλάβετε τον ταχυδρομικό κώδικα στη διεύθυνση\n\nΠαράδειγμα: Υδρας 24, 15342"
+      );
       return;
     }
 
@@ -312,14 +361,45 @@ export function LocationModal({
       const coordinates = await geocodeAddress(address);
       console.log("📍 Address coordinates:", coordinates);
 
-      // Save location to localStorage
-      const locationData = {
-        city: address.split(",")[0] || address, // Use first part as city
-        fullAddress: address,
-        coordinates,
-        addressDetails: {},
+      // Update coordinates in context
+      setCoordinates(coordinates);
+
+      // Create a custom formatted address from the typed address instead of reverse geocoding
+      // This preserves the user's exact input
+
+      // Extract postcode using regex (Greek format: 5 digits, optionally with space)
+      const postalCodeMatch = address.match(/\b(\d{3}\s?\d{2})\b/);
+      const postcode = postalCodeMatch ? postalCodeMatch[1] : "";
+
+      // Remove postcode from address to get street part
+      const streetPart = address
+        .replace(/\b\d{3}\s?\d{2}\b/, "")
+        .replace(/,\s*$/, "")
+        .trim();
+
+      // Extract city (everything after the last comma, or default to Athens)
+      const addressParts = address.split(",").map((part) => part.trim());
+      const cityPart =
+        addressParts.length > 1
+          ? addressParts[addressParts.length - 1]
+          : "Αθήνα";
+
+      const customFormattedAddress = {
+        street: streetPart,
+        area: cityPart,
+        postcode: postcode,
+        fullAddress: address, // Use the original typed address
       };
-      localStorage.setItem("userLocation", JSON.stringify(locationData));
+
+      setFormattedAddress(customFormattedAddress);
+      console.log(
+        "📍 Using typed address as formatted address:",
+        customFormattedAddress
+      );
+      console.log(
+        "📍 Full address being set:",
+        customFormattedAddress.fullAddress
+      );
 
       // Call the callback to update parent component
       if (onLocationSet) {
@@ -330,7 +410,11 @@ export function LocationModal({
       onClose();
     } catch (error) {
       console.error("Error processing address:", error);
-      alert("Failed to process the address. Please try again.");
+      alert(
+        lang === "el"
+          ? "Αποτυχία επεξεργασίας της διεύθυνσης. Παρακαλώ δοκιμάστε ξανά."
+          : "Failed to process address. Please try again."
+      );
     }
   };
 
@@ -355,19 +439,21 @@ export function LocationModal({
 
         {/* Title */}
         <h2 className="text-xl font-semibold mb-6 text-white">
-          Προσθήκη νέας διεύθυνσης
+          {dict.locationModal.title}
         </h2>
 
         {/* Country dropdown */}
         <div className="mb-4">
-          <label className="block text-sm text-gray-400 mb-2">Χώρα</label>
+          <label className="block text-sm text-gray-400 mb-2">
+            {lang === "el" ? "Χώρα" : "Country"}
+          </label>
           <Select defaultValue="greece">
             <SelectTrigger className="w-full bg-[#2a2a2a] border-gray-600 text-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#2a2a2a] border-gray-600">
               <SelectItem value="greece" className="text-white">
-                Ελλάδα
+                {lang === "el" ? "Ελλάδα" : "Greece"}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -377,7 +463,7 @@ export function LocationModal({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm text-gray-400">
-              Αποθηκευμένες διευθύνσεις
+              {dict.locationModal.savedAddresses}
             </label>
             <button
               onClick={() => {
@@ -388,7 +474,13 @@ export function LocationModal({
               }}
               className="text-primary text-sm hover:text-primary/80 transition-colors"
             >
-              {showAddressList ? "Απόκρυψη" : "Εμφάνιση"}
+              {showAddressList
+                ? lang === "el"
+                  ? "Απόκρυψη"
+                  : "Hide"
+                : lang === "el"
+                ? "Εμφάνιση"
+                : "Show"}
             </button>
           </div>
 
@@ -420,7 +512,9 @@ export function LocationModal({
                 ))
               ) : (
                 <div className="text-center py-4 text-gray-400 text-sm">
-                  Δεν έχετε αποθηκευμένες διευθύνσεις
+                  {lang === "el"
+                    ? "Δεν έχετε αποθηκευμένες διευθύνσεις"
+                    : "No saved addresses"}
                 </div>
               )}
             </div>
@@ -430,14 +524,22 @@ export function LocationModal({
         {/* Address input */}
         <div className="mb-6">
           <label className="block text-sm text-gray-400 mb-2">
-            Οδός και αριθμός
+            {dict.locationModal.enterAddress}{" "}
+            <span className="text-red-400">*</span>
           </label>
+          <p className="text-xs text-gray-500 mb-2">
+            {lang === "el"
+              ? "Συμπεριλάβετε τον ταχυδρομικό κώδικα (π.χ. 15342)"
+              : "Include postal code (e.g. 15342)"}
+          </p>
           <div className="relative">
-            <GooglePlacesAutocomplete
+            <GooglePlacesCustom
               value={address}
               onChange={handleAddressChange}
               onPlaceSelect={handleGooglePlaceSelect}
-              placeholder="Εισάγετε τη διεύθυνσή σας"
+              placeholder={
+                lang === "el" ? "π.χ. Υδρας 24, 15342" : "e.g. Ydras 24, 15342"
+              }
               className="pr-20"
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
@@ -445,7 +547,7 @@ export function LocationModal({
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation}
                 className="p-1 hover:bg-gray-600 rounded transition-colors"
-                title="Use current location"
+                title={dict.locationModal.useCurrentLocation}
               >
                 {isGettingLocation ? (
                   <Loader2 className="w-4 h-4 text-primary animate-spin" />
@@ -455,37 +557,6 @@ export function LocationModal({
               </button>
               <MapPin className="w-4 h-4 text-gray-400" />
             </div>
-
-            {/* Address suggestions dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-[#2a2a2a] border border-gray-600 rounded-md mt-1 max-h-48 overflow-y-auto z-10">
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                    className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-600 transition-colors border-b border-gray-700 last:border-b-0"
-                  >
-                    <div className="font-medium">
-                      {suggestion.address.road}{" "}
-                      {suggestion.address.house_number}
-                    </div>
-                    <div className="text-gray-400 text-xs">
-                      {suggestion.address.postcode} {suggestion.address.city}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="absolute top-full left-0 right-0 bg-[#2a2a2a] border border-gray-600 rounded-md mt-1 p-3 text-center">
-                <Loader2 className="w-4 h-4 text-primary animate-spin mx-auto" />
-                <div className="text-sm text-gray-400 mt-1">
-                  Searching addresses...
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -494,7 +565,7 @@ export function LocationModal({
           onClick={handleContinue}
           className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3"
         >
-          Συνέχεια
+          {dict.common.confirm}
         </Button>
 
         {/* Decorative illustration */}
