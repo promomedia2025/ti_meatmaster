@@ -13,7 +13,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "multitake.bettersolution.gr",
+        hostname: "cocofino.bettersolution.gr",
         pathname: "/**",
       },
     ],

@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     // Get CSRF token from external API
     const csrfResponse = await fetch(
-      "https://multitake.bettersolution.gr/api/csrf",
+      "https://cocofino.bettersolution.gr/api/csrf",
       {
         method: "GET",
         headers: {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     let response;
     try {
       response = await fetch(
-        "https://multitake.bettersolution.gr/public/custom-orders/create",
+        "https://cocofino.bettersolution.gr/public/custom-orders/create",
         {
           method: "POST",
           headers: {

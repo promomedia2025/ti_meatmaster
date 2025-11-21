@@ -43,7 +43,7 @@ export default function OrderStatusPage() {
       try {
         console.log(`🔍 Fetching order ${orderId} details...`);
         const response = await fetch(
-          `https://multitake.bettersolution.gr/api/user/${user.id}/orders/${orderId}`
+          `https://cocofino.bettersolution.gr/api/user/${user.id}/orders/${orderId}`
         );
 
         if (!response.ok) {

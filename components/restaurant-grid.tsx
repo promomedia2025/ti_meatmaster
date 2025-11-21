@@ -192,10 +192,7 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
   }
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-bold text-foreground mb-6">
-        Όλα τα εστιατόρια
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
         {locations.map((location) => {
           const slug = generateSlug(location.name, location.id);
           const deliveryTime = getDeliveryTime(location);
@@ -214,21 +211,17 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
             <Link
               key={location.id}
               href={`/location/${slug}`}
-              className="bg-card rounded-lg overflow-hidden hover:bg-card/80 transition-colors cursor-pointer block"
+              className="w-full max-w-[1600px] bg-card rounded-lg overflow-hidden hover:bg-card/80 transition-colors cursor-pointer block"
             >
-              <div className="relative aspect-[4/3]">
+              <div className="relative aspect-[4/1]">
                 <Image
                   src={thumbnailUrl}
                   alt={location.name}
                   fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   priority
                   fetchPriority="high"
                 />
-                <div className="absolute top-3 left-3 bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium">
-                  {promotion}
-                </div>
+                
                 {/* Restaurant Status Badge */}
                 <div
                   className={`absolute top-3 right-3 px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClasses(
@@ -269,7 +262,7 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                           d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
                         />
                       </svg>
-                      Delivery
+                      Παράδοση
                     </span>
                   )}
                   {statusDisplay.pickupAvailable && (
@@ -287,7 +280,7 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                           d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                         />
                       </svg>
-                      Pickup
+                      Παραλαβή
                     </span>
                   )}
                 </div>
@@ -326,7 +319,7 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                         />
                       </svg>
                       <span>{deliveryFee}€</span>
-                      <span>• €€€</span>
+                      <span>• €</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -343,7 +336,6 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
             </Link>
           );
         })}
-      </div>
     </section>
   );
 }

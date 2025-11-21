@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
 
     // Call external API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/cart/update/${finalRowId}`,
+      `https://cocofino.bettersolution.gr/api/cart/update/${finalRowId}`,
       {
         method: "PUT",
         headers: {

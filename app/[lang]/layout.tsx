@@ -20,7 +20,7 @@ export async function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
-  title: "FoodHub - Παράδοση φαγητού",
+  title: "Cocofino | Online Delivery - Χολαργός, Χαλάνδρι, Παπάγου, Άγια Παρασκευή",
   description: "Παραγγείλετε φαγητό από τα αγαπημένα σας εστιατόρια",
   generator: "v0.app",
 };

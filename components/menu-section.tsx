@@ -210,7 +210,7 @@ export default function MenuSection({
               <button
                 onClick={() => handleAddToCart(3, "Feast for 2", 18.5)}
                 disabled={loadingItemId === 3}
-                className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-8 h-8 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-[#ff9328ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingItemId === 3 ? (
                   <Loader2 className="w-4 h-4 text-white animate-spin" />

@@ -23,7 +23,7 @@ async function getFavoriteStatus(locationId: number): Promise<boolean> {
       locationId
     );
 
-    const url = `https://multitake.bettersolution.gr/api/locations/${locationId}/is-favorite`;
+    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/is-favorite`;
     console.log("📡 [Server] Making request to:", url);
 
     const response = await fetch(url, {

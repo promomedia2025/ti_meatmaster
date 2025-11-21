@@ -22,7 +22,7 @@ export async function GET(
 
     // Fetch user's entire cart from BetterSolution API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/cart/user/${userId}/all`,
+      `https://cocofino.bettersolution.gr/api/cart/user/${userId}/all`,
       {
         method: "GET",
         headers: {

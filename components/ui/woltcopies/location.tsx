@@ -82,19 +82,19 @@ export function WoltLocation({
 
   return (
     <div className="flex items-center gap-2 cursor-pointer" onClick={onClick}>
-      <div className="inline-flex relative justify-center items-center w-[40px] min-w-[40px] h-[40px] min-h-[40px] rounded-full transition-colors duration-[120ms] ease-out bg-[#001924]">
-        <MapPin size={24} color="rgb(0, 157, 224)" />
+      <div className="inline-flex relative justify-center items-center w-[40px] min-w-[40px] h-[40px] min-h-[40px] rounded-full transition-colors duration-[120ms] ease-out bg-[#60350F]">
+        <MapPin size={24} color="#ff9328ff" />
       </div>
       <div className="flex items-center gap-1">
         {showLoading ? (
-          <Loader2 className="w-4 h-4 text-[rgb(0,157,224)] animate-spin" />
+          <Loader2 className="w-4 h-4 text-[#ff9328ff] animate-spin" />
         ) : (
-          <p className="text-sm text-[rgb(0,157,224)] font-semibold">
+          <p className="text-sm text-[#ff9328ff] font-semibold">
             {displayText}
           </p>
         )}
       </div>
-      <ChevronDown size={16} color="rgb(0, 157, 224)" />
+      <ChevronDown size={16} color="#ff9328ff" />
     </div>
   );
 }

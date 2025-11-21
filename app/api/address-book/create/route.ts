@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/create`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/create`;
     console.log("📝 Creating address via API:", apiUrl);
     console.log("📤 Request body:", {
       customer_id,

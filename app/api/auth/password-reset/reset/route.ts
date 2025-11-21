@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external API from the server
     const response = await fetch(
-      "https://multitake.bettersolution.gr/api/auth/customer/reset",
+      "https://cocofino.bettersolution.gr/api/auth/customer/reset",
       {
         method: "POST",
         credentials: "include",

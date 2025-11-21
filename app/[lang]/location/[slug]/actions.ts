@@ -22,7 +22,7 @@ export async function favoriteLocation(
     );
     console.log("❤️ [FAVORITE] Cookie string length:", cookieString.length);
 
-    const url = `https://multitake.bettersolution.gr/api/locations/${locationId}/favorite`;
+    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/favorite`;
     console.log("❤️ [FAVORITE] Request URL:", url);
 
     const response = await fetch(url, {
@@ -108,7 +108,7 @@ export async function unfavoriteLocation(
     );
     console.log("💔 [UNFAVORITE] Cookie string length:", cookieString.length);
 
-    const url = `https://multitake.bettersolution.gr/api/locations/${locationId}/favorite`;
+    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/favorite`;
     console.log("💔 [UNFAVORITE] Request URL:", url);
 
     const response = await fetch(url, {

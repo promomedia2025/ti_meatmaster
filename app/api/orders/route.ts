@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Make request to the external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/user/${userId}/orders`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/user/${userId}/orders`;
 
     const response = await fetch(apiUrl, {
       method: "GET",

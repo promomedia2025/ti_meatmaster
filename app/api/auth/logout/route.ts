@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external API to logout
     const response = await fetch(
-      "https://multitake.bettersolution.gr/api/auth/logout",
+      "https://cocofino.bettersolution.gr/api/auth/logout",
       {
         method: "POST",
         credentials: "include",

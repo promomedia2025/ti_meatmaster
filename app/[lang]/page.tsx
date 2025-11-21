@@ -178,7 +178,7 @@ export default function HomePage() {
                     }
                     className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-full transition-all duration-200 ${
                       selectedTransport === transport.key
-                        ? "bg-[rgb(0,157,224)] text-white shadow-md"
+                        ? "bg-[#ff9328ff] text-white shadow-md"
                         : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                     }`}
                   >

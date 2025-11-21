@@ -16,22 +16,8 @@ export function Footer({ lang, dict }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
           {/* Logo and App Downloads */}
           <div className="md:col-span-1">
-            <div className="text-2xl font-bold text-white mb-6">FoodHub</div>
+            <div className="text-2xl font-bold text-white mb-6">Cocofino</div>
             <div className="space-y-3">
-              <button className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors w-full">
-                <Apple className="w-5 h-5" />
-                <div className="text-left">
-                  <div className="text-xs">Download on the</div>
-                  <div className="text-sm font-semibold">App Store</div>
-                </div>
-              </button>
-              <button className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors w-full">
-                <Play className="w-5 h-5" />
-                <div className="text-left">
-                  <div className="text-xs">Get it on</div>
-                  <div className="text-sm font-semibold">Google Play</div>
-                </div>
-              </button>
             </div>
           </div>
 
@@ -39,16 +25,6 @@ export function Footer({ lang, dict }: FooterProps) {
           <div>
             <h3 className="text-white font-semibold mb-4">Συνεργασία</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Για συνεργάτες διανομείς
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Για εμπόρους
-                </a>
-              </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">
                   Για συνεργάτες
@@ -94,122 +70,25 @@ export function Footer({ lang, dict }: FooterProps) {
             </ul>
           </div>
 
-          {/* Products Column */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Υπηρεσίες</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Γρήγορη Διανομή
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Αγορά Προϊόντων
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Premium Membership
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Εταιρικές Υπηρεσίες
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Διαφήμιση
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Βιτρίνα καταστήματος
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Useful Links Column */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Χρήσιμα links</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Υποστήριξη
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Media
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Επικοινωνία
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Μίλα πιο δυνατά
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Κωδικοί
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Προγραμματιστές
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Ανάλυση προϊόντων για την ασφάλεια
-                </a>
-              </li>
-            </ul>
-          </div>
-
+          <div> </div>
+          <div> </div>
           {/* Follow Us Column */}
           <div>
             <h3 className="text-white font-semibold mb-4">Ακολουθήστε μας</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Σχεδιαστικό Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="https://www.instagram.com/cocofino_delivery" className="hover:text-white transition-colors">
                   Instagram
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="https://www.facebook.com/cocofino.gr/?locale=el_GR" className="hover:text-white transition-colors">
                   Facebook
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  X
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  LinkedIn
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  FoodHub Life
+                <a href="https://share.google/VoMxKQsI79hExtNRk" className="hover:text-white transition-colors">
+                  Google Reviews
                 </a>
               </li>
             </ul>
@@ -244,7 +123,7 @@ export function Footer({ lang, dict }: FooterProps) {
                 Δήλωση προστασίας προσωπικών δεδομένων
               </a>
             </div>
-            <div className="text-sm text-gray-400">© FoodHub 2025</div>
+            <div className="text-sm text-gray-400">© Cocofino 2025</div>
           </div>
         </div>
       </div>

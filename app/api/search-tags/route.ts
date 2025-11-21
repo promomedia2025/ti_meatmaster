@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const apiUrl = "https://multitake.bettersolution.gr/api/search-tags";
+    const apiUrl = "https://cocofino.bettersolution.gr/api/search-tags";
 
     const response = await fetch(apiUrl, {
       method: "GET",

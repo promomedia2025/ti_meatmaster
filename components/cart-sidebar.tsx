@@ -293,7 +293,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         for (const [locationId, menuIds] of locationMenuMap.entries()) {
           try {
             const response = await fetch(
-              `https://multitake.bettersolution.gr/api/locations/${locationId}/menu-items`
+              `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-items`
             );
             const data = await response.json();
 
@@ -557,7 +557,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
         if (!menuItems) {
           const response = await fetch(
-            `https://multitake.bettersolution.gr/api/locations/${cart.locationId}/menu-items`
+            `https://cocofino.bettersolution.gr/api/locations/${cart.locationId}/menu-items`
           );
           const data = await response.json();
 

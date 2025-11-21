@@ -36,7 +36,7 @@ export async function GET(
 
     // Call external API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/customer-api/locations/${locationId}/delivery-availability?latitude=${latitude}&longitude=${longitude}`,
+      `https://cocofino.bettersolution.gr/customer-api/locations/${locationId}/delivery-availability`,
       {
         method: "GET",
         headers: {

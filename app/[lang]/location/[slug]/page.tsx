@@ -22,7 +22,7 @@ async function getFavoriteStatus(
   cookieHeader?: string
 ): Promise<boolean> {
   try {
-    const url = `https://multitake.bettersolution.gr/api/locations/${locationId}/is-favorite`;
+    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/is-favorite`;
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -97,7 +97,7 @@ async function getLocationData(slug: string): Promise<Location | null> {
 
     // Fetch location data directly from external API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/locations`,
+      `https://cocofino.bettersolution.gr/api/locations`,
       {
         cache: "no-store", // Ensure fresh data
       }
@@ -121,34 +121,59 @@ async function getLocationData(slug: string): Promise<Location | null> {
   }
 }
 
-// Function to get menu data from API
+// Correct final version: maintains original API shape
 async function getMenuData(locationId: number, categorySlug?: string) {
   try {
-    let apiUrl = `https://multitake.bettersolution.gr/api/locations/${locationId}/menu-items`;
-    if (categorySlug) {
-      apiUrl += `?category_slug=${categorySlug}`;
+    let page = 1;
+    const perPage = 100;
+    const allItems: any[] = [];
+
+    while (true) {
+      let apiUrl = `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-items?page=${page}&per_page=${perPage}`;
+
+      if (categorySlug) {
+        apiUrl += `&category_slug=${categorySlug}`;
+      }
+
+      const response = await fetch(apiUrl, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+
+      const json = await response.json();
+      allItems.push(...json.data.menu_items);
+
+      const { current_page, last_page } = json.data.pagination;
+      if (current_page >= last_page) break;
+
+      page++;
     }
 
-    const response = await fetch(apiUrl, {
-      cache: "no-store", // Ensure fresh data
-    });
+    return {
+      success: true,
+      data: {
+        menu_items: allItems,  // ← restore original shape
+      },
+    };
 
-    if (!response.ok) {
-      throw new Error(`API responded with status: ${response.status}`);
-    }
-
-    const data: MenuItemsResponse = await response.json();
-    return data;
   } catch (error) {
-    return null;
+    console.error("Failed to fetch menu data:", error);
+
+    return {
+      success: false,
+      data: {
+        menu_items: [],
+      },
+    };
   }
 }
+
 
 // Function to get menu categories from API
 async function getMenuCategories(locationId: number) {
   try {
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/locations/${locationId}/menu-categories`,
+      `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-categories`,
       {
         cache: "no-store", // Ensure fresh data
       }

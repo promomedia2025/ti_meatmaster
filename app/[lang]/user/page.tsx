@@ -74,26 +74,6 @@ export default function UserPage() {
             </div>
           </Link>
 
-          {/* Favorites */}
-          <Link
-            href="/user/favorites"
-            className="block bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
-                <Heart className="w-6 h-6 text-red-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">Αγαπημένα</h3>
-                <p className="text-gray-400 text-sm">
-                  Προβολή των αγαπημένων σας εστιατορίων
-                </p>
-              </div>
-              <div className="text-gray-400 group-hover:text-white transition-colors">
-                →
-              </div>
-            </div>
-          </Link>
 
           {/* Address Book */}
           <Link

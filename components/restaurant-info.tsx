@@ -36,10 +36,7 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
   return (
     <div className="bg-gray-900 border-b border-gray-800 px-4 py-3">
       <div className="flex items-center gap-6 text-sm text-gray-300 flex-wrap">
-        <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4 text-blue-400" />
-          <span>Επιλογή τοποθεσίας</span>
-        </div>
+      
 
         <div className="flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400" />
@@ -73,11 +70,6 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
           <Euro className="w-4 h-4" />
           <span>Ελάχιστη παραγγελία {restaurant.minOrder}€</span>
         </div>
-
-        <button className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
-          <span>Περισσότερα</span>
-          <Info className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

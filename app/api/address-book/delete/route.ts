@@ -35,7 +35,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Forward to external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/address/${addressId}`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/address/${addressId}`;
     console.log("🗑️ Deleting address via API:", apiUrl);
 
     const response = await fetch(apiUrl, {

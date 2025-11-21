@@ -216,7 +216,7 @@ export function CategoryGrid() {
             onClick={toggleExpanded}
             className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-foreground bg-card hover:bg-card/80 border border-border rounded-full transition-colors"
           >
-            <span>{isExpanded ? "Show less" : "Show more"}</span>
+            <span>{isExpanded ? "Λιγότερα" : "Περισσοτέρα"}</span>
             <svg
               className={`w-4 h-4 transition-transform duration-300 ${
                 isExpanded ? "rotate-180" : ""

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch current cart from BetterSolution API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/cart/current?user_id=${userId}`,
+      `https://cocofino.bettersolution.gr/api/cart/current?user_id=${userId}`,
       {
         method: "GET",
         headers: {

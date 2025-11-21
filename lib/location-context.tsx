@@ -84,7 +84,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const fetchDefaultAddress = async (customerId: number) => {
     try {
       const response = await fetch(
-        `https://multitake.bettersolution.gr/api/address-book/${customerId}?default=true`
+        `https://cocofino.bettersolution.gr/api/address-book/${customerId}?default=true`
       );
 
       if (response.ok) {

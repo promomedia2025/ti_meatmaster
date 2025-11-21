@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/${customerId}`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/${customerId}`;
     console.log("🔍 API URL:", apiUrl);
     const response = await fetch(apiUrl, {
       method: "GET",

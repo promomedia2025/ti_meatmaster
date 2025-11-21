@@ -27,7 +27,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Make request to external API with rowId in URL and query parameters
-    const url = `https://multitake.bettersolution.gr/api/cart/remove/${row_id}?user_id=${user_id}${
+    const url = `https://cocofino.bettersolution.gr/api/cart/remove/${row_id}?user_id=${user_id}${
       location_id ? `&location_id=${location_id}` : ""
     }`;
     console.log("🛒 [SERVER] External API URL:", url);

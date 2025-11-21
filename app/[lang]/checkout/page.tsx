@@ -375,7 +375,7 @@ function CheckoutPageContent() {
         if (
           error.message.includes("access control") ||
           error.message.includes("CORS") ||
-          error.message.includes("multitake.bettersolution.gr")
+          error.message.includes("cocofino.bettersolution.gr")
         ) {
           errorMessage =
             "Σφάλμα ασφαλείας δικτύου. Παρακαλώ ανανεώστε τη σελίδα και δοκιμάστε ξανά.";

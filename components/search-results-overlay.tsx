@@ -197,9 +197,7 @@ export function SearchResultsOverlay({
                       />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">
-                          No Image
-                        </span>
+
                       </div>
                     )}
                   </div>

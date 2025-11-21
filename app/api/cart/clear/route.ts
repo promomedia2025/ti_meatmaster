@@ -22,7 +22,7 @@ export async function DELETE(request: NextRequest) {
 
     // Call the external API
     const response = await fetch(
-      `https://multitake.bettersolution.gr/api/cart/clear?user_id=${userId}&location_id=${locationId}`,
+      `https://cocofino.bettersolution.gr/api/cart/clear?user_id=${userId}&location_id=${locationId}`,
       {
         method: "DELETE",
         headers: {

@@ -114,11 +114,7 @@ export default function RestaurantHeader({
             </button>
           )}
 
-          <FavoriteButton
-            isFavorite={isFavorite ?? false}
-            onFavorite={handleFavorite}
-            onUnfavorite={handleUnfavorite}
-          />
+
         </div>
       </div>
 

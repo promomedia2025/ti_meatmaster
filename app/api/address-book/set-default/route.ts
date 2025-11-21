@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/address-book/address/${addressId}/set-default`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/address/${addressId}/set-default`;
     console.log("⭐ Setting address as default via API:", apiUrl);
 
     const response = await fetch(apiUrl, {

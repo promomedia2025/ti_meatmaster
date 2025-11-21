@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Make request to external API
     const response = await fetch(
-      "https://multitake.bettersolution.gr/api/cart/add",
+      "https://cocofino.bettersolution.gr/api/cart/add",
       {
         method: "POST",
         headers: {

@@ -830,7 +830,7 @@ export function ServerCartProvider({ children }: { children: ReactNode }) {
       console.log("🛒 Fetching all user carts for user:", user.id);
 
       const response = await fetch(
-        `https://multitake.bettersolution.gr/api/cart/user/${user.id}/all`
+        `https://cocofino.bettersolution.gr/api/cart/user/${user.id}/all`
       );
       const data = await response.json();
 

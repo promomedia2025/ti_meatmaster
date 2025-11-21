@@ -8,9 +8,7 @@ export async function GET(request: NextRequest) {
 
     // Forward search parameters to the external API
     const queryString = searchParams.toString();
-    const apiUrl = `https://multitake.bettersolution.gr/api/locations${
-      queryString ? `?${queryString}` : ""
-    }`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/locations`;
 
     const response = await fetch(apiUrl, {
       method: "GET",

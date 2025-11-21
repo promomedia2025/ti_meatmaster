@@ -316,11 +316,11 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
           <div className="flex items-center gap-8 flex-shrink-0 ml-2">
             <Link href={`/${lang}`}>
               <Image
-                src="/logo.png"
-                alt="Wolt Logo"
+                src="/logo_1.png"
+                alt="Logo"
                 width={90}
                 height={68}
-                className="w-[70px] h-[60px] scale-200"
+                className="w-[70px] h-[60px] scale-100"
               />
             </Link>
             {/* Location on desktop - next to logo, only when not scrolled and search not expanded */}
@@ -336,15 +336,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             )}
           </div>
 
-          {/* Center section: Search Bar */}
-          <div className="hidden sm:flex sm:justify-center sm:flex-1 lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-            <WoltSearchBar
-              onToggle={handleSearchToggle}
-              isExpanded={isSearchExpanded}
-              onSearchQueryChange={setSearchQuery}
-              placeholder={dict.navigation.search}
-            />
-          </div>
 
           {/* Right section: Mobile search, Active Orders, Profile, Cart */}
           <div className="flex-1 h-[50px] flex items-center justify-end gap-2 sm:flex-none sm:flex-shrink-0">

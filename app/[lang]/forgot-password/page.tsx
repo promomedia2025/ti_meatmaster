@@ -129,7 +129,7 @@ function ForgotPasswordForm() {
                 </p>
                 <div className="mt-4">
                   <Link href="/">
-                    <Button className="w-full h-12 bg-[rgb(0,157,224)] hover:bg-[rgb(0,157,224)]/90 text-white">
+                    <Button className="w-full h-12 bg-[#ff9328ff] hover:bg-[#ff9328ff]/90 text-white">
                       Σύνδεση
                     </Button>
                   </Link>
@@ -172,7 +172,7 @@ function ForgotPasswordForm() {
                 <Button
                   type="submit"
                   disabled={isResetting}
-                  className="w-full h-12 bg-[rgb(0,157,224)] hover:bg-[rgb(0,157,224)]/90 text-white"
+                  className="w-full h-12 bg-[#ff9328ff] hover:bg-[#ff9328ff]/90 text-white"
                 >
                   {isResetting ? "Ενημέρωση..." : "Ενημέρωση Κωδικού"}
                 </Button>
@@ -236,7 +236,7 @@ function ForgotPasswordForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 bg-[rgb(0,157,224)] hover:bg-[rgb(0,157,224)]/90 text-white"
+                className="w-full h-12 bg-[#ff9328ff] hover:bg-[#ff9328ff]/90 text-white"
               >
                 {isSubmitting ? "Αποστολή..." : "Αποστολή"}
               </Button>

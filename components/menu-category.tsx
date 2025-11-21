@@ -111,7 +111,7 @@ export default function MenuCategory({
 
             {/* Right side - Image and Add button (30-40% width) */}
             <div className="relative w-32 h-32 flex-shrink-0 p-2.5">
-              <div className="w-full h-full bg-gray-800 rounded flex items-center justify-center relative overflow-hidden">
+              <div className="w-full h-full rounded flex items-center justify-center relative overflow-hidden">
                 {item.image?.url ? (
                   <Image
                     src={item.image.url}
@@ -121,7 +121,7 @@ export default function MenuCategory({
                     sizes="128px"
                   />
                 ) : (
-                  <span className="text-gray-400 text-xs">No Image</span>
+                  <span className="text-gray-400 text-xs"></span>
                 )}
               </div>
 
@@ -132,7 +132,7 @@ export default function MenuCategory({
                   onMenuItemClick(item);
                 }}
                 disabled={loadingItemId === item.menu_id || !isAuthenticated}
-                className="absolute top-0 right-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
+                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
               >
                 {loadingItemId === item.menu_id ? (
                   <Loader2 className="w-5 h-5 text-white animate-spin" />

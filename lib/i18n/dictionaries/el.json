@@ -1,7 +1,7 @@
 {
   "navigation": {
     "restaurants": "Εστιατόρια",
-    "search": "Αναζήτηση στη Wolt...",
+    "search": "Αναζήτηση...",
     "login": "Σύνδεση",
     "register": "Εγγραφή",
     "logout": "Αποσύνδεση",
@@ -22,7 +22,7 @@
     "locationUnavailable": "Η τοποθεσία δεν είναι διαθέσιμη"
   },
   "home": {
-    "title": "Εστιατόρια κοντά μου",
+    "title": "Παραγγείλτε σε 1'",
     "transportWalking": "με τα πόδια",
     "transportBike": "με ποδήλατο",
     "transportCar": "με αυτοκίνητο",

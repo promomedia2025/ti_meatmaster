@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to the external API
-    const apiUrl = `https://multitake.bettersolution.gr/api/locations/${locationId}/menu-categories`;
+    const apiUrl = `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-categories`;
 
     const response = await fetch(apiUrl, {
       method: "GET",
