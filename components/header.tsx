@@ -454,10 +454,10 @@ export function Header() {
               {isRestaurantPage && (
                 <button
                   onClick={() => setIsCartSidebarOpen(true)}
-                  className="flex items-center gap-2 lg:gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 lg:py-3 px-3 lg:px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
+                  className="flex items-center gap-2 lg:gap-3 bg-[#ff9328ff] hover:bg-[#915316] text-white font-medium py-2 lg:py-3 px-3 lg:px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
                 >
                   {globalSummary.totalItems > 0 && (
-                    <span className="bg-white text-blue-500 text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                    <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
                       {globalSummary.totalItems}
                     </span>
                   )}

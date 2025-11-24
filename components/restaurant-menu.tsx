@@ -304,13 +304,13 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
             setCartViewLocationId(locationId || undefined);
             setIsCartSidebarOpen(true);
           }}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-between shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
+          className="w-full bg-[#ff9328ff] hover:bg-[#915316] text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-between shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
         >
           {(() => {
             const cart = getLocationCart(locationId || 0);
             return cart?.summary.count && cart.summary.count > 0;
           })() && (
-            <span className="bg-white text-blue-500 text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
+            <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
               {getLocationCart(locationId || 0)?.summary.count}
             </span>
           )}

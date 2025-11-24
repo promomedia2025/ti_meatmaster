@@ -201,7 +201,7 @@ export default function AddressBookPage() {
         <div className="mb-6">
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+            className="flex items-center gap-3 bg-[#ff9328ff] hover:bg-[#915316] text-white px-6 py-3 rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>Προσθήκη Διεύθυνσης</span>
@@ -237,7 +237,7 @@ export default function AddressBookPage() {
                 </p>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors"
+                  className="bg-[#ff9328ff] hover:bg-[#915316] text-white px-6 py-3 rounded-lg transition-colors"
                 >
                   Προσθήκη Διεύθυνσης
                 </button>
@@ -266,14 +266,6 @@ export default function AddressBookPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!address.is_default && (
-                        <button
-                          onClick={() => handleSetAsDefault(address.id)}
-                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
-                        >
-                          Ορισμός ως προεπιλογή
-                        </button>
-                      )}
                       <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
                         <Edit className="w-4 h-4 text-gray-400 hover:text-white" />
                       </button>

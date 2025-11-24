@@ -1118,7 +1118,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                               className={`w-full font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center shadow-2xl backdrop-blur-sm ${
                                 isDeliveryBlocked(locationCart.locationId)
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                                  : "bg-blue-500 hover:bg-blue-600 text-white shadow-blue-500/25"
+                                  : "bg-[#ff9328ff] hover:bg-[#915316] text-white shadow-blue-500/25"
                               }`}
                             >
                               Ολοκληρωση παραγγελιας

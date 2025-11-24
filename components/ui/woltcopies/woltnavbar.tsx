@@ -495,13 +495,13 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
                       setCartViewLocationId(locationId || undefined); // Show location-specific cart
                       setIsCartSidebarOpen(true);
                     }}
-                    className="hidden md:flex items-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
+                    className="hidden md:flex items-center gap-3 bg-[#915316] hover:bg-[#915316] text-white font-medium py-3 px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
                   >
                     {(() => {
                       const cart = getLocationCart(locationId || 0);
                       return cart?.summary.count && cart.summary.count > 0;
                     })() && (
-                      <span className="bg-white text-blue-500 text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                      <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
                         {getLocationCart(locationId || 0)?.summary.count}
                       </span>
                     )}

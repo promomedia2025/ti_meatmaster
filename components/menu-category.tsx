@@ -98,7 +98,7 @@ export default function MenuCategory({
                 </p>
               </div>
               <div className="mt-3">
-                <p className="text-blue-400 font-bold text-lg">
+                <p className="text-[#ff9328ff] font-bold text-lg">
                   {item.menu_price.toFixed(2)} {item.currency}
                 </p>
                 {item.minimum_qty > 1 && (
@@ -132,7 +132,7 @@ export default function MenuCategory({
                   onMenuItemClick(item);
                 }}
                 disabled={loadingItemId === item.menu_id || !isAuthenticated}
-                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
+                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-[#915316] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
               >
                 {loadingItemId === item.menu_id ? (
                   <Loader2 className="w-5 h-5 text-white animate-spin" />

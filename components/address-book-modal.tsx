@@ -300,7 +300,7 @@ export function AddressBookModal({
                   </p>
                   <Button
                     onClick={handleAddNewAddress}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    className="bg-[#915316] hover:bg-[#915316] text-white"
                   >
                     Προσθήκη πρώτης διεύθυνσης
                   </Button>

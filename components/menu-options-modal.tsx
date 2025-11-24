@@ -515,7 +515,7 @@ export function MenuOptionsModal({
                                 e.target.checked
                               )
                             }
-                            className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                            className="w-4 h-4 text-[#ff9328ff] bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                           />
                           <span
                             className={`text-white ${
@@ -566,8 +566,8 @@ export function MenuOptionsModal({
         {/* Fixed Footer */}
         <div className="flex-shrink-0 p-4 pb-6 border-t border-gray-800 bg-gray-900">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-white font-medium">Total</span>
-            <span className="text-blue-400 font-bold text-lg">
+            <span className="text-white font-medium">Συνολικό Ποσό</span>
+            <span className="text-[#ff9328ff] font-bold text-lg">
               {calculateTotalPrice().toFixed(2)} {menuItem?.currency}
             </span>
           </div>
@@ -597,11 +597,11 @@ export function MenuOptionsModal({
             <button
               onClick={handleAddToCart}
             disabled={!hasRequiredOptions() || isSubmitting}
-            className="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-[#ff9328ff] text-white py-3 px-6 rounded-lg font-medium hover:bg-[#915316] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
             {isSubmitting
               ? "Αποθήκευση..."
-              : confirmLabel || "Add to Cart"}
+              : confirmLabel || "Προσθήκη στο καλάθι"}
             </button>
           </div>
         </div>

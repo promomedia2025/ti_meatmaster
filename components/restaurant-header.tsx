@@ -97,10 +97,10 @@ export default function RestaurantHeader({
                 setCartViewLocationId(locationId);
                 setIsCartSidebarOpen(true);
               }}
-              className="hidden md:flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-2xl transition-all duration-200 shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
+              className="hidden md:flex items-center gap-2 bg-[#ff9328ff] hover:bg-[#915316] text-white font-medium py-2 px-4 rounded-2xl transition-all duration-200 shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
             >
               {cart.summary.count > 0 && (
-                <span className="bg-white text-blue-500 text-sm font-bold px-2 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center">
                   {cart.summary.count}
                 </span>
               )}

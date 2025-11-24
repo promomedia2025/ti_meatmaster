@@ -250,7 +250,6 @@ export function CategoryGrid() {
             return (
               <Card
                 key={category.id}
-                onClick={() => handleCategoryClick(category.id)}
                 className={`group cursor-pointer overflow-hidden bg-card hover:scale-105 transition-all duration-200 ${
                   isSelected
                     ? "border-2 border-primary ring-2 ring-primary/20"
