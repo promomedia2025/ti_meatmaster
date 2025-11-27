@@ -1,5 +1,5 @@
 "use client";
-
+import HeroVideoCarousel from "@/components/HeroVideoCarousel";
 import FeaturedMenuCarousel from "@/components/FeaturedMenuCarousel";
 import Autoplay from "embla-carousel-autoplay";
 import { useEffect, useRef, Suspense, useState } from "react";
@@ -34,10 +34,8 @@ export default function HomePage() {
   const { dict, lang } = useTranslations();
   const { subscribe, unsubscribe, isConnected, pusher } = usePusher();
   const subscribedChannelsRef = useRef<Set<string>>(new Set());
+  const [activeIndex, setActiveIndex] = useState(0);
   const [radius, setRadius] = useState(5);
-  const [selectedTransport, setSelectedTransport] = useState<
-    "walking" | "bike" | "car"
-  >("car");
 
   const handleTransportSelect = (transport: "walking" | "bike" | "car") => {
     setSelectedTransport(transport);
@@ -161,145 +159,9 @@ export default function HomePage() {
           <CategoryGrid />
         </Suspense>
 
-        {/* Featured Carousel */}
-        <div className="mb-8">
-
-<Carousel
-  opts={{
-    align: "start",
-    loop: true,
-  }}
-  plugins={[
-    Autoplay({
-      delay: 10000, // 10 seconds
-      stopOnInteraction: false, // keep autoplay even after user scrolls
-    }),
-  ]}
-  className="w-full"
->
-            <CarouselContent>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/1.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/2.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/3.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/4.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/5.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/6.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/7.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/8.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-              <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-                 <video
-                  src="/9.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay={isActive}
-                  muted
-                  playsInline
-                  loop={isActive}
-                  preload={isActive ? "auto" : "none"}
-                 />
-                </div>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="hidden md:flex md:ml-15" />
-            <CarouselNext className="hidden md:flex md:mr-15" />
-          </Carousel>
-        </div>
+<div className="mb-8">
+  <HeroVideoCarousel />
+</div>
 
 {/* FEATURED MENU ITEMS CAROUSEL */}
 <FeaturedMenuCarousel
