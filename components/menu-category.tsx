@@ -84,6 +84,7 @@ export default function MenuCategory({
         {categoryItems.map((item) => (
           <div
             key={item.menu_id}
+            id={String(item.menu_id)}
             onClick={() => onMenuItemClick(item)}
             className="bg-transparent sm:bg-gray-900 rounded-lg overflow-hidden border-0 sm:border border-gray-800 border-b border-gray-700 sm:border-b-0 flex pb-4 sm:pb-0 transition-transform duration-200 hover:scale-105 cursor-pointer"
           >

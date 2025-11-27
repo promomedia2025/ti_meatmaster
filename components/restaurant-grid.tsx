@@ -240,10 +240,6 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                     `${location.address.city} • ${location.address.line_1}`}
                 </p>
 
-                {/* Status Message */}
-                <p className="text-xs text-muted-foreground mb-3">
-                  {statusDisplay.statusMessage}
-                </p>
 
                 {/* Service Availability */}
                 <div className="flex items-center gap-2 mb-3">
@@ -319,7 +315,6 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                         />
                       </svg>
                       <span>{deliveryFee}€</span>
-                      <span>• €</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

@@ -5,13 +5,23 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchTags } from "@/lib/use-search-tags";
-import image1 from "@/public/4b91a26ed2a144c1bd95f30a01a184e7.webp";
-import image2 from "@/public/83a7f18fbb1b-1440x495_mexican_tacos.webp";
-import image3 from "@/public/shutterstock_2009487272.jpg";
-import image4 from "@/public/pizza-peperoni.jpg";
-import image5 from "@/public/seafood-_-scaled.jpg";
-import image6 from "@/public/TRESORELLE-0076.jpg";
-import image7 from "@/public/wang1.jpg";
+import image1 from "@/public/1.png";
+import image2 from "@/public/2.png";
+import image3 from "@/public/3.png";
+import image4 from "@/public/4.png";
+import image5 from "@/public/5.png";
+import image6 from "@/public/6.png";
+import image7 from "@/public/7.png";  
+import image8 from "@/public/8.png";
+import image9 from "@/public/9.png";
+import image10 from "@/public/10.png";
+import image11 from "@/public/11.png";
+import image12 from "@/public/12.png";
+import image13 from "@/public/13.png";
+import image14 from "@/public/14.png";
+import image15 from "@/public/15.png"
+import image16 from "@/public/16.png"
+import image17 from "@/public/17.png"
 
 interface Category {
   id: number;
@@ -22,17 +32,22 @@ interface Category {
 
 // Map category names to images
 const categoryImageMap: Record<string, any> = {
-  Σουβλάκι: image1,
-  Πίτσα: image4,
-  Μπέργκερ: "/gourmet-burger-fries.png",
-  "Ασιατική Κουζίνα": image7,
-  Ιταλική: image4,
-  Μεξικάνικη: image2,
-  Θαλασσινά: image5,
-  Χορτοφαγική: image1,
-  Επιδόρπια: image2,
-  Πρωινό: image3,
-  "Μπάρμπεκιου & Ψητά": image6,
+  Τυλιχτά: image1,
+  Μαγειρευτά: image2,
+  Κοτόπουλα: image5,
+  Σαλάτες: image14,
+  "Burgers XXL": image11,
+  Μερίδες: image9,
+  Αναψυκτικά: image17,
+  Χορτοφαγική: image3,
+  Γλυκά: image16,
+  Αλοιφές: image4,
+  Ορεκτικά: image15,
+  Πατάτες: image12,
+  Ποικιλίες: image10,
+  Τεμάχια: image6,
+  "Σκεπαστές κλασικές": image7,
+  "Σκεπαστές XXL": image8,
 };
 
 export function CategoryGrid() {
@@ -211,7 +226,10 @@ export function CategoryGrid() {
       </div>
 
       {hasMoreItems && (
-        <div className="hidden lg:flex justify-end mt-6">
+        <div className="hidden lg:flex justify-between mt-6">
+        <h1 className="text-2xl font-bold text-foreground hidden lg:block">
+             Παραγγειλε σε 1΄
+           </h1>
           <button
             onClick={toggleExpanded}
             className="flex items-center gap-2 px-6 py-3 text-sm font-medium text-foreground bg-card hover:bg-card/80 border border-border rounded-full transition-colors"

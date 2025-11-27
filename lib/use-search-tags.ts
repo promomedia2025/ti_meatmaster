@@ -48,7 +48,7 @@ export function useSearchTags() {
 
         if (result.success && result.data) {
           // Take first 10 tags
-          const tagsToCache = result.data.slice(0, 10);
+          const tagsToCache = result.data;
 
           // Cache the data
           cacheTags(tagsToCache);

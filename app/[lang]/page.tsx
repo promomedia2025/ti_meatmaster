@@ -1,5 +1,7 @@
 "use client";
 
+import FeaturedMenuCarousel from "@/components/FeaturedMenuCarousel";
+import Autoplay from "embla-carousel-autoplay";
 import { useEffect, useRef, Suspense, useState } from "react";
 import { Navigation } from "@/components/navigation";
 import { CategoryGrid } from "@/components/category-grid";
@@ -18,7 +20,6 @@ import { User, Bike, Car } from "lucide-react";
 import Image from "next/image";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useTranslations } from "@/lib/i18n/translations-provider";
-import image1 from "@/public/4b91a26ed2a144c1bd95f30a01a184e7.webp";
 import image2 from "@/public/83a7f18fbb1b-1440x495_mexican_tacos.webp";
 import image3 from "@/public/shutterstock_2009487272.jpg";
 import image4 from "@/public/pizza-peperoni.jpg";
@@ -26,6 +27,8 @@ import image5 from "@/public/seafood-_-scaled.jpg";
 import image6 from "@/public/TRESORELLE-0076.jpg";
 import image7 from "@/public/wang1.jpg";
 import BrandCarousel from "@/components/ui/woltcopies/BrandCarousel";
+
+const featuredMenuIds = [112, 113, 196, 325, 552];
 
 export default function HomePage() {
   const { dict, lang } = useTranslations();
@@ -143,51 +146,9 @@ export default function HomePage() {
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-foreground lg:hidden">
               {dict.home.title}
             </h1>
-            <div className="flex flex-row gap-2 w-fit md:w-auto">
-              {[
-                {
-                  key: "walking",
-                  label: dict.home.transportWalking,
-                  radius: 1,
-                  icon: User,
-                },
-                {
-                  key: "bike",
-                  label: dict.home.transportBike,
-                  radius: 2,
-                  icon: Bike,
-                },
-                {
-                  key: "car",
-                  label: dict.home.transportCar,
-                  radius: 5,
-                  icon: Car,
-                },
-              ].map((transport) => {
-                const Icon = transport.icon;
-                return (
-                  <button
-                    key={transport.key}
-                    onClick={() =>
-                      handleTransportSelect(
-                        transport.key as "walking" | "bike" | "car"
-                      )
-                    }
-                    className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-full transition-all duration-200 ${
-                      selectedTransport === transport.key
-                        ? "bg-[#ff9328ff] text-white shadow-md"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {transport.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
         <Suspense
@@ -202,142 +163,127 @@ export default function HomePage() {
 
         {/* Featured Carousel */}
         <div className="mb-8">
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
-          >
+
+<Carousel
+  opts={{
+    align: "start",
+    loop: true,
+  }}
+  plugins={[
+    Autoplay({
+      delay: 10000, // 10 seconds
+      stopOnInteraction: false, // keep autoplay even after user scrolls
+    }),
+  ]}
+  className="w-full"
+>
             <CarouselContent>
               <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image1}
-                    alt="Featured 1"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.discoverFlavors}
-                      </h3>
-                      <p className="text-white/90">
-                        {dict.home.orderFromFavorites}
-                      </p>
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/1.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
               <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image2}
-                    alt="Featured 2"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.fastDelivery}
-                      </h3>
-                      <p className="text-white/90">{dict.home.hotAndFresh}</p>
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/2.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
               <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image3}
-                    alt="Featured 3"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.specialOffers}
-                      </h3>
-                      <p className="text-white/90">{dict.home.specialDeals}</p>
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/3.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
               <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image4}
-                    alt="Featured 3"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.specialOffers}
-                      </h3>
-                      <p className="text-white/90">{dict.home.specialDeals}</p>
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/4.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
-
               <CarouselItem className="basis-full lg:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image5}
-                    alt="Featured 3"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.specialOffers}
-                      </h3>
-                      <p className="text-white/90">{dict.home.specialDeals}</p>
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/5.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
-              <CarouselItem className="basis-full md:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image6}
-                    alt="Featured 3"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.specialOffers}
-                      </h3>
-                      <p className="text-white/90">{dict.home.specialDeals}</p>
-                    </div>
-                  </div>
+              <CarouselItem className="basis-full lg:basis-1/2">
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/6.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
-              <CarouselItem className="basis-full md:basis-1/2">
-                <div className="relative w-full h-[300px] lg:h-[500px] rounded-lg overflow-hidden">
-                  <Image
-                    src={image7}
-                    alt="Featured 3"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-                    <div className="p-6">
-                      <h3 className="text-white text-2xl font-bold mb-2">
-                        {dict.home.specialOffers}
-                      </h3>
-                      <p className="text-white/90">{dict.home.specialDeals}</p>
-                    </div>
-                  </div>
+              <CarouselItem className="basis-full lg:basis-1/2">
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/7.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
+                </div>
+              </CarouselItem>
+              <CarouselItem className="basis-full lg:basis-1/2">
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/8.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
+                </div>
+              </CarouselItem>
+              <CarouselItem className="basis-full lg:basis-1/2">
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                 <video
+                  src="/9.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                 />
                 </div>
               </CarouselItem>
             </CarouselContent>
@@ -346,9 +292,14 @@ export default function HomePage() {
           </Carousel>
         </div>
 
-        <div className="mb-8">
-          <BrandCarousel />
-        </div>
+{/* FEATURED MENU ITEMS CAROUSEL */}
+<FeaturedMenuCarousel
+  featuredMenuIds={featuredMenuIds}
+  locale={lang}
+  locationSlug="cocofino-13"
+/>
+
+
         <Suspense
           fallback={
             <div className="text-center py-8">

@@ -1,5 +1,6 @@
 "use client";
 
+import AutoSelect from "@/components/AutoSelect";
 import { useState, useEffect, useRef } from "react";
 import { ShoppingCart, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -209,6 +210,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
 
   return (
     <div className="bg-black relative">
+     <AutoSelect />
       {/* Menu Navigation */}
       <div
         ref={navigationRef}
