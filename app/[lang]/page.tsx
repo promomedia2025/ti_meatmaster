@@ -183,10 +183,11 @@ export default function HomePage() {
                  <video
                   src="/1.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -195,10 +196,11 @@ export default function HomePage() {
                  <video
                   src="/2.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -207,10 +209,11 @@ export default function HomePage() {
                  <video
                   src="/3.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -219,10 +222,11 @@ export default function HomePage() {
                  <video
                   src="/4.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -231,10 +235,11 @@ export default function HomePage() {
                  <video
                   src="/5.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -243,10 +248,11 @@ export default function HomePage() {
                  <video
                   src="/6.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -255,10 +261,11 @@ export default function HomePage() {
                  <video
                   src="/7.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -267,10 +274,11 @@ export default function HomePage() {
                  <video
                   src="/8.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
@@ -279,10 +287,11 @@ export default function HomePage() {
                  <video
                   src="/9.mp4"
                   className="w-full h-full object-cover"
-                  autoPlay
-                  loop
+                  autoPlay={isActive}
                   muted
                   playsInline
+                  loop={isActive}
+                  preload={isActive ? "auto" : "none"}
                  />
                 </div>
               </CarouselItem>
