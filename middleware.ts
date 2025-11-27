@@ -5,6 +5,11 @@ import { i18n } from "./lib/i18n/config";
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Skip locale redirect for admin routes
+  if (pathname.startsWith("/admin")) {
+    return NextResponse.next();
+  }
+
   // Check if there is any supported locale in the pathname
   const pathnameIsMissingLocale = i18n.locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
@@ -17,9 +22,11 @@ export function middleware(request: NextRequest) {
 
     // Preserve query parameters when redirecting
     const searchParams = request.nextUrl.searchParams.toString();
-    const newPath = `/${locale}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
+    const newPath = `/${locale}${
+      pathname.startsWith("/") ? "" : "/"
+    }${pathname}`;
     const newUrl = new URL(newPath, request.url);
-    
+
     // Add search params if they exist
     if (searchParams) {
       newUrl.search = searchParams;

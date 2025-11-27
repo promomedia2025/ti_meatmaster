@@ -391,3 +391,29 @@
   scrollbar-width: thin;
   scrollbar-color: #3f3f3f #1a1a1a;
 }
+
+/* Custom scrollbar for admin orders list */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #009DE0;
+}
+
+/* Firefox scrollbar styling for admin */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 #1a1a1a;
+}
