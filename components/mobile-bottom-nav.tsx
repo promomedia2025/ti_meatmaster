@@ -39,13 +39,7 @@ export function MobileBottomNav() {
                     isActive ? "text-[#009DE0]" : "text-white"
                   }`}
                 />
-                <span
-                  className={`text-xs font-medium transition-colors ${
-                    isActive ? "text-[#009DE0]" : "text-white"
-                  }`}
-                >
-                  {tab.label}
-                </span>
+
               </button>
             );
           })}

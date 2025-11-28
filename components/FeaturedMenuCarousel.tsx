@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import useEmblaCarousel from "embla-carousel-react";
 
 interface MenuItem {
   menu_id: number;
@@ -19,13 +20,15 @@ export default function FeaturedMenuCarousel({
   locale,
   featuredMenuIds,
 }: {
-  locationSlug: string;    // "cocofino-13"
-  locale: string;          // "el"
+  locationSlug: string;
+  locale: string;
   featuredMenuIds: number[];
 }) {
   const router = useRouter();
   const [items, setItems] = useState<MenuItem[]>([]);
-  const LOCATION_ID = 13;  // Static location ID
+  const [emblaRef] = useEmblaCarousel({ dragFree: true, align: "start" });
+
+  const LOCATION_ID = 13;
 
   useEffect(() => {
     async function loadAllPages() {
@@ -34,7 +37,6 @@ export default function FeaturedMenuCarousel({
       let totalPages = 1;
 
       try {
-        // Fetch first page to discover pagination count
         const firstRes = await fetch(
           `https://cocofino.bettersolution.gr/api/locations/${LOCATION_ID}/menu-items?page=1`
         );
@@ -43,7 +45,6 @@ export default function FeaturedMenuCarousel({
         allItems = [...firstData.data.menu_items];
         totalPages = firstData.data.pagination.last_page;
 
-        // Fetch remaining pages
         const pageRequests = [];
         for (let p = 2; p <= totalPages; p++) {
           pageRequests.push(
@@ -54,12 +55,10 @@ export default function FeaturedMenuCarousel({
         }
 
         const pages = await Promise.all(pageRequests);
-
         pages.forEach((pageData) => {
           allItems = [...allItems, ...pageData.data.menu_items];
         });
 
-        // Filter by featured IDs
         const filtered = allItems.filter((item) =>
           featuredMenuIds.includes(item.menu_id)
         );
@@ -77,43 +76,44 @@ export default function FeaturedMenuCarousel({
 
   return (
     <div className="w-full mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-white">Προτεινόμενα</h2>
+      {/* Embla wrapper */}
+      <div className="embla overflow-hidden" ref={emblaRef}>
+        <div className="embla__container flex gap-4">
+          {items.map((item) => (
+            <div
+              key={item.menu_id}
+              className="embla__slide min-w-[200px] max-w-[220px] cursor-pointer bg-gray-900 rounded-lg overflow-hidden border border-gray-700 hover:scale-[1.03] transition-transform"
+              onClick={() =>
+                router.push(
+                  `/${locale}/location/${locationSlug}?select=${item.menu_id}`
+                )
+              }
+            >
+              <div className="relative h-[150px] w-full">
+                {item.image?.url ? (
+                  <Image
+                    src={item.image.url}
+                    alt={item.menu_name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gray-800" />
+                )}
+              </div>
 
-      <div className="flex overflow-x-auto gap-4 scrollbar-hide">
-        {items.map((item) => (
-          <div
-            key={item.menu_id}
-            onClick={() =>
-              router.push(
-                `/${locale}/location/${locationSlug}?select=${item.menu_id}`
-              )
-            }
-            className="min-w-[200px] max-w-[220px] cursor-pointer bg-gray-900 rounded-lg overflow-hidden border border-gray-700 hover:scale-105 transition-transform"
-          >
-            <div className="relative h-[150px] w-full">
-              {item.image?.url ? (
-                <Image
-                  src={item.image.url}
-                  alt={item.menu_name}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="h-full w-full bg-gray-800" />
-              )}
+              <div className="p-3">
+                <p className="text-white font-semibold text-sm line-clamp-2 h-10 overflow-hidden">
+                  {item.menu_name}
+                </p>
+
+                <p className="text-[#ff9328ff] font-bold mt-1 text-sm">
+                  {item.menu_price.toFixed(2)} {item.currency}
+                </p>
+              </div>
             </div>
-
-            <div className="p-3">
-              <p className="text-white font-semibold text-sm line-clamp-2">
-                {item.menu_name}
-              </p>
-
-              <p className="text-[#ff9328ff] font-bold mt-1 text-sm">
-                {item.menu_price.toFixed(2)} {item.currency}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

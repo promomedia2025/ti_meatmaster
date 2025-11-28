@@ -20,15 +20,10 @@ import { User, Bike, Car } from "lucide-react";
 import Image from "next/image";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useTranslations } from "@/lib/i18n/translations-provider";
-import image2 from "@/public/83a7f18fbb1b-1440x495_mexican_tacos.webp";
-import image3 from "@/public/shutterstock_2009487272.jpg";
-import image4 from "@/public/pizza-peperoni.jpg";
-import image5 from "@/public/seafood-_-scaled.jpg";
-import image6 from "@/public/TRESORELLE-0076.jpg";
-import image7 from "@/public/wang1.jpg";
 import BrandCarousel from "@/components/ui/woltcopies/BrandCarousel";
 
-const featuredMenuIds = [112, 113, 196, 325, 552];
+const featuredMenuIds = [112, 101, 177, 406, 92, 176, 184, 196];
+const featuredDiscountIds = [553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566];
 
 export default function HomePage() {
   const { dict, lang } = useTranslations();
@@ -163,13 +158,15 @@ export default function HomePage() {
   <HeroVideoCarousel />
 </div>
 
-{/* FEATURED MENU ITEMS CAROUSEL */}
+
+<h2 className="text-2xl font-bold mb-4 text-white">Προσφορές</h2>
 <FeaturedMenuCarousel
-  featuredMenuIds={featuredMenuIds}
+  featuredMenuIds={featuredDiscountIds}
   locale={lang}
   locationSlug="cocofino-13"
 />
 
+<h2 className="text-2xl font-bold mb-4 text-white">Δείτε το μενού</h2>
 
         <Suspense
           fallback={
@@ -180,7 +177,20 @@ export default function HomePage() {
         >
           <RestaurantGrid radius={radius} />
         </Suspense>
+        
+{/* FEATURED MENU ITEMS CAROUSEL */}
+<h2 className="text-2xl font-bold mb-4 mt-8 text-white">
+          Προτεινόμενα Πιάτα
+        </h2>
+
+<FeaturedMenuCarousel
+  featuredMenuIds={featuredMenuIds}
+  locale={lang}
+  locationSlug="cocofino-13"
+/>
       </main>
+
+      
 
       {/* Mobile Bottom Navigation - only on home page */}
       <MobileBottomNav />

@@ -16,14 +16,12 @@ export default function DualVideoHero() {
     Autoplay({ delay: 8000, stopOnInteraction: false })
   );
 
-  // ALIGNMENT:
-  // Mobile: 'center' (standard 1-item carousel feel)
-  // Desktop: 'start' (starts from left to allow 2 items side-by-side)
   const [emblaRef, embla] = useEmblaCarousel(
     { 
       loop: true, 
-      align: "center", 
+      align: "center", // Center for mobile/tablet
       breakpoints: { 
+        // On large screens (1024px+), align start for the 2-column layout
         '(min-width: 1024px)': { align: 'start' } 
       } 
     },
@@ -38,7 +36,6 @@ export default function DualVideoHero() {
 
       videoRefs.current.forEach((video, index) => {
         if (!video) return;
-
         if (visibleIndices.includes(index)) {
           video.play().catch((e) => console.log("Autoplay blocked:", e));
         } else {
@@ -68,15 +65,17 @@ export default function DualVideoHero() {
           {videos.map((src, idx) => (
             <div
               key={idx}
-              // WIDTH SETTINGS:
-              // basis-full = 1 item on Mobile (100% width)
-              // lg:basis-1/2 = 2 items on Desktop (50% width)
-              className="shrink-0 grow-0 basis-full lg:basis-1/2 px-1"
+              // WIDTH RULES:
+              // Mobile & Tablet (<1024px): 100% width (basis-full)
+              // Desktop (>=1024px): 50% width (basis-1/2)
+              className="shrink-0 grow-0 basis-full lg:basis-1/2 px-2"
             >
-              {/* HEIGHT SETTINGS: */}
-              {/* h-[220px] = Matches the banner height in your screenshot */}
-              {/* lg:h-[420px] = Keeps the taller height for desktop */}
-              <div className="relative w-full h-[220px] lg:h-[420px] bg-black rounded-xl overflow-hidden">
+              {/* RATIO FIX: 
+                  1. Removed fixed 'h-[...]' classes.
+                  2. Added 'aspect-video' (16:9 ratio). 
+                  This ensures the height automatically shrinks/grows with width.
+              */}
+              <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
                 <video
                   ref={(el) => { videoRefs.current[idx] = el; }}
                   src={src}
