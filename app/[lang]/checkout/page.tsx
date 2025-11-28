@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin, CreditCard, Package } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Package, Loader2 } from "lucide-react";
+import GooglePlacesCustom from "@/components/google-places-custom";
 
 interface UserLocation {
   city: string;
@@ -39,7 +40,7 @@ function CheckoutPageContent() {
   const { subscribe, unsubscribe, isConnected } = usePusher();
   const { isDeliveryBlocked, setDeliveryData, getDeliveryData } =
     useDeliveryAvailability();
-  const { coordinates } = useLocation();
+  const { coordinates, formattedAddress, reverseGeocode } = useLocation();
 
   // Extract current language from pathname (first segment)
   const currentLang = useMemo(() => {
@@ -64,24 +65,125 @@ function CheckoutPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [addressInput, setAddressInput] = useState("");
 
-  // Load user location from localStorage (with Safari-safe access)
-  useEffect(() => {
+  // Function to autocomplete location from navbar
+  const handleAutocompleteFromNavbar = async () => {
+    if (!coordinates) {
+      toast.error("Δεν υπάρχει τοποθεσία στην γραμμή πλοήγησης");
+      return;
+    }
+
+    setIsLoadingLocation(true);
     try {
-      const savedLocation = localStorage.getItem("userLocation");
-      if (savedLocation) {
-        try {
-          const parsedLocation = JSON.parse(savedLocation);
-          setUserLocation(parsedLocation);
-        } catch (error) {
-          console.error("Error parsing saved location:", error);
+      // If we have formattedAddress from context, use it
+      let addressInfo;
+      if (formattedAddress) {
+        addressInfo = {
+          city: formattedAddress.area || "Unknown Location",
+          fullAddress: formattedAddress.fullAddress || "Unknown Location",
+          addressDetails: {
+            street: formattedAddress.street || "",
+            postalCode: formattedAddress.postcode || "",
+            locality: formattedAddress.area || "",
+          },
+        };
+      } else {
+        // Otherwise, reverse geocode the coordinates
+        const geocoded = await reverseGeocode(
+          coordinates.latitude,
+          coordinates.longitude,
+          currentLang
+        );
+        if (geocoded) {
+          addressInfo = {
+            city: geocoded.area || "Unknown Location",
+            fullAddress: geocoded.fullAddress || "Unknown Location",
+            addressDetails: {
+              street: geocoded.street || "",
+              postalCode: geocoded.postcode || "",
+              locality: geocoded.area || "",
+            },
+          };
+        } else {
+          throw new Error("Failed to get address information");
         }
       }
+
+      const location: UserLocation = {
+        ...addressInfo,
+        coordinates: {
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
+        },
+      };
+
+      setUserLocation(location);
+      toast.success("Η διεύθυνση συμπληρώθηκε αυτόματα");
     } catch (error) {
-      // Safari private browsing mode throws errors when accessing localStorage
-      console.warn("localStorage not available:", error);
+      console.error("Error autocompleting location:", error);
+      toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
+    } finally {
+      setIsLoadingLocation(false);
     }
-  }, []);
+  };
+
+  // Handle Google Places address selection
+  const handleGooglePlaceSelect = async (place: any) => {
+    if (!place.formatted_address || !place.geometry?.location) {
+      toast.error("Παρακαλώ επιλέξτε μια έγκυρη διεύθυνση");
+      return;
+    }
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    setIsLoadingLocation(true);
+    try {
+      // Reverse geocode to get formatted address details
+      const geocoded = await reverseGeocode(lat, lng, currentLang);
+      
+      if (geocoded) {
+        const location: UserLocation = {
+          city: geocoded.area || "Unknown Location",
+          fullAddress: geocoded.fullAddress || place.formatted_address,
+          coordinates: {
+            latitude: lat,
+            longitude: lng,
+          },
+          addressDetails: {
+            street: geocoded.street || "",
+            postalCode: geocoded.postcode || "",
+            locality: geocoded.area || "",
+          },
+        };
+
+        setUserLocation(location);
+        setAddressInput(""); // Clear the input after selection
+        toast.success("Η διεύθυνση ορίστηκε");
+      } else {
+        // Fallback to basic address if reverse geocoding fails
+        const location: UserLocation = {
+          city: "Unknown Location",
+          fullAddress: place.formatted_address,
+          coordinates: {
+            latitude: lat,
+            longitude: lng,
+          },
+          addressDetails: {},
+        };
+        setUserLocation(location);
+        setAddressInput(""); // Clear the input after selection
+        toast.success("Η διεύθυνση ορίστηκε");
+      }
+    } catch (error) {
+      console.error("Error setting location from Google Places:", error);
+      toast.error("Σφάλμα κατά τον ορισμό της διεύθυνσης");
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
 
   // Check delivery availability when locationId, coordinates, and orderType change
   useEffect(() => {
@@ -243,6 +345,14 @@ function CheckoutPageContent() {
 
     // Check if delivery is blocked for delivery orders
     if (orderType === "delivery" && locationCart) {
+      // Check if user has set a delivery address
+      if (!userLocation) {
+        toast.error(
+          "Παρακαλώ ορίστε διεύθυνση παράδοσης για παραγγελίες παράδοσης."
+        );
+        return;
+      }
+
       const deliveryData = getDeliveryData(locationCart.locationId);
       if (
         deliveryData &&
@@ -287,7 +397,7 @@ function CheckoutPageContent() {
       });
 
       // Prepare order data in the expected API format
-      const orderData = {
+      const orderData: any = {
         locationId: locationCart.locationId,
         locationName: locationCart.locationName,
         items: formattedItems,
@@ -296,12 +406,25 @@ function CheckoutPageContent() {
         paymentMethod: paymentMethod === "cash" ? "cod" : "card",
         orderComments,
         user: {
+          id: null,
           email: user.email,
           name:
             user.name ||
             `${user.first_name || ""} ${user.last_name || ""}`.trim(),
         },
       };
+
+      // Add deliveryAddress for delivery orders
+      if (orderType === "delivery" && userLocation) {
+        orderData.deliveryAddress = {
+          city: userLocation.city,
+          fullAddress: userLocation.fullAddress,
+          coordinates: {
+            latitude: userLocation.coordinates.latitude,
+            longitude: userLocation.coordinates.longitude,
+          },
+        };
+      }
 
       console.log("📦 Submitting order with data:", orderData);
 
@@ -513,45 +636,83 @@ function CheckoutPageContent() {
         </Card>
 
         {/* Delivery Address (only if delivery is selected) */}
-        {orderType === "delivery" && userLocation && (
+        {orderType === "delivery" && (
           <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
             <h3 className="text-lg font-semibold text-white mb-4">
               Διεύθυνση παράδοσης
             </h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-gray-300 text-sm mb-1">
-                  Διεύθυνση
-                </label>
-                <Input
-                  value={userLocation.fullAddress}
-                  readOnly
-                  className="bg-gray-800 border-gray-700 text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            {userLocation ? (
+              <div className="space-y-3">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1">
-                    Πόλη
+                    Διεύθυνση
                   </label>
                   <Input
-                    value={userLocation.city}
+                    value={userLocation.fullAddress}
                     readOnly
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">
+                      Πόλη
+                    </label>
+                    <Input
+                      value={userLocation.city}
+                      readOnly
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">
+                      Ταχυδρομικός κώδικας
+                    </label>
+                    <Input
+                      value={userLocation.addressDetails.postalCode || ""}
+                      readOnly
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-gray-400 text-sm mb-3">
+                  Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
+                  εισάγετε μια νέα διεύθυνση
+                </p>
+                <Button
+                  onClick={handleAutocompleteFromNavbar}
+                  disabled={!coordinates || isLoadingLocation}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                >
+                  {isLoadingLocation ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Φόρτωση...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Χρησιμοποίησε τοποθεσία από γραμμή πλοήγησης
+                    </>
+                  )}
+                </Button>
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1">
-                    Ταχυδρομικός κώδικας
+                  <label className="block text-gray-300 text-sm mb-2">
+                    Ή εισάγετε διεύθυνση
                   </label>
-                  <Input
-                    value={userLocation.addressDetails.postalCode || ""}
-                    readOnly
+                  <GooglePlacesCustom
+                    onPlaceSelect={handleGooglePlaceSelect}
+                    value={addressInput}
+                    onChange={setAddressInput}
+                    placeholder="Εισάγετε διεύθυνση παράδοσης..."
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
               </div>
-            </div>
+            )}
           </Card>
         )}
 

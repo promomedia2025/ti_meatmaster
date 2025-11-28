@@ -44,19 +44,31 @@ export function useSearchTags() {
           throw new Error(`API responded with status: ${response.status}`);
         }
 
-        const result: SearchTagsResponse = await response.json();
+        const result = await response.json();
 
-        if (result.success && result.data) {
-          // Take first 10 tags
-          const tagsToCache = result.data;
-
-          // Cache the data
-          cacheTags(tagsToCache);
-
-          setTags(tagsToCache);
+        // Handle both response structures: direct array or wrapped in success/data
+        let allTags: SearchTag[] = [];
+        if (Array.isArray(result)) {
+          // If response is directly an array
+          allTags = result;
+        } else if (
+          result.success &&
+          result.data &&
+          Array.isArray(result.data)
+        ) {
+          // If response is wrapped in success/data structure
+          allTags = result.data;
+        } else if (result.data && Array.isArray(result.data)) {
+          // If response has data property with array
+          allTags = result.data;
         } else {
-          throw new Error(result.message || "Failed to fetch search tags");
+          throw new Error("Invalid response structure from search tags API");
         }
+
+        // Cache the data
+        cacheTags(allTags);
+
+        setTags(allTags);
       } catch (err) {
         console.error("Error fetching search tags:", err);
         setError(
