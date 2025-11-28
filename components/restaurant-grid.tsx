@@ -157,7 +157,6 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
     return (
       <section className="mt-8">
         <h2 className="text-xl font-bold text-foreground mb-6">
-          Όλα τα εστιατόρια
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(8)].map((_, index) => (
@@ -182,7 +181,6 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
     return (
       <section className="mt-8">
         <h2 className="text-xl font-bold text-foreground mb-6">
-          Όλα τα εστιατόρια
         </h2>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Error: {error}</p>
