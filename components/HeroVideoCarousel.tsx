@@ -41,24 +41,46 @@ export default function DualVideoHero() {
 
       videoRefs.current.forEach((video, index) => {
         if (!video) return;
-        if (visibleIndices.includes(index)) {
-          video.play().catch((e) => console.log("Autoplay blocked:", e));
+        const isVisible = visibleIndices.includes(index);
+
+        if (isVisible) {
+          // Only play if not already playing
+          if (video.paused) {
+            const playPromise = video.play();
+            // Handle promise rejection silently (autoplay may be blocked)
+            if (playPromise !== undefined) {
+              playPromise.catch(() => {
+                // Ignore autoplay errors - they're expected in some browsers
+              });
+            }
+          }
         } else {
-          video.pause();
+          // Only pause if currently playing
+          if (!video.paused) {
+            video.pause();
+          }
           video.currentTime = 0;
         }
       });
     };
 
+    // Use a debounced version for scroll to reduce rapid calls
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(handleVideoPlay, 100);
+    };
+
     embla.on("select", handleVideoPlay);
-    embla.on("scroll", handleVideoPlay);
+    embla.on("scroll", handleScroll);
     embla.on("reInit", handleVideoPlay);
 
     handleVideoPlay();
 
     return () => {
+      clearTimeout(scrollTimeout);
       embla.off("select", handleVideoPlay);
-      embla.off("scroll", handleVideoPlay);
+      embla.off("scroll", handleScroll);
       embla.off("reInit", handleVideoPlay);
     };
   }, [embla]);
