@@ -6,15 +6,15 @@ import Autoplay from "embla-carousel-autoplay";
 
 export default function DualVideoHero() {
   const videos = [
-    "https://cocofino.bettersolution.gr/assets/media/uploads/1.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/2.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/3.mp4",
     "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/5.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/6.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/7.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/8.mp4",
-    "https://cocofino.bettersolution.gr/assets/media/uploads/9.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
   ];
 
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
