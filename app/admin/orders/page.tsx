@@ -90,6 +90,8 @@ export default function AdminOrdersPage() {
     }
   }, [isAuthenticated]);
 
+  // Realtime updates removed for now
+
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     router.push("/admin/login");

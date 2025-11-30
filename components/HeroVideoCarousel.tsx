@@ -6,24 +6,29 @@ import Autoplay from "embla-carousel-autoplay";
 
 export default function DualVideoHero() {
   const videos = [
-    "/1.mp4", "/2.mp4", "/3.mp4", "/4.mp4", 
-    "/5.mp4", "/6.mp4", "/7.mp4", "/8.mp4", "/9.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
+    "https://cocofino.bettersolution.gr/assets/media/uploads/4.mp4",
   ];
 
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  const autoplay = useRef(
-    Autoplay({ delay: 8000, stopOnInteraction: false })
-  );
+  const autoplay = useRef(Autoplay({ delay: 8000, stopOnInteraction: true }));
 
   const [emblaRef, embla] = useEmblaCarousel(
-    { 
-      loop: true, 
+    {
+      loop: true,
       align: "center", // Center for mobile/tablet
-      breakpoints: { 
+      breakpoints: {
         // On large screens (1024px+), align start for the 2-column layout
-        '(min-width: 1024px)': { align: 'start' } 
-      } 
+        "(min-width: 1024px)": { align: "start" },
+      },
     },
     [autoplay.current]
   );
@@ -32,7 +37,7 @@ export default function DualVideoHero() {
     if (!embla) return;
 
     const handleVideoPlay = () => {
-      const visibleIndices = embla.slidesInView(); 
+      const visibleIndices = embla.slidesInView();
 
       videoRefs.current.forEach((video, index) => {
         if (!video) return;
@@ -40,7 +45,7 @@ export default function DualVideoHero() {
           video.play().catch((e) => console.log("Autoplay blocked:", e));
         } else {
           video.pause();
-          video.currentTime = 0; 
+          video.currentTime = 0;
         }
       });
     };
@@ -52,10 +57,10 @@ export default function DualVideoHero() {
     handleVideoPlay();
 
     return () => {
-        embla.off("select", handleVideoPlay);
-        embla.off("scroll", handleVideoPlay);
-        embla.off("reInit", handleVideoPlay);
-    }
+      embla.off("select", handleVideoPlay);
+      embla.off("scroll", handleVideoPlay);
+      embla.off("reInit", handleVideoPlay);
+    };
   }, [embla]);
 
   return (
@@ -77,7 +82,9 @@ export default function DualVideoHero() {
               */}
               <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
                 <video
-                  ref={(el) => { videoRefs.current[idx] = el; }}
+                  ref={(el) => {
+                    videoRefs.current[idx] = el;
+                  }}
                   src={src}
                   className="absolute inset-0 w-full h-full object-cover"
                   muted

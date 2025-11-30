@@ -120,7 +120,7 @@ const normalizeStatusNameToValue = (
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { subscribe, unsubscribe, isConnected } = usePusher();
+  const { pusher, subscribe, unsubscribe, isConnected } = usePusher();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -458,6 +458,10 @@ export default function AdminDashboardPage() {
       return;
     }
 
+    // Store previous order state for rollback
+    const previousOrder = orders.find((o) => o.order_id === orderId);
+
+    // Optimistic update - update UI immediately
     setOrders((prev) =>
       prev.map((order) =>
         order.order_id === orderId
@@ -475,25 +479,191 @@ export default function AdminDashboardPage() {
       [orderId]: statusValue,
     }));
 
-    if (!options?.silent) {
-      toast.info("Ενημέρωση Κατάστασης", {
-        description: `Παραγγελία #${orderId} ➜ ${statusOption.label}`,
+    // Send POST request to update order status via server-side API (avoids CORS)
+    const updateOrderStatus = async () => {
+      console.log("🔄 [CLIENT] handleStatusChange called:", {
+        orderId,
+        statusValue,
+        statusOption: {
+          label: statusOption.label,
+          value: statusOption.value,
+          statusId: statusOption.statusId,
+        },
+        options,
+      });
+
+      try {
+        const requestPayload = {
+          order_id: orderId,
+          status_id: statusOption.statusId,
+        };
+
+        console.log("📤 [CLIENT] Preparing API request:", {
+          url: "/api/admin/orders/update-status",
+          method: "POST",
+          payload: requestPayload,
+        });
+
+        const requestStartTime = Date.now();
+        const response = await fetch("/api/admin/orders/update-status", {
+          method: "POST",
+          body: JSON.stringify(requestPayload),
+        });
+
+        const requestDuration = Date.now() - requestStartTime;
+        console.log("📥 [CLIENT] API response received:", {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          duration: `${requestDuration}ms`,
+          headers: {
+            contentType: response.headers.get("content-type"),
+          },
+        });
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+            console.error("❌ [CLIENT] API request failed:", {
+              status: response.status,
+              statusText: response.statusText,
+              errorData,
+            });
+          } catch (parseError) {
+            const errorText = await response.text();
+            console.error(
+              "❌ [CLIENT] API request failed (non-JSON response):",
+              {
+                status: response.status,
+                statusText: response.statusText,
+                errorText: errorText.substring(0, 500),
+              }
+            );
+            errorData = { error: errorText.substring(0, 200) };
+          }
+          throw new Error(
+            errorData.error ||
+              `API request failed with status: ${response.status}`
+          );
+        }
+
+        const result = await response.json();
+        console.log("✅ [CLIENT] Order status updated successfully:", {
+          success: result.success,
+          data: result.data,
+          message: result.message,
+          fullResponse: result,
+        });
+
+        if (!options?.silent) {
+          toast.success("Ενημέρωση Κατάστασης", {
+            description: `Παραγγελία #${orderId} ➜ ${statusOption.label}`,
+          });
+        }
+      } catch (error) {
+        console.error("❌ [CLIENT] Error updating order status:", {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          orderId,
+          previousOrder: previousOrder
+            ? {
+                order_id: previousOrder.order_id,
+                status_id: previousOrder.status_id,
+                status_name: previousOrder.status_name,
+              }
+            : null,
+        });
+
+        // Rollback optimistic update on error
+        if (previousOrder) {
+          console.log("🔄 [CLIENT] Rolling back optimistic update:", {
+            orderId,
+            previousStatus: previousOrder.status_name,
+          });
+          setOrders((prev) =>
+            prev.map((order) =>
+              order.order_id === orderId ? previousOrder : order
+            )
+          );
+        }
+        toast.error("Σφάλμα κατά την ενημέρωση της κατάστασης");
+      }
+    };
+
+    // Call the update function
+    console.log("🚀 [CLIENT] Calling updateOrderStatus function");
+    updateOrderStatus();
+  };
+
+  const handleAcceptOrder = async (orderId: number) => {
+    try {
+      console.log("📤 [CLIENT] Accepting order:", orderId);
+
+      const response = await fetch("/api/admin/orders/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Αποδοχή Παραγγελίας", {
+          description: `Παραγγελία #${orderId} αποδέχθηκε`,
+        });
+        // Refresh orders to reflect the updated status
+        fetchOrders();
+      } else {
+        toast.error("Σφάλμα", {
+          description: result.error || "Αποτυχία αποδοχής παραγγελίας",
+        });
+      }
+    } catch (error) {
+      console.error("❌ [CLIENT] Error accepting order:", error);
+      toast.error("Σφάλμα", {
+        description: "Αποτυχία αποδοχής παραγγελίας",
       });
     }
   };
 
-  const handleAcceptOrder = (orderId: number) => {
-    handleStatusChange(orderId, "RECEIVED", { silent: true });
-    toast.success("Αποδοχή Παραγγελίας", {
-      description: `Παραγγελία #${orderId} αποδέχθηκε`,
-    });
-  };
+  const handleRejectOrder = async (orderId: number) => {
+    try {
+      console.log("📤 [CLIENT] Canceling order:", orderId);
 
-  const handleRejectOrder = (orderId: number) => {
-    handleStatusChange(orderId, "CANCELLED", { silent: true });
-    toast.error("Απόρριψη Παραγγελίας", {
-      description: `Παραγγελία #${orderId} απορρίφθηκε`,
-    });
+      const response = await fetch("/api/admin/orders/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.error("Απόρριψη Παραγγελίας", {
+          description: `Παραγγελία #${orderId} απορρίφθηκε`,
+        });
+        // Refresh orders to reflect the updated status
+        fetchOrders();
+      } else {
+        toast.error("Σφάλμα", {
+          description: result.error || "Αποτυχία απόρριψης παραγγελίας",
+        });
+      }
+    } catch (error) {
+      console.error("❌ [CLIENT] Error canceling order:", error);
+      toast.error("Σφάλμα", {
+        description: "Αποτυχία απόρριψης παραγγελίας",
+      });
+    }
   };
 
   // Subscribe to admin.orders channel for real-time updates
