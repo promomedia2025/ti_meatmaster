@@ -19,7 +19,7 @@ export default function DualVideoHero() {
 
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  const autoplay = useRef(Autoplay({ delay: 8000, stopOnInteraction: true }));
+  const autoplay = useRef(Autoplay({ stopOnInteraction: true }));
 
   const [emblaRef, embla] = useEmblaCarousel(
     {
