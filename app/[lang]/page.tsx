@@ -23,7 +23,7 @@ import { useTranslations } from "@/lib/i18n/translations-provider";
 import BrandCarousel from "@/components/ui/woltcopies/BrandCarousel";
 
 const featuredMenuIds = [112, 101, 177, 406, 92, 176, 184, 196];
-const featuredDiscountIds = [553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566];
+const featuredDiscountIds = [553, 554, 555, 556, 557, 558, 559, 563 ];
 
 export default function HomePage() {
   const { dict, lang } = useTranslations();
