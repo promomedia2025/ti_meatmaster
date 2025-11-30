@@ -962,15 +962,13 @@ export default function AdminDashboardPage() {
             >
               Παραγγελιες
             </Link>
-            <button
-              onClick={() => {
-                setIsSidebarOpen(false);
-                // Handle Menu navigation
-              }}
-              className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
+            <Link
+              href="/admin/menu"
+              onClick={() => setIsSidebarOpen(false)}
+              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
             >
               Menu
-            </button>
+            </Link>
             <button
               onClick={() => {
                 setIsSidebarOpen(false);

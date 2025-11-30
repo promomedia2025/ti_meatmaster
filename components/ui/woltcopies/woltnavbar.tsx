@@ -54,6 +54,10 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const navbarRef = useRef<HTMLDivElement>(null);
 
+  // Check if we're on a restaurant or location page
+  const isRestaurantPage =
+    pathname?.startsWith("/restaurant/") || pathname?.startsWith("/location/");
+
   // Show cart icon on initial load if user is authenticated
   useEffect(() => {
     if (isAuthenticated && !isSearchExpanded) {
@@ -300,16 +304,28 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
       <div
         ref={navbarRef}
         className={`sticky top-0 flex flex-col py-2 justify-between md:px-4 px-2 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-[#242424]" : "bg-transparent"
+          isRestaurantPage
+            ? "bg-transparent"
+            : isScrolled
+            ? "bg-[#242424]"
+            : "bg-transparent"
         }`}
       >
-        {/* Dark gray background overlay */}
-        <div
-          className={`absolute top-0 right-0 h-full transition-all duration-300 ease-in-out ${
-            isSearchExpanded ? "w-full opacity-100" : "w-0 opacity-0"
-          }`}
-          style={{ backgroundColor: "#242424" }}
-        />
+        {/* Dark gray background overlay - only show on non-restaurant pages or when search is expanded */}
+        {!isRestaurantPage && (
+          <div
+            className={`absolute top-0 right-0 h-full transition-all duration-300 ease-in-out ${
+              isSearchExpanded ? "w-full opacity-100" : "w-0 opacity-0"
+            }`}
+            style={{ backgroundColor: "#242424" }}
+          />
+        )}
+        {isRestaurantPage && isSearchExpanded && (
+          <div
+            className="absolute top-0 right-0 h-full w-full opacity-100 transition-all duration-300 ease-in-out"
+            style={{ backgroundColor: "#242424" }}
+          />
+        )}
 
         <div className="relative z-10 flex items-center gap-[10px] justify-between max-w-[1500px] w-full mx-auto">
           {/* Left section: Logo + Location */}

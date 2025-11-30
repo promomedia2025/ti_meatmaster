@@ -282,14 +282,16 @@ export default async function LocationPage({
         onFavorite={favoriteLocation}
         onUnfavorite={unfavoriteLocation}
       />
-      <RestaurantInfo restaurant={restaurant} />
-      <Suspense
-        fallback={
-          <div className="text-center py-8 text-white">Loading menu...</div>
-        }
-      >
-        <RestaurantMenu restaurant={restaurant} />
-      </Suspense>
+      <div className="max-w-[1600px] mx-auto">
+        <RestaurantInfo restaurant={restaurant} />
+        <Suspense
+          fallback={
+            <div className="text-center py-8 text-white">Loading menu...</div>
+          }
+        >
+          <RestaurantMenu restaurant={restaurant} />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -34,10 +34,8 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
   );
 
   return (
-    <div className="bg-gray-900 border-b border-gray-800 px-4 py-3">
+    <div className="bg-black/60  px-4 py-3">
       <div className="flex items-center gap-6 text-sm text-gray-300 flex-wrap">
-      
-
         <div className="flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400" />
           <span>{restaurant.rating}</span>
@@ -49,7 +47,12 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
           )}`}
         >
           <Clock className="w-4 h-4" />
-          <span>{statusDisplay.statusMessage}</span>
+          <span>{`${
+            statusDisplay.statusMessage ===
+            "We are OPEN, Pick up is available, Delivery is available"
+              ? "Aνοικτό"
+              : "Κλειστό"
+          }`}</span>
         </div>
 
         {statusDisplay.deliveryAvailable && (
