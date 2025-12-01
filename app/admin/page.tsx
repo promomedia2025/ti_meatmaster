@@ -35,12 +35,12 @@ interface AdminOrder {
 const PENDING_STATUS_ID = 2;
 
 const ORDER_STATUS_OPTIONS = [
-  { label: "RECEIVED", value: "RECEIVED", statusId: 3 },
-  { label: "PREPARATION", value: "PREPARATION", statusId: 4 },
-  { label: "DELIVERY", value: "DELIVERY", statusId: 5 },
-  { label: "COMPLETED", value: "COMPLETED", statusId: 6 },
-  { label: "CANCELLED", value: "CANCELLED", statusId: 7 },
-  { label: "PICK UP", value: "PICK_UP", statusId: 8 },
+  { label: "Ελήφθη", value: "RECEIVED", statusId: 3 },
+  { label: "Προετοιμασία", value: "PREPARATION", statusId: 4 },
+  { label: "Παράδοση", value: "DELIVERY", statusId: 5 },
+  { label: "Ολοκληρώθηκε", value: "COMPLETED", statusId: 6 },
+  { label: "Ακυρώθηκε", value: "CANCELLED", statusId: 7 },
+  { label: "Έτοιμη Προς Παραλαβή", value: "PICK_UP", statusId: 8 },
 ] as const;
 
 type OrderStatusValue = (typeof ORDER_STATUS_OPTIONS)[number]["value"];
