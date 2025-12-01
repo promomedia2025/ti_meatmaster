@@ -43,6 +43,16 @@ export async function POST(request: NextRequest) {
       const setCookieHeader = response.headers.get("set-cookie");
 
       if (setCookieHeader) {
+        // Extract cookie name(s) from set-cookie header for logging
+        const cookieNames = setCookieHeader.split(",").map((cookie) => {
+          const cookiePart = cookie.trim().split(";")[0];
+          return cookiePart.split("=")[0];
+        });
+        console.log(
+          "🍪 Admin login - Cookie names from set-cookie header:",
+          cookieNames
+        );
+
         // Parse and modify cookies for localhost
         const cookies = setCookieHeader.split(",").map((cookie) => {
           // Remove domain restrictions and make it work for localhost
@@ -55,6 +65,8 @@ export async function POST(request: NextRequest) {
 
         const modifiedCookies = cookies.join(", ");
         response_data.headers.set("set-cookie", modifiedCookies);
+      } else {
+        console.log("⚠️ Admin login - No set-cookie header in response");
       }
 
       return response_data;
@@ -75,4 +87,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

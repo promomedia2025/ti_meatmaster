@@ -1,27 +1,52 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if already logged in
+  // Check for expiration message from URL or check auth status
   useEffect(() => {
+    const expired = searchParams?.get("expired");
+    if (expired === "true") {
+      toast.error("Your token has expired, please login again");
+      setError("Your token has expired, please login again");
+    }
+
+    // Check if already logged in with valid session
     const checkAuth = async () => {
       const adminToken = localStorage.getItem("admin_token");
       if (adminToken) {
-        router.push("/admin");
+        // Verify session is still valid
+        try {
+          const response = await fetch("/api/auth/admin/check", {
+            method: "GET",
+            credentials: "include",
+          });
+          const result = await response.json();
+          if (result.success && result.authenticated) {
+            router.push("/admin");
+          } else {
+            // Session expired, clear token
+            localStorage.removeItem("admin_token");
+          }
+        } catch (error) {
+          // Error checking, allow login
+          console.error("Auth check error:", error);
+        }
       }
     };
     checkAuth();
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

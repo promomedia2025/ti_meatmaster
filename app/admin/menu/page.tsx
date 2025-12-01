@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MenuItem {
   menu_id: number;
@@ -12,14 +19,82 @@ interface MenuItem {
   menu_description: string;
 }
 
+interface Category {
+  category_id: number;
+  name: string;
+}
+
+interface MenuOptionValue {
+  menu_option_value_id: number;
+  name: string;
+  price: number;
+  is_default: boolean;
+  is_enabled: boolean;
+}
+
+interface MenuOption {
+  menu_option_id: number;
+  option_name: string;
+  display_type: string;
+  is_enabled: boolean;
+  values: MenuOptionValue[];
+}
+
 export default function AdminMenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [menuOptions, setMenuOptions] = useState<MenuOption[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
   const itemsPerPage = 5;
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetch("/api/admin/get-menu-categories", {
+          credentials: "include",
+        });
+
+        const result = await response.json();
+        console.log("Categories API result:", result);
+
+        if (result.success && result.data) {
+          // Handle different response formats
+          if (Array.isArray(result.data)) {
+            setCategories(result.data);
+          } else if (result.data.data && Array.isArray(result.data.data)) {
+            setCategories(result.data.data);
+          } else if (
+            result.data.categories &&
+            Array.isArray(result.data.categories)
+          ) {
+            setCategories(result.data.categories);
+          }
+        } else if (Array.isArray(result.data)) {
+          setCategories(result.data);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch menu items
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
@@ -49,20 +124,31 @@ export default function AdminMenuPage() {
     fetchMenuItems();
   }, []);
 
-  // Filter menu items based on search query (prefix matching for name)
+  // Filter menu items based on search query and category
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return menuItems;
+    let filtered = menuItems;
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (item) => item.category_name === selectedCategory
+      );
     }
-    const query = searchQuery.toLowerCase();
-    return menuItems.filter(
-      (item) =>
-        item.menu_name.toLowerCase().startsWith(query) ||
-        item.category_name.toLowerCase().includes(query) ||
-        item.menu_description.toLowerCase().includes(query) ||
-        item.menu_id.toString().includes(query)
-    );
-  }, [menuItems, searchQuery]);
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.menu_name.toLowerCase().startsWith(query) ||
+          item.category_name.toLowerCase().includes(query) ||
+          item.menu_description.toLowerCase().includes(query) ||
+          item.menu_id.toString().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [menuItems, searchQuery, selectedCategory]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -70,10 +156,135 @@ export default function AdminMenuPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentItems = filteredItems.slice(startIndex, endIndex);
 
-  // Reset to page 1 when search query changes
+  // Reset to page 1 when search query or category changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategory]);
+
+  // Handle menu item click
+  const handleMenuItemClick = async (item: MenuItem) => {
+    setSelectedMenuItem(item);
+    setIsModalOpen(true);
+    setOptionsLoading(true);
+    setMenuOptions([]);
+
+    try {
+      const response = await fetch(
+        `/api/admin/menu-item-options?menu_id=${item.menu_id}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      const result = await response.json();
+      console.log("Menu options API result:", result);
+
+      // Handle different response formats
+      // Menu options are in the options array of the API response
+      let options: MenuOption[] = [];
+
+      // Check for options array in various locations
+      if (result.data?.options && Array.isArray(result.data.options)) {
+        options = result.data.options;
+      } else if (result.options && Array.isArray(result.options)) {
+        options = result.options;
+      } else if (result.success && result.data) {
+        if (Array.isArray(result.data)) {
+          options = result.data;
+        } else if (result.data.data && Array.isArray(result.data.data)) {
+          options = result.data.data;
+        } else if (
+          result.data.menu_options &&
+          Array.isArray(result.data.menu_options)
+        ) {
+          options = result.data.menu_options;
+        } else {
+          // Single object response - wrap in array
+          options = [result.data];
+        }
+      } else if (Array.isArray(result.data)) {
+        options = result.data;
+      } else if (Array.isArray(result)) {
+        options = result;
+      } else if (result && typeof result === "object") {
+        // Single object - wrap in array
+        options = [result];
+      }
+
+      setMenuOptions(options);
+    } catch (err) {
+      console.error("Error fetching menu options:", err);
+    } finally {
+      setOptionsLoading(false);
+    }
+  };
+
+  // Handle toggle menu option value status
+  const handleToggleOptionValueStatus = async (
+    menuOptionValueId: number,
+    currentStatus: boolean
+  ) => {
+    const newStatus = !currentStatus;
+
+    // Optimistic update - update the option value status in all menu options
+    setMenuOptions((prev) =>
+      prev.map((option) => ({
+        ...option,
+        values: option.values.map((value) =>
+          value.menu_option_value_id === menuOptionValueId
+            ? { ...value, is_enabled: newStatus }
+            : value
+        ),
+      }))
+    );
+
+    try {
+      // Convert boolean to numeric is_enabled: 1 for enabled, 0 for disabled
+      const isEnabledValue = newStatus ? 1 : 0;
+
+      const response = await fetch("/api/admin/toggle-menu-option-value", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          menu_option_value_id: menuOptionValueId,
+          is_enabled: isEnabledValue,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        // Rollback on error
+        setMenuOptions((prev) =>
+          prev.map((option) => ({
+            ...option,
+            values: option.values.map((value) =>
+              value.menu_option_value_id === menuOptionValueId
+                ? { ...value, is_enabled: currentStatus }
+                : value
+            ),
+          }))
+        );
+        console.error("Failed to toggle option value status:", result.error);
+      }
+    } catch (err) {
+      // Rollback on error
+      setMenuOptions((prev) =>
+        prev.map((option) => ({
+          ...option,
+          values: option.values.map((value) =>
+            value.menu_option_value_id === menuOptionValueId
+              ? { ...value, is_enabled: currentStatus }
+              : value
+          ),
+        }))
+      );
+      console.error("Error toggling option value status:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
@@ -97,16 +308,44 @@ export default function AdminMenuPage() {
               <h2 className="text-2xl font-bold">
                 Menu Items ({filteredItems.length})
               </h2>
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search by name, category, or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-[#2a2a2a] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff9328ff] focus:border-transparent"
-                />
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                {/* Category Dropdown */}
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger className="w-full sm:w-[200px] bg-[#2a2a2a] border-gray-700 text-white">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2a2a2a] border-gray-700">
+                    <SelectItem
+                      value="all"
+                      className="text-white focus:bg-[#3a3a3a]"
+                    >
+                      All Categories
+                    </SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.category_id}
+                        value={category.name}
+                        className="text-white focus:bg-[#3a3a3a]"
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, category, or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-[#2a2a2a] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff9328ff] focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
 
@@ -116,7 +355,8 @@ export default function AdminMenuPage() {
                 currentItems.map((item) => (
                   <div
                     key={item.menu_id}
-                    className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                    className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-[#ff9328ff] transition-colors"
+                    onClick={() => handleMenuItemClick(item)}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -150,7 +390,10 @@ export default function AdminMenuPage() {
                         >
                           {item.menu_status ? "Active" : "Inactive"}
                         </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label
+                          className="relative inline-flex items-center cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <input
                             type="checkbox"
                             checked={item.menu_status}
@@ -287,6 +530,125 @@ export default function AdminMenuPage() {
           </div>
         )}
       </main>
+
+      {/* Menu Item Options Modal */}
+      {isModalOpen && selectedMenuItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div>
+                <h2 className="text-2xl font-bold text-white">
+                  {selectedMenuItem.menu_name}
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">Menu Options</p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSelectedMenuItem(null);
+                  setMenuOptions([]);
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {optionsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              ) : menuOptions.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No menu options found</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {menuOptions.map((menuOption) => (
+                    <div
+                      key={menuOption.menu_option_id}
+                      className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                    >
+                      <h3 className="text-lg font-semibold text-white mb-4">
+                        {menuOption.option_name}
+                      </h3>
+                      {menuOption.values && menuOption.values.length > 0 ? (
+                        <div className="space-y-3">
+                          {menuOption.values.map((optionValue) => (
+                            <div
+                              key={optionValue.menu_option_value_id}
+                              className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <h4 className="text-base font-medium text-white mb-1">
+                                    {optionValue.name}
+                                  </h4>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <span className="text-gray-400">
+                                      Price:
+                                    </span>
+                                    <span className="text-white font-semibold">
+                                      €{optionValue.price.toFixed(2)}
+                                    </span>
+                                    <span className="text-gray-400">ID:</span>
+                                    <span className="text-gray-300">
+                                      #{optionValue.menu_option_value_id}
+                                    </span>
+                                  </div>
+                                  {optionValue.is_default && (
+                                    <span className="inline-block mt-2 px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span
+                                    className={`text-sm ${
+                                      optionValue.is_enabled
+                                        ? "text-green-400"
+                                        : "text-red-400"
+                                    }`}
+                                  >
+                                    {optionValue.is_enabled
+                                      ? "Active"
+                                      : "Inactive"}
+                                  </span>
+                                  <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={optionValue.is_enabled}
+                                      onChange={() =>
+                                        handleToggleOptionValueStatus(
+                                          optionValue.menu_option_value_id,
+                                          optionValue.is_enabled
+                                        )
+                                      }
+                                      className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff9328ff]"></div>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 text-sm">
+                          No option values available
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

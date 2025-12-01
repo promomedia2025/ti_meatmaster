@@ -277,10 +277,34 @@ export function Header() {
       const houseNumber = address.house_number || "";
       const postalCode = address.postcode || "";
       const locality = address.suburb || address.neighbourhood || "";
-      const country = address.country || "";
+      let country = address.country || "";
 
-      // Build full address string
-      const fullAddress = data.display_name || "Unknown Location";
+      // Validate and fix country - must be Greece
+      const countryCode = data.address?.country_code?.toLowerCase() || "";
+      const isValidGreece = countryCode === "gr" || 
+                            country?.toLowerCase().includes("greece") ||
+                            country?.toLowerCase().includes("ελλάδα") ||
+                            country?.toLowerCase().includes("hellas");
+      
+      if (!isValidGreece && country) {
+        console.warn("⚠️ [HEADER-REVERSE-GEOCODE] Invalid country detected:", {
+          country,
+          countryCode,
+          overridingToGreece: true,
+        });
+      }
+      
+      country = isValidGreece ? country : "Ελλάδα";
+
+      // Build full address string - remove invalid country from display_name if present
+      let fullAddress = data.display_name || "Unknown Location";
+      
+      // Remove invalid country names from the address string
+      if (!isValidGreece && country && fullAddress.toLowerCase().includes(country.toLowerCase())) {
+        // Remove the invalid country from the address
+        const countryRegex = new RegExp(`,\\s*${country.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+        fullAddress = fullAddress.replace(countryRegex, '').trim();
+      }
 
       return {
         city,

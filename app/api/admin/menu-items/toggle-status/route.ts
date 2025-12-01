@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { menu_id, menu_status } = body;
 
-    if (!menu_id || typeof menu_status !== "boolean") {
+    if (!menu_id || typeof status !== "boolean") {
       return NextResponse.json(
         { success: false, error: "menu_id and menu_status are required" },
         { status: 400 }

@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Printer } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { AdminPrinterOptionsSidebar } from "./admin-printer-options-sidebar";
 
 export function AdminSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isPrinterOptionsOpen, setIsPrinterOptionsOpen] = useState(false);
   const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
@@ -99,6 +101,16 @@ export function AdminSidebar() {
             >
               Χρονος παραγγελιας
             </Link>
+            <button
+              onClick={() => {
+                setIsSidebarOpen(false);
+                setIsPrinterOptionsOpen(true);
+              }}
+              className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors flex items-center gap-2"
+            >
+              <Printer className="w-5 h-5" />
+              Επιλογες εκτυπωτη
+            </button>
           </nav>
         </div>
       </div>
@@ -110,6 +122,12 @@ export function AdminSidebar() {
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
+
+      {/* Printer Options Sidebar */}
+      <AdminPrinterOptionsSidebar
+        isOpen={isPrinterOptionsOpen}
+        onClose={() => setIsPrinterOptionsOpen(false)}
+      />
     </>
   );
 }

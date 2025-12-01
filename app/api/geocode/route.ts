@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     if (lat && lon) {
       if (useGoogle) {
         const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_API_KEY}&language=${language}`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&components=country:GR&key=${GOOGLE_API_KEY}&language=${language}`
         );
 
         if (response.ok) {
@@ -27,8 +27,39 @@ export async function GET(request: NextRequest) {
             const result = data.results[0];
             // Convert Google format to our format
             const addressComponents = result.address_components;
+            
+            // Extract country and validate it's Greece
+            const countryComponent = addressComponents.find((c: any) =>
+              c.types.includes("country")
+            );
+            const countryCode = countryComponent?.short_name || "";
+            const countryName = countryComponent?.long_name || "";
+            
+            // Validate country is Greece (GR) - if not, force it to Greece
+            const isValidGreece = countryCode === "GR" || 
+                                  countryName?.toLowerCase().includes("greece") ||
+                                  countryName?.toLowerCase().includes("ελλάδα") ||
+                                  countryName?.toLowerCase().includes("hellas");
+            
+            const finalCountry = isValidGreece ? (countryName || "Ελλάδα") : "Ελλάδα";
+            
+            console.log("🌍 [GEOCODE] Reverse geocoding country check:", {
+              countryCode,
+              countryName,
+              isValidGreece,
+              finalCountry,
+            });
+            
+            // Clean formatted address - remove invalid country if present
+            let cleanedAddress = result.formatted_address;
+            if (!isValidGreece && countryName) {
+              // Remove invalid country from the end of the address string
+              const countryRegex = new RegExp(`,\\s*${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+              cleanedAddress = cleanedAddress.replace(countryRegex, '').trim();
+            }
+            
             const formattedResult = {
-              display_name: result.formatted_address,
+              display_name: cleanedAddress,
               address: {
                 road: addressComponents.find((c: any) =>
                   c.types.includes("route")
@@ -54,9 +85,7 @@ export async function GET(request: NextRequest) {
                 postcode: addressComponents.find((c: any) =>
                   c.types.includes("postal_code")
                 )?.long_name,
-                country: addressComponents.find((c: any) =>
-                  c.types.includes("country")
-                )?.long_name,
+                country: finalCountry,
               },
             };
             return NextResponse.json({
@@ -67,9 +96,9 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Fallback to Nominatim
+      // Fallback to Nominatim (restricted to Greece)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&countrycodes=gr&addressdetails=1`,
         {
           headers: {
             "User-Agent": "WoltRestaurantApp/1.0",
@@ -79,6 +108,40 @@ export async function GET(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Validate and fix country if needed
+        if (data && data.address) {
+          const countryCode = data.address.country_code?.toLowerCase();
+          const countryName = data.address.country;
+          
+          // Validate country is Greece - if not, override it
+          const isValidGreece = countryCode === "gr" || 
+                                countryName?.toLowerCase().includes("greece") ||
+                                countryName?.toLowerCase().includes("ελλάδα") ||
+                                countryName?.toLowerCase().includes("hellas");
+          
+          if (!isValidGreece && countryName) {
+            console.warn("⚠️ [GEOCODE] Invalid country detected in Nominatim response:", {
+              countryCode,
+              countryName,
+              coordinates: { lat, lon },
+              overridingToGreece: true,
+            });
+          }
+          
+          // Override country to Greece if invalid
+          if (!isValidGreece) {
+            data.address.country = "Ελλάδα";
+            data.address.country_code = "gr";
+            
+            // Also clean the display_name to remove invalid country
+            if (data.display_name && countryName) {
+              const countryRegex = new RegExp(`,\\s*${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+              data.display_name = data.display_name.replace(countryRegex, '').trim();
+            }
+          }
+        }
+        
         return NextResponse.json({
           success: true,
           data: data,

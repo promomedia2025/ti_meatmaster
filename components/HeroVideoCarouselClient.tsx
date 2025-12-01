@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import Image from "next/image";
 
 interface HeroVideoCarouselClientProps {
   videos: string[];
@@ -15,7 +16,14 @@ export function HeroVideoCarouselClient({
   const loadedVideos = useRef<Set<number>>(new Set());
   const [isIOS, setIsIOS] = useState(false);
   const [loadingVideos, setLoadingVideos] = useState<Set<number>>(new Set());
+  const [showPlaceholders, setShowPlaceholders] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
   const rafId = useRef<number | null>(null);
+
+  // Generate placeholder image paths for each video
+  const placeholderImages = videos.map(
+    (_, idx) => `/videoPlaceholder${idx + 1}.png`
+  );
 
   const autoplay = useRef(Autoplay({ delay: 8000, stopOnInteraction: false }));
 
@@ -37,6 +45,20 @@ export function HeroVideoCarouselClient({
       const userAgent = window.navigator.userAgent.toLowerCase();
       setIsIOS(/iphone|ipad|ipod/.test(userAgent));
     }
+  }, []);
+
+  // Hide placeholders after 3.5 seconds to simulate loading with smooth fade-out
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Start fade-out animation
+      setFadeOut(true);
+      // Hide completely after fade animation completes
+      setTimeout(() => {
+        setShowPlaceholders(false);
+      }, 500); // 500ms for fade-out transition
+    }, 1500); // 3.5 seconds before starting fade
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle video loading states
@@ -215,6 +237,22 @@ export function HeroVideoCarouselClient({
                   {...(isIOS && { playsInline: true })}
                   loop
                 />
+                {/* Blurred placeholder overlay that shows for first 3.5 seconds */}
+                {showPlaceholders && (
+                  <div
+                    className={`absolute inset-0 w-full h-full z-10 transition-opacity duration-500 ${
+                      fadeOut ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    <Image
+                      src={placeholderImages[idx]}
+                      alt={`Video placeholder ${idx + 1}`}
+                      fill
+                      className="object-cover blur-[5px]"
+                      priority={idx < 2} // Prioritize first 2 images for faster initial load
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}

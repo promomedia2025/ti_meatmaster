@@ -177,6 +177,26 @@ export function AddAddressModal({
                     }
                   });
 
+                  // Validate country is Greece - force to Greece if invalid
+                  const countryCode = selectedPlace.address_components?.find(
+                    (c: any) => c.types.includes("country")
+                  )?.short_name || "";
+                  
+                  const isValidGreece = countryCode === "GR" || 
+                                        country?.toLowerCase().includes("greece") ||
+                                        country?.toLowerCase().includes("ελλάδα") ||
+                                        country?.toLowerCase().includes("hellas");
+                  
+                  if (!isValidGreece && country) {
+                    console.warn("⚠️ [ADD-ADDRESS] Invalid country detected:", {
+                      country,
+                      countryCode,
+                      overridingToGreece: true,
+                    });
+                  }
+                  
+                  const finalCountry = isValidGreece ? (country || "Ελλάδα") : "Ελλάδα";
+
                   // Construct address_1 (street number + route)
                   const address1 = `${streetNumber} ${route}`.trim();
 
@@ -188,7 +208,7 @@ export function AddAddressModal({
                     city: city || "",
                     state: state || "",
                     postcode: postcode || "",
-                    country: country || "Ελλάδα",
+                    country: finalCountry,
                     is_default: false,
                   };
 
