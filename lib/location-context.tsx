@@ -40,6 +40,8 @@ interface FormattedAddress {
   area: string;
   postcode: string;
   fullAddress: string;
+  bell_name?: string | null;
+  floor?: string | null;
 }
 
 interface LocationContextType {

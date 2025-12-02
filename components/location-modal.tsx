@@ -30,6 +30,8 @@ interface SavedAddress {
   id: string;
   label: string;
   address: string;
+  bell_name?: string | null;
+  floor?: string | null;
   coordinates?: {
     latitude: number;
     longitude: number;
@@ -100,6 +102,8 @@ export function LocationModal({
                 apiAddress.address ||
                 apiAddress.full_address ||
                 apiAddress.address_1,
+              bell_name: apiAddress.bell_name || null,
+              floor: apiAddress.floor || null,
               coordinates: apiAddress.coordinates
                 ? {
                     latitude: parseFloat(apiAddress.coordinates.latitude),
@@ -272,16 +276,22 @@ export function LocationModal({
 
       // Trigger reverse geocoding to get formatted address
       try {
-        const formattedAddress = await reverseGeocode(
+        const formattedAddr = await reverseGeocode(
           coordinates.latitude,
           coordinates.longitude,
           lang
         );
-        if (formattedAddress) {
-          setFormattedAddress(formattedAddress);
+        if (formattedAddr) {
+          // Include bell_name and floor in the formatted address
+          const formattedAddressWithExtras = {
+            ...formattedAddr,
+            bell_name: savedAddress.bell_name || null,
+            floor: savedAddress.floor || null,
+          };
+          setFormattedAddress(formattedAddressWithExtras);
           console.log(
             "📍 Formatted address set from saved address:",
-            formattedAddress
+            formattedAddressWithExtras
           );
         }
       } catch (error) {
@@ -308,16 +318,22 @@ export function LocationModal({
 
         // Trigger reverse geocoding to get formatted address
         try {
-          const formattedAddress = await reverseGeocode(
+          const formattedAddr = await reverseGeocode(
             coordinates.latitude,
             coordinates.longitude,
             lang
           );
-          if (formattedAddress) {
-            setFormattedAddress(formattedAddress);
+          if (formattedAddr) {
+            // Include bell_name and floor in the formatted address
+            const formattedAddressWithExtras = {
+              ...formattedAddr,
+              bell_name: savedAddress.bell_name || null,
+              floor: savedAddress.floor || null,
+            };
+            setFormattedAddress(formattedAddressWithExtras);
             console.log(
               "📍 Formatted address set from geocoded saved address:",
-              formattedAddress
+              formattedAddressWithExtras
             );
           }
         } catch (error) {
@@ -507,6 +523,26 @@ export function LocationModal({
                       <div className="text-gray-400 text-xs">
                         {savedAddress.address}
                       </div>
+                      {(savedAddress.bell_name || savedAddress.floor) && (
+                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-400">
+                          {savedAddress.bell_name && (
+                            <span>
+                              Κουδούνι:{" "}
+                              <span className="text-gray-300">
+                                {savedAddress.bell_name}
+                              </span>
+                            </span>
+                          )}
+                          {savedAddress.floor && (
+                            <span>
+                              Όροφος:{" "}
+                              <span className="text-gray-300">
+                                {savedAddress.floor}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

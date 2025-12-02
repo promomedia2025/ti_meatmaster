@@ -30,6 +30,8 @@ interface AdminOrder {
   order_type_name?: string;
   comment?: string;
   total_items?: number;
+  bell_name?: string | null;
+  floor?: string | null;
 }
 
 const PENDING_STATUS_ID = 2;
@@ -137,6 +139,7 @@ export default function AdminDashboardPage() {
   } | null>(null);
   const [locationStatusLoading, setLocationStatusLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [autoPrintOrderId, setAutoPrintOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
@@ -146,11 +149,44 @@ export default function AdminDashboardPage() {
     const checkAuth = async () => {
       const adminToken = localStorage.getItem("admin_token");
       if (!adminToken) {
-        router.push("/admin/login");
+        router.replace("/admin/login");
         return;
       }
-      setIsAuthenticated(true);
-      setIsLoading(false);
+
+      // Use get-menu-categories endpoint as token check
+      try {
+        const response = await fetch("/api/admin/get-menu-categories", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        // If 500 or 401/403, redirect to login
+        if (
+          response.status === 500 ||
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          console.error("Token check failed - redirecting to login");
+          localStorage.removeItem("admin_token");
+          router.replace("/admin/login");
+          return;
+        }
+
+        // If request succeeded, token is valid
+        if (response.ok) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        } else {
+          // Other errors - redirect to login
+          console.error("Token check failed with status:", response.status);
+          localStorage.removeItem("admin_token");
+          router.replace("/admin/login");
+        }
+      } catch (error) {
+        console.error("Error checking token:", error);
+        localStorage.removeItem("admin_token");
+        router.replace("/admin/login");
+      }
     };
     checkAuth();
   }, [router]);
@@ -381,6 +417,7 @@ export default function AdminDashboardPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
+    setAutoPrintOrderId(null); // Reset auto-print flag when closing
   };
 
   const playNotificationSound = useCallback(() => {
@@ -389,40 +426,11 @@ export default function AdminDashboardPage() {
     }
 
     try {
-      const AudioContextConstructor =
-        window.AudioContext || (window as any).webkitAudioContext;
-
-      if (!AudioContextConstructor) {
-        console.warn("🔇 AudioContext not supported in this browser");
-        return;
-      }
-
-      const audioContext = new AudioContextConstructor();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.type = "triangle";
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-
-      gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.35,
-        audioContext.currentTime + 0.02
-      );
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.0001,
-        audioContext.currentTime + 0.6
-      );
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.6);
-
-      setTimeout(() => {
-        audioContext.close();
-      }, 750);
+      const audio = new Audio("/phone-ringtone-normal-444775.mp3");
+      audio.volume = 0.7; // Set volume to 70%
+      audio.play().catch((error) => {
+        console.warn("🔇 Failed to play notification sound", error);
+      });
     } catch (error) {
       console.warn("🔇 Failed to play notification sound", error);
     }
@@ -616,6 +624,15 @@ export default function AdminDashboardPage() {
         toast.success("Αποδοχή Παραγγελίας", {
           description: `Παραγγελία #${orderId} αποδέχθηκε`,
         });
+
+        // Find the order and open modal with auto-print
+        const acceptedOrder = orders.find((o) => o.order_id === orderId);
+        if (acceptedOrder) {
+          setSelectedOrder(acceptedOrder);
+          setIsModalOpen(true);
+          setAutoPrintOrderId(orderId); // Trigger auto-print
+        }
+
         // Refresh orders to reflect the updated status
         fetchOrders();
       } else {
@@ -932,86 +949,14 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] flex">
-      {/* Sidebar */}
-      <div
-        className={`fixed left-0 top-0 h-full bg-[#2a2a2a] border-r border-gray-700 z-50 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } w-64`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-white">Admin Menu</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(false)}
-              className="text-white hover:bg-[#3a3a3a]"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Sidebar Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            <Link
-              href="/admin/orders"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Παραγγελιες
-            </Link>
-            <Link
-              href="/admin/menu"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Menu
-            </Link>
-            <button
-              onClick={() => {
-                setIsSidebarOpen(false);
-                // Handle Order History navigation
-              }}
-              className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Ιστορικο παραγγελιων
-            </button>
-            <Link
-              href="/admin/intervals"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Χρονος παραγγελιας
-            </Link>
-          </nav>
-        </div>
-      </div>
-
-      {/* Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
+    <div className="h-screen bg-[#1a1a1a] flex">
       {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 px-8">
+        <div className="max-w-7xl mx-auto pt-8">
           <div className="flex justify-between items-start mb-8">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSidebarOpen(true)}
-                className="text-white hover:bg-[#2a2a2a]"
-              >
-                <Menu className="w-6 h-6" />
-              </Button>
+            <div className="flex items-center gap-4 ">
               <h1 className="text-4xl font-bold text-white">
-                Welcome to the dashboard page
+                Καλώς ήρθατε στο διαχειριστικό
               </h1>
             </div>
             <div className="flex flex-col gap-2 items-end">
@@ -1186,6 +1131,7 @@ export default function AdminDashboardPage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         order={selectedOrder}
+        autoPrintOnAccept={autoPrintOrderId === selectedOrder?.order_id}
       />
     </div>
   );

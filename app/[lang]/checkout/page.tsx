@@ -12,8 +12,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, MapPin, CreditCard, Package, Loader2 } from "lucide-react";
 import GooglePlacesCustom from "@/components/google-places-custom";
+import { AddressBookModal } from "@/components/address-book-modal";
 
 interface UserLocation {
   city: string;
@@ -29,6 +31,8 @@ interface UserLocation {
     locality?: string;
     country?: string;
   };
+  bell_name?: string | null;
+  floor?: string | null;
 }
 
 function CheckoutPageContent() {
@@ -67,6 +71,10 @@ function CheckoutPageContent() {
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
+  const [bellName, setBellName] = useState("");
+  const [floor, setFloor] = useState("");
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
 
   // Function to autocomplete location from navbar
   const handleAutocompleteFromNavbar = async () => {
@@ -117,12 +125,154 @@ function CheckoutPageContent() {
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
         },
+        // Include bell_name and floor from formattedAddress if available
+        bell_name: formattedAddress?.bell_name || null,
+        floor: formattedAddress?.floor || null,
       };
 
       setUserLocation(location);
+
+      // Autofill bell_name and floor fields if they exist in formattedAddress
+      if (formattedAddress?.bell_name) {
+        setBellName(formattedAddress.bell_name);
+      }
+      if (formattedAddress?.floor) {
+        setFloor(formattedAddress.floor);
+      }
+
       toast.success("Η διεύθυνση συμπληρώθηκε αυτόματα");
     } catch (error) {
       console.error("Error autocompleting location:", error);
+      toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
+
+  // Handle address selection from address book
+  const handleAddressBookSelect = async (address: any) => {
+    setIsLoadingLocation(true);
+    try {
+      let location: UserLocation;
+
+      // Use API fields directly if available (address_1, city, postcode)
+      const hasApiFields =
+        address.address_1 && address.city && address.postcode;
+
+      // If address has coordinates, use them
+      if (address.coordinates) {
+        const geocoded = await reverseGeocode(
+          address.coordinates.latitude,
+          address.coordinates.longitude,
+          currentLang
+        );
+
+        if (geocoded && !hasApiFields) {
+          // Use geocoded data only if we don't have API fields
+          location = {
+            city:
+              geocoded.area ||
+              address.city ||
+              address.address.split(",")[1]?.trim() ||
+              "Unknown Location",
+            fullAddress: geocoded.fullAddress || address.address,
+            coordinates: {
+              latitude: address.coordinates.latitude,
+              longitude: address.coordinates.longitude,
+            },
+            addressDetails: {
+              street:
+                geocoded.street ||
+                address.address_1 ||
+                address.address.split(",")[0]?.trim() ||
+                "",
+              postalCode:
+                geocoded.postcode ||
+                address.postcode ||
+                address.address.match(/\d{5}/)?.[0] ||
+                "",
+              locality:
+                geocoded.area ||
+                address.city ||
+                address.address.split(",")[1]?.trim() ||
+                "",
+            },
+            bell_name: address.bell_name || null,
+            floor: address.floor || null,
+          };
+        } else {
+          // Use API fields directly
+          location = {
+            city:
+              address.city ||
+              geocoded?.area ||
+              address.address.split(",")[1]?.trim() ||
+              "Unknown Location",
+            fullAddress: address.address || geocoded?.fullAddress || "",
+            coordinates: {
+              latitude: address.coordinates.latitude,
+              longitude: address.coordinates.longitude,
+            },
+            addressDetails: {
+              street:
+                address.address_1 ||
+                geocoded?.street ||
+                address.address.split(",")[0]?.trim() ||
+                "",
+              postalCode:
+                address.postcode ||
+                geocoded?.postcode ||
+                address.address.match(/\d{5}/)?.[0] ||
+                "",
+              locality:
+                address.city ||
+                geocoded?.area ||
+                address.address.split(",")[1]?.trim() ||
+                "",
+            },
+            bell_name: address.bell_name || null,
+            floor: address.floor || null,
+          };
+        }
+      } else {
+        // If no coordinates, use API fields or parse the address string
+        location = {
+          city:
+            address.city ||
+            address.address.split(",")[1]?.trim() ||
+            address.address.split(",")[0]?.trim() ||
+            "Unknown Location",
+          fullAddress: address.address,
+          coordinates: {
+            latitude: 37.9755, // Default Athens coordinates
+            longitude: 23.7348,
+          },
+          addressDetails: {
+            street:
+              address.address_1 || address.address.split(",")[0]?.trim() || "",
+            postalCode:
+              address.postcode || address.address.match(/\d{5}/)?.[0] || "",
+            locality:
+              address.city || address.address.split(",")[1]?.trim() || "",
+          },
+          bell_name: address.bell_name || null,
+          floor: address.floor || null,
+        };
+      }
+
+      setUserLocation(location);
+
+      // Set bell_name and floor if they exist
+      if (address.bell_name) {
+        setBellName(address.bell_name);
+      }
+      if (address.floor) {
+        setFloor(address.floor);
+      }
+
+      toast.success("Η διεύθυνση συμπληρώθηκε");
+    } catch (error) {
+      console.error("Error setting address from address book:", error);
       toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -143,7 +293,7 @@ function CheckoutPageContent() {
     try {
       // Reverse geocode to get formatted address details
       const geocoded = await reverseGeocode(lat, lng, currentLang);
-      
+
       if (geocoded) {
         const location: UserLocation = {
           city: geocoded.area || "Unknown Location",
@@ -157,9 +307,19 @@ function CheckoutPageContent() {
             postalCode: geocoded.postcode || "",
             locality: geocoded.area || "",
           },
+          // Include bell_name and floor from formattedAddress if available
+          bell_name: geocoded.bell_name || null,
+          floor: geocoded.floor || null,
         };
 
         setUserLocation(location);
+        // Autofill bell_name and floor if they exist
+        if (geocoded.bell_name) {
+          setBellName(geocoded.bell_name);
+        }
+        if (geocoded.floor) {
+          setFloor(geocoded.floor);
+        }
         setAddressInput(""); // Clear the input after selection
         toast.success("Η διεύθυνση ορίστηκε");
       } else {
@@ -172,6 +332,8 @@ function CheckoutPageContent() {
             longitude: lng,
           },
           addressDetails: {},
+          bell_name: null,
+          floor: null,
         };
         setUserLocation(location);
         setAddressInput(""); // Clear the input after selection
@@ -261,7 +423,10 @@ function CheckoutPageContent() {
           }
         }
       } catch (error) {
-        console.error("🛒 [CHECKOUT] Error checking delivery availability:", error);
+        console.error(
+          "🛒 [CHECKOUT] Error checking delivery availability:",
+          error
+        );
       } finally {
         setIsCheckingDelivery(false);
         console.log("🛒 [CHECKOUT] Delivery availability check completed");
@@ -276,6 +441,41 @@ function CheckoutPageContent() {
     coordinates?.longitude,
     orderType,
   ]);
+
+  // Load bell_name and floor from formattedAddress when it changes or on mount
+  useEffect(() => {
+    if (formattedAddress) {
+      // Only update if values exist - don't clear if not present (user might have typed manually)
+      if (
+        formattedAddress.bell_name !== undefined &&
+        formattedAddress.bell_name !== null
+      ) {
+        setBellName(formattedAddress.bell_name);
+      }
+      if (
+        formattedAddress.floor !== undefined &&
+        formattedAddress.floor !== null
+      ) {
+        setFloor(formattedAddress.floor);
+      }
+    }
+  }, [formattedAddress]);
+
+  // Load bell_name and floor from userLocation when it changes
+  useEffect(() => {
+    if (userLocation) {
+      // Only update if values exist
+      if (
+        userLocation.bell_name !== undefined &&
+        userLocation.bell_name !== null
+      ) {
+        setBellName(userLocation.bell_name);
+      }
+      if (userLocation.floor !== undefined && userLocation.floor !== null) {
+        setFloor(userLocation.floor);
+      }
+    }
+  }, [userLocation]);
 
   // Listen to specific order channel for order status updates
   useEffect(() => {
@@ -406,7 +606,7 @@ function CheckoutPageContent() {
         paymentMethod: paymentMethod === "cash" ? "cod" : "card",
         orderComments,
         user: {
-          id: null,
+          id: user.id,
           email: user.email,
           name:
             user.name ||
@@ -423,7 +623,69 @@ function CheckoutPageContent() {
             latitude: userLocation.coordinates.latitude,
             longitude: userLocation.coordinates.longitude,
           },
+          bell_name: bellName || "",
+          floor: floor || "",
         };
+      }
+
+      // Save address to address book ONLY if checkbox is explicitly checked
+      // Do NOT save if checkbox is not checked
+      if (
+        saveAddress === true &&
+        isAuthenticated &&
+        user?.id &&
+        orderType === "delivery" &&
+        userLocation
+      ) {
+        try {
+          // Get CSRF token
+          const csrfResponse = await fetch("/api/csrf");
+          const csrfData = await csrfResponse.json();
+
+          if (csrfData.csrfToken) {
+            // Construct address payload
+            const addressPayload = {
+              customer_id: user.id,
+              address_1:
+                userLocation.addressDetails.street ||
+                userLocation.fullAddress ||
+                "",
+              address_2: "",
+              city: userLocation.city || "",
+              state: "",
+              postcode: userLocation.addressDetails.postalCode || "",
+              country: userLocation.addressDetails.country || "Ελλάδα",
+              bell_name: bellName || "",
+              floor: floor || "",
+              is_default: false,
+            };
+
+            // Save address to address book (only once, before order submission)
+            const addressResponse = await fetch("/api/address-book/create", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-csrf-token": csrfData.csrfToken,
+              },
+              body: JSON.stringify(addressPayload),
+            });
+
+            if (addressResponse.ok) {
+              const addressResult = await addressResponse.json();
+              console.log("✅ Address saved to address book:", addressResult);
+              toast.success("Η διεύθυνση αποθηκεύτηκε στο βιβλίο διευθύνσεων");
+            } else {
+              console.error(
+                "⚠️ Failed to save address:",
+                await addressResponse.json()
+              );
+              // Don't fail the order if address save fails
+            }
+          }
+        } catch (error) {
+          console.error("⚠️ Error saving address:", error);
+          // Don't fail the order if address save fails
+        }
       }
 
       console.log("📦 Submitting order with data:", orderData);
@@ -526,7 +788,7 @@ function CheckoutPageContent() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-xl font-bold text-white">
-              Ολοκληρωση παραγγελιας
+              Ολοκλήρωση παραγγελίας
             </h1>
           </div>
         </div>
@@ -586,8 +848,9 @@ function CheckoutPageContent() {
               const deliveryData = locationCart
                 ? getDeliveryData(locationCart.locationId)
                 : null;
-              const isDeliveryDisabled =
-                deliveryData && !deliveryData.delivery_enabled;
+              const isDeliveryDisabled = !!(
+                deliveryData && !deliveryData.delivery_enabled
+              );
 
               return (
                 <label
@@ -643,12 +906,21 @@ function CheckoutPageContent() {
             </h3>
             {userLocation ? (
               <div className="space-y-3">
+                {isAuthenticated && (
+                  <Button
+                    onClick={() => setIsAddressBookModalOpen(true)}
+                    className="w-full mb-3 bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Επιλεξτε μια απο τις αποθηκευμένες διευθύνσεις
+                  </Button>
+                )}
                 <div>
                   <label className="block text-gray-300 text-sm mb-1">
                     Διεύθυνση
                   </label>
                   <Input
-                    value={userLocation.fullAddress}
+                    value={`${userLocation.addressDetails.street || ""}`.trim()}
                     readOnly
                     className="bg-gray-800 border-gray-700 text-white"
                   />
@@ -675,6 +947,47 @@ function CheckoutPageContent() {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">
+                      Όνομα στο Κουδούνι
+                    </label>
+                    <Input
+                      value={bellName}
+                      onChange={(e) => setBellName(e.target.value)}
+                      placeholder="π.χ. Παππάς"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-1">
+                      Όροφος
+                    </label>
+                    <Input
+                      value={floor}
+                      onChange={(e) => setFloor(e.target.value)}
+                      placeholder="π.χ. 3"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                </div>
+                {isAuthenticated && (
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="save-address"
+                      checked={saveAddress}
+                      onCheckedChange={(checked) =>
+                        setSaveAddress(checked === true)
+                      }
+                    />
+                    <label
+                      htmlFor="save-address"
+                      className="text-sm text-gray-300 cursor-pointer"
+                    >
+                      Αποθήκευση διεύθυνσης στο βιβλίο διευθύνσεων
+                    </label>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -682,6 +995,16 @@ function CheckoutPageContent() {
                   Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
                   εισάγετε μια νέα διεύθυνση
                 </p>
+                {isAuthenticated && (
+                  <Button
+                    onClick={() => setIsAddressBookModalOpen(true)}
+                    disabled={isLoadingLocation}
+                    className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Επιλεξτε μια απο τις αποθηκευμένες διευθύνσεις
+                  </Button>
+                )}
                 <Button
                   onClick={handleAutocompleteFromNavbar}
                   disabled={!coordinates || isLoadingLocation}
@@ -872,6 +1195,13 @@ function CheckoutPageContent() {
           );
         })()}
       </div>
+
+      {/* Address Book Modal */}
+      <AddressBookModal
+        isOpen={isAddressBookModalOpen}
+        onClose={() => setIsAddressBookModalOpen(false)}
+        onAddressSelect={handleAddressBookSelect}
+      />
     </div>
   );
 }

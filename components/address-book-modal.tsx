@@ -10,6 +10,8 @@ interface Address {
   label: string;
   address: string;
   isDefault?: boolean;
+  bell_name?: string | null;
+  floor?: string | null;
   coordinates?: {
     latitude: number;
     longitude: number;
@@ -100,7 +102,18 @@ export function AddressBookModal({
                     apiAddress.postcode
                   }, ${apiAddress.country?.name || "Greece"}`,
                 isDefault: apiAddress.is_default || false,
-                coordinates: undefined, // API doesn't provide coordinates in this format
+                bell_name: apiAddress.bell_name || null,
+                floor: apiAddress.floor || null,
+                coordinates: apiAddress.coordinates
+                  ? {
+                      latitude: parseFloat(apiAddress.coordinates.latitude),
+                      longitude: parseFloat(apiAddress.coordinates.longitude),
+                    }
+                  : undefined,
+                // Include original API fields for checkout
+                address_1: apiAddress.address_1 || null,
+                city: apiAddress.city || null,
+                postcode: apiAddress.postcode || null,
               }));
               console.log("📚 Transformed address list:", addressList);
             } else {
@@ -207,25 +220,51 @@ export function AddressBookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .address-modal-scroll::-webkit-scrollbar {
+              width: 8px;
+            }
+            .address-modal-scroll::-webkit-scrollbar-track {
+              background: #1a1a1a;
+              border-radius: 10px;
+            }
+            .address-modal-scroll::-webkit-scrollbar-thumb {
+              background: #4a4a4a;
+              border-radius: 10px;
+              border: 2px solid #1a1a1a;
+            }
+            .address-modal-scroll::-webkit-scrollbar-thumb:hover {
+              background: #5a5a5a;
+            }
+            .address-modal-scroll {
+              scrollbar-width: thin;
+              scrollbar-color: #4a4a4a #1a1a1a;
+            }
+          `,
+        }}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-[#1a1a1a] rounded-lg w-full max-w-md mx-4 text-white">
+        <div className="relative bg-[#1a1a1a] rounded-xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl border border-gray-800 text-white">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
           <h2 className="text-2xl font-bold text-white">Πού;</h2>
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"
             onClick={onClose}
           >
             <X className="w-6 h-6" />
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 overflow-y-auto flex-1 min-h-0 address-modal-scroll">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -238,20 +277,38 @@ export function AddressBookModal({
                   {addresses.map((address, index) => (
                     <div key={address.id} className="space-y-4">
                       <div
-                        className="flex items-center justify-between p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors"
+                        className="flex items-center justify-between p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors border border-gray-700/50"
                         onClick={() => handleAddressSelect(address)}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                             <Home className="w-4 h-4 text-white" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <div className="text-blue-400 font-medium">
                               {address.label}
                             </div>
                             <div className="text-gray-300 text-sm">
                               {address.address}
                             </div>
+                            {(address.bell_name || address.floor) && (
+                              <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-300">
+                                {address.bell_name && (
+                                  <div>
+                                    <span className="text-gray-500">Κουδούνι:</span>{" "}
+                                    <span className="font-medium">
+                                      {address.bell_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {address.floor && (
+                                  <div>
+                                    <span className="text-gray-500">Όροφος:</span>{" "}
+                                    <span className="font-medium">{address.floor}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <Button
@@ -278,7 +335,7 @@ export function AddressBookModal({
 
               {/* Add New Address */}
               <div
-                className="flex items-center gap-3 p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors"
+                className="flex items-center gap-3 p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors border border-gray-700/50"
                 onClick={handleAddNewAddress}
               >
                 <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
@@ -311,5 +368,6 @@ export function AddressBookModal({
         </div>
       </div>
     </div>
+    </>
   );
 }

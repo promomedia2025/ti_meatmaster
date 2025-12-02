@@ -35,7 +35,7 @@ export function AdminSidebar() {
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-white">Admin Menu</h2>
+            <h2 className="text-xl font-bold text-white">Κεντρική πύλη</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -57,7 +57,7 @@ export function AdminSidebar() {
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
-              Dashboard
+              Ζωντανές παραγγελίες
             </Link>
             <Link
               href="/admin/orders"
@@ -68,7 +68,7 @@ export function AdminSidebar() {
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
-              Παραγγελιες
+              Ιστορικό παραγγελιών
             </Link>
             <Link
               href="/admin/menu"
@@ -79,17 +79,9 @@ export function AdminSidebar() {
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
-              Menu
+              Μενού
             </Link>
-            <button
-              onClick={() => {
-                setIsSidebarOpen(false);
-                // Handle Order History navigation
-              }}
-              className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Ιστορικο παραγγελιων
-            </button>
+
             <Link
               href="/admin/intervals"
               onClick={() => setIsSidebarOpen(false)}
@@ -99,7 +91,7 @@ export function AdminSidebar() {
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
-              Χρονος παραγγελιας
+              Χρόνος παραγγελίας
             </Link>
             <button
               onClick={() => {
@@ -109,7 +101,7 @@ export function AdminSidebar() {
               className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors flex items-center gap-2"
             >
               <Printer className="w-5 h-5" />
-              Επιλογες εκτυπωτη
+              Επιλογές εκτυπωτή
             </button>
           </nav>
         </div>

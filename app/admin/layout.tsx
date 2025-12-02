@@ -39,11 +39,8 @@ export default function AdminLayout({
     <PusherProvider>
       <div className="min-h-screen bg-[#1a1a1a] flex">
         <AdminSidebar />
-        <div className="flex-1 lg:ml-64">
-          {children}
-        </div>
+        <div className="flex-1 lg:ml-64">{children}</div>
       </div>
     </PusherProvider>
   );
 }
-

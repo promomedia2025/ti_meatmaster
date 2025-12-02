@@ -46,6 +46,12 @@ export async function GET(request: NextRequest) {
     console.log("✅ External API response status:", response.status);
     console.log("✅ External API response data type:", typeof data);
     console.log("✅ External API response keys:", Object.keys(data || {}));
+    
+    // Log a sample order to see what's available
+    if (data.data && data.data.length > 0) {
+      console.log("📋 Sample order attributes:", JSON.stringify(data.data[0].attributes, null, 2));
+      console.log("📋 Sample order includes:", data.included ? JSON.stringify(data.included, null, 2) : "No included data");
+    }
 
     // Transform the response structure
     // The API returns data in format: { data: [{ type, id, attributes: {...} }] }
@@ -53,6 +59,11 @@ export async function GET(request: NextRequest) {
     const transformedOrders = Array.isArray(data.data)
       ? data.data.map((item: any) => {
           const attrs = item.attributes || {};
+          
+          // Extract bell_name and floor - they should be directly in attrs
+          const bell_name = attrs.bell_name || null;
+          const floor = attrs.floor || null;
+          
           return {
             order_id: attrs.order_id,
             order_date: attrs.order_date || attrs.created_at,
@@ -79,6 +90,8 @@ export async function GET(request: NextRequest) {
             order_type_name: attrs.order_type_name,
             comment: attrs.comment,
             total_items: attrs.total_items,
+            bell_name: bell_name,
+            floor: floor,
           };
         })
       : [];

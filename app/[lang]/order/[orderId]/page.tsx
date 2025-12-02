@@ -147,6 +147,66 @@ export default function OrderStatusPage() {
     return "bg-gray-50 border-gray-200 text-gray-700";
   };
 
+  const getStatusText = (statusName: string) => {
+    const statusLower = statusName?.toLowerCase() || "";
+
+    // Exact matches first
+    switch (statusLower) {
+      case "delivery":
+      case "delivered":
+      case "complete":
+      case "completed":
+        return "Παραδόθηκε";
+      case "received":
+        return "Ελήφθη";
+      case "pending":
+        return "Εκκρεμεί";
+      case "cancelled":
+      case "canceled":
+        return "Ακυρώθηκε";
+      case "preparing":
+      case "in preparation":
+        return "Σε προετοιμασία";
+      case "transit":
+      case "on the way":
+      case "in transit":
+        return "Σε διανομή";
+      case "ready":
+        return "Έτοιμο";
+      default:
+        // Check for partial matches (order matters - more specific first)
+        if (
+          statusLower.includes("transit") ||
+          statusLower.includes("on the way")
+        ) {
+          return "Σε διανομή";
+        }
+        if (
+          statusLower.includes("delivered") ||
+          statusLower.includes("complete")
+        ) {
+          return "Παραδόθηκε";
+        }
+        if (statusLower.includes("receive")) {
+          return "Ελήφθη";
+        }
+        if (statusLower.includes("pending") || statusLower.includes("wait")) {
+          return "Εκκρεμεί";
+        }
+        if (statusLower.includes("cancel")) {
+          return "Ακυρώθηκε";
+        }
+        if (statusLower.includes("prepar") || statusLower.includes("cook")) {
+          return "Σε προετοιμασία";
+        }
+        if (statusLower.includes("deliver")) {
+          return "Σε διανομή";
+        }
+        // Return original if no match found
+        return statusName;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -198,7 +258,7 @@ export default function OrderStatusPage() {
                 {getStatusIcon(orderStatus.statusName)}
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                {orderStatus.statusName}
+                {getStatusText(orderStatus.statusName)}
               </h2>
               <p className="text-gray-400 text-sm mb-6">
                 Τελευταία ενημέρωση:{" "}

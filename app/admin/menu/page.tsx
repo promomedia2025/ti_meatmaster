@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   Select,
@@ -41,6 +42,7 @@ interface MenuOption {
 }
 
 export default function AdminMenuPage() {
+  const router = useRouter();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,6 +67,13 @@ export default function AdminMenuPage() {
         const response = await fetch("/api/admin/get-menu-categories", {
           credentials: "include",
         });
+
+        // Check if response is 500 - redirect to login
+        if (response.status === 500) {
+          console.error("Categories API returned 500 - redirecting to login");
+          router.push("/admin/login");
+          return;
+        }
 
         const result = await response.json();
         console.log("Categories API result:", result);
@@ -92,7 +101,7 @@ export default function AdminMenuPage() {
     };
 
     fetchCategories();
-  }, []);
+  }, [router]);
 
   // Fetch menu items
   useEffect(() => {

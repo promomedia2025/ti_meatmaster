@@ -2,6 +2,7 @@
 
 import { X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import GooglePlacesCustom from "./google-places-custom";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -20,6 +21,8 @@ export function AddAddressModal({
   const { user } = useAuth();
   const [address, setAddress] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [bellName, setBellName] = useState("");
+  const [floor, setFloor] = useState("");
 
   // Handle address input change
   const handleAddressChange = (value: string) => {
@@ -128,6 +131,40 @@ export function AddAddressModal({
             </div>
           )}
 
+          {/* Bell Name Field */}
+          {selectedPlace && (
+            <div className="space-y-2">
+              <label htmlFor="bellName" className="text-base font-medium text-white">
+                Όνομα στο Κουδούνι
+              </label>
+              <Input
+                id="bellName"
+                type="text"
+                value={bellName}
+                onChange={(e) => setBellName(e.target.value)}
+                placeholder="π.χ. Παππάς"
+                className="w-full bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+              />
+            </div>
+          )}
+
+          {/* Floor Field */}
+          {selectedPlace && (
+            <div className="space-y-2">
+              <label htmlFor="floor" className="text-base font-medium text-white">
+                Όροφος
+              </label>
+              <Input
+                id="floor"
+                type="text"
+                value={floor}
+                onChange={(e) => setFloor(e.target.value)}
+                placeholder="π.χ. 3"
+                className="w-full bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+              />
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button
@@ -177,28 +214,10 @@ export function AddAddressModal({
                     }
                   });
 
-                  // Validate country is Greece - force to Greece if invalid
-                  const countryCode = selectedPlace.address_components?.find(
-                    (c: any) => c.types.includes("country")
-                  )?.short_name || "";
-                  
-                  const isValidGreece = countryCode === "GR" || 
-                                        country?.toLowerCase().includes("greece") ||
-                                        country?.toLowerCase().includes("ελλάδα") ||
-                                        country?.toLowerCase().includes("hellas");
-                  
-                  if (!isValidGreece && country) {
-                    console.warn("⚠️ [ADD-ADDRESS] Invalid country detected:", {
-                      country,
-                      countryCode,
-                      overridingToGreece: true,
-                    });
-                  }
-                  
-                  const finalCountry = isValidGreece ? (country || "Ελλάδα") : "Ελλάδα";
-
-                  // Construct address_1 (street number + route)
-                  const address1 = `${streetNumber} ${route}`.trim();
+                  // Construct address_1 (route + street number) - Greek format
+                  const address1 = route && streetNumber 
+                    ? `${route} ${streetNumber}`.trim()
+                    : route || streetNumber || selectedPlace.formatted_address;
 
                   // API body structure
                   const apiBody = {
@@ -208,7 +227,9 @@ export function AddAddressModal({
                     city: city || "",
                     state: state || "",
                     postcode: postcode || "",
-                    country: finalCountry,
+                    country: country || "Ελλάδα",
+                    bell_name: bellName || "",
+                    floor: floor || "",
                     is_default: false,
                   };
 

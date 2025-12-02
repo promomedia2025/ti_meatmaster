@@ -25,6 +25,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useServerCart } from "@/lib/server-cart-context";
 import { useLocation } from "@/lib/location-context";
 import { useLocationFromUrl } from "@/lib/use-location-from-url";
+import { useCartSidebar } from "@/lib/cart-sidebar-context";
 import { AddressBookResponse } from "@/lib/types";
 
 interface UserLocation {
@@ -45,9 +46,11 @@ interface UserLocation {
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
-  const { locationCarts, globalSummary, removeItem, updateQuantity } =
+  const { locationCarts, globalSummary, removeItem, updateQuantity, getLocationCart } =
     useServerCart();
   const { setCoordinates } = useLocation();
+  const { locationId } = useLocationFromUrl();
+  const { setCartViewLocationId } = useCartSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -277,34 +280,10 @@ export function Header() {
       const houseNumber = address.house_number || "";
       const postalCode = address.postcode || "";
       const locality = address.suburb || address.neighbourhood || "";
-      let country = address.country || "";
+      const country = address.country || "";
 
-      // Validate and fix country - must be Greece
-      const countryCode = data.address?.country_code?.toLowerCase() || "";
-      const isValidGreece = countryCode === "gr" || 
-                            country?.toLowerCase().includes("greece") ||
-                            country?.toLowerCase().includes("ελλάδα") ||
-                            country?.toLowerCase().includes("hellas");
-      
-      if (!isValidGreece && country) {
-        console.warn("⚠️ [HEADER-REVERSE-GEOCODE] Invalid country detected:", {
-          country,
-          countryCode,
-          overridingToGreece: true,
-        });
-      }
-      
-      country = isValidGreece ? country : "Ελλάδα";
-
-      // Build full address string - remove invalid country from display_name if present
-      let fullAddress = data.display_name || "Unknown Location";
-      
-      // Remove invalid country names from the address string
-      if (!isValidGreece && country && fullAddress.toLowerCase().includes(country.toLowerCase())) {
-        // Remove the invalid country from the address
-        const countryRegex = new RegExp(`,\\s*${country.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-        fullAddress = fullAddress.replace(countryRegex, '').trim();
-      }
+      // Build full address string
+      const fullAddress = data.display_name || "Unknown Location";
 
       return {
         city,
@@ -474,33 +453,6 @@ export function Header() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              {/* Cart Button - Only show on restaurant pages */}
-              {isRestaurantPage && (
-                <button
-                  onClick={() => setIsCartSidebarOpen(true)}
-                  className="flex items-center gap-2 lg:gap-3 bg-[#ff9328ff] hover:bg-[#915316] text-white font-medium py-2 lg:py-3 px-3 lg:px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
-                >
-                  {globalSummary.totalItems > 0 && (
-                    <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                      {globalSummary.totalItems}
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4" />
-                    {/* Show icon only on md, full text on lg+ */}
-                    <span className="hidden lg:inline">
-                      Δες την παραγγελία σου
-                    </span>
-                  </div>
-                  {globalSummary.totalAmount > 0 && (
-                    <div className="text-right">
-                      <div className="text-sm font-bold">
-                        €{globalSummary.totalAmount.toFixed(2)}
-                      </div>
-                    </div>
-                  )}
-                </button>
-              )}
 
               {isAuthenticated ? (
                 <>

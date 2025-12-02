@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useEffect } from "react";
+import { useState, Fragment, useEffect, useRef, useCallback } from "react";
 import { X, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,12 +51,15 @@ interface AdminOrder {
   order_type_name?: string;
   comment?: string;
   total_items?: number;
+  bell_name?: string | null;
+  floor?: string | null;
 }
 
 interface AdminOrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   order: AdminOrder | null;
+  autoPrintOnAccept?: boolean; // New prop to trigger auto-print
 }
 
 // Component to generate dynamic print styles based on paper size
@@ -65,7 +68,7 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
   const isThermal = paperSize === "80mm" || paperSize === "58mm";
 
   let pageSizeCSS = "margin: 1cm;";
-  
+
   if (isThermal) {
     // Thermal printer - continuous feed
     pageSizeCSS = `
@@ -85,7 +88,8 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
   }
 
   // Generate paper-size specific styles
-  const paperSpecificStyles = isThermal ? `
+  const paperSpecificStyles = isThermal
+    ? `
     /* Thermal printer - Compact layout */
     .invoice-print-content {
       width: ${paperConfig.width}mm !important;
@@ -246,7 +250,9 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     body {
       width: ${paperConfig.width}mm !important;
     }
-  ` : paperSize === "A5" ? `
+  `
+    : paperSize === "A5"
+    ? `
     /* A5 - Medium layout */
     .invoice-print-content {
       font-size: 11px !important;
@@ -265,7 +271,8 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     .invoice-print-content table td {
       padding: 6px 4px !important;
     }
-  ` : `
+  `
+    : `
     /* A4 - Standard layout (default) */
     .invoice-print-content {
       font-size: 12px !important;
@@ -367,98 +374,18 @@ export function AdminOrderDetailsModal({
   isOpen,
   onClose,
   order,
+  autoPrintOnAccept = false,
 }: AdminOrderDetailsModalProps) {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [paperSize, setPaperSize] = useState(getPrinterPaperSize());
 
-  // Update paper size when it changes in localStorage or when invoice modal opens
-  useEffect(() => {
-    // Refresh paper size when invoice modal opens
-    if (isInvoiceModalOpen) {
-      setPaperSize(getPrinterPaperSize());
-    }
-
-    const handleStorageChange = () => {
-      setPaperSize(getPrinterPaperSize());
-    };
-
-    // Listen for storage changes (when user selects a different paper size)
-    window.addEventListener("storage", handleStorageChange);
-    
-    // Also check periodically for changes (in case same window)
-    const interval = setInterval(() => {
-      if (isInvoiceModalOpen) {
-        const currentSize = getPrinterPaperSize();
-        if (currentSize !== paperSize) {
-          setPaperSize(currentSize);
-        }
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [paperSize, isInvoiceModalOpen]);
-
-  if (!isOpen || !order) return null;
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("el-GR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const formatTime = (timeString: string) => {
-    return timeString;
-  };
-
-  const formatDateTime = (dateString: string, timeString: string) => {
-    const date = new Date(dateString);
-    const [hours, minutes] = timeString.split(":");
-    date.setHours(parseInt(hours || "0"), parseInt(minutes || "0"));
-    return date.toLocaleString("el-GR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatCurrency = (value: string | number) => {
-    const numValue = typeof value === "string" ? parseFloat(value) : value;
-    return numValue.toFixed(2);
-  };
-
-  const getPaymentMethodName = (payment?: string) => {
-    if (!payment) return "";
-    return payment === "cod" ? "Μετρητά" : "Κάρτα";
-  };
-
-  const groupMenuOptions = (menuOptions: any[]) => {
-    if (!menuOptions || menuOptions.length === 0) return {};
-    const grouped: { [key: string]: any[] } = {};
-    menuOptions.forEach((option) => {
-      const category =
-        option.order_option_category || option.category || "Other";
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(option);
-    });
-    return grouped;
-  };
-
-  const handlePrint = () => {
+  // Define handlePrint using useCallback (must be before useEffect that uses it)
+  const handlePrint = useCallback(() => {
     // Get current paper size configuration
     const paperConfig = getPaperSizeConfig(paperSize);
-    
+
     console.log("🖨️ [PRINT] Printing with paper size:", paperConfig);
-    
+
     // Check if we're in an Electron environment
     const win = window as any;
     const isElectron =
@@ -528,20 +455,152 @@ export function AdminOrderDetailsModal({
 
     // Fallback to browser print dialog if not in Electron or if Electron printing failed
     window.print();
+  }, [paperSize]);
+
+  // Handle auto-print when accept is clicked
+  useEffect(() => {
+    if (autoPrintOnAccept && isOpen && order) {
+      // Small delay to ensure modal is fully rendered
+      const openTimer = setTimeout(() => {
+        setIsInvoiceModalOpen(true);
+      }, 100);
+
+      // Wait 3.5 seconds after invoice opens, then print and close
+      const printTimer = setTimeout(() => {
+        handlePrint();
+        // Close invoice modal after a short delay to allow print to start
+        setTimeout(() => {
+          setIsInvoiceModalOpen(false);
+        }, 500);
+      }, 3600); // 100ms delay + 3500ms display = 3600ms total
+
+      return () => {
+        clearTimeout(openTimer);
+        clearTimeout(printTimer);
+      };
+    }
+  }, [autoPrintOnAccept, isOpen, order, handlePrint]);
+
+  // Update paper size when it changes in localStorage or when invoice modal opens
+  useEffect(() => {
+    // Refresh paper size when invoice modal opens
+    if (isInvoiceModalOpen) {
+      setPaperSize(getPrinterPaperSize());
+    }
+
+    const handleStorageChange = () => {
+      setPaperSize(getPrinterPaperSize());
+    };
+
+    // Listen for storage changes (when user selects a different paper size)
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check periodically for changes (in case same window)
+    const interval = setInterval(() => {
+      if (isInvoiceModalOpen) {
+        const currentSize = getPrinterPaperSize();
+        if (currentSize !== paperSize) {
+          setPaperSize(currentSize);
+        }
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [paperSize, isInvoiceModalOpen]);
+
+  // Early return moved after all hooks to maintain hook order
+  if (!isOpen || !order) return null;
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("el-GR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString;
+  };
+
+  const formatDateTime = (dateString: string, timeString: string) => {
+    const date = new Date(dateString);
+    const [hours, minutes] = timeString.split(":");
+    date.setHours(parseInt(hours || "0"), parseInt(minutes || "0"));
+    return date.toLocaleString("el-GR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatCurrency = (value: string | number) => {
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    return numValue.toFixed(2);
+  };
+
+  const getPaymentMethodName = (payment?: string) => {
+    if (!payment) return "";
+    return payment === "cod" ? "Μετρητά" : "Κάρτα";
+  };
+
+  const groupMenuOptions = (menuOptions: any[]) => {
+    if (!menuOptions || menuOptions.length === 0) return {};
+    const grouped: { [key: string]: any[] } = {};
+    menuOptions.forEach((option) => {
+      const category =
+        option.order_option_category || option.category || "Other";
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(option);
+    });
+    return grouped;
   };
 
   return (
     <Fragment>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .order-modal-scroll::-webkit-scrollbar {
+              width: 8px;
+            }
+            .order-modal-scroll::-webkit-scrollbar-track {
+              background: #1a1a1a;
+              border-radius: 10px;
+            }
+            .order-modal-scroll::-webkit-scrollbar-thumb {
+              background: #4a4a4a;
+              border-radius: 10px;
+              border: 2px solid #1a1a1a;
+            }
+            .order-modal-scroll::-webkit-scrollbar-thumb:hover {
+              background: #5a5a5a;
+            }
+            .order-modal-scroll {
+              scrollbar-width: thin;
+              scrollbar-color: #4a4a4a #1a1a1a;
+            }
+          `,
+        }}
+      />
       <div
-        className="order-details-modal fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
+        className="order-details-modal fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto"
         onClick={onClose}
       >
         <div
-          className="bg-[#1a1a1a] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+          className="bg-[#1a1a1a] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-gray-800 relative my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-[#1a1a1a] border-b border-gray-700 p-6 flex items-center justify-between">
+          <div className="sticky top-0 bg-[#1a1a1a] border-b border-gray-700 p-6 flex items-center justify-between z-10 rounded-t-xl">
             <div>
               <h2 className="text-2xl font-bold text-white">
                 Παραγγελία #{order.order_id}
@@ -552,16 +611,16 @@ export function AdminOrderDetailsModal({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
+          {/* Content - Scrollable */}
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0 order-modal-scroll">
             {/* Order Info */}
-            <div className="bg-[#2a2a2a] rounded-lg p-4">
+            <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
               <h3 className="text-lg font-semibold text-white mb-4">
                 Πληροφορίες Παραγγελίας
               </h3>
@@ -599,7 +658,7 @@ export function AdminOrderDetailsModal({
 
             {/* Customer Info */}
             {(order.customer_name || order.telephone || order.email) && (
-              <div className="bg-[#2a2a2a] rounded-lg p-4">
+              <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Πληροφορίες Πελάτη
                 </h3>
@@ -626,8 +685,35 @@ export function AdminOrderDetailsModal({
               </div>
             )}
 
+            {/* Delivery Address */}
+            {order.order_type === "delivery" && order.location_name && (
+              <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Διεύθυνση Παράδοσης
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">Διεύθυνση:</span>
+                    <p className="text-white">{order.location_name}</p>
+                  </div>
+                  {order.floor && (
+                    <div>
+                      <span className="text-gray-400">Όροφος:</span>
+                      <p className="text-white">{order.floor}</p>
+                    </div>
+                  )}
+                  {order.bell_name && (
+                    <div>
+                      <span className="text-gray-400">Κουδούνι:</span>
+                      <p className="text-white">{order.bell_name}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Order Items */}
-            <div className="bg-[#2a2a2a] rounded-lg p-4">
+            <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
               <h3 className="text-lg font-semibold text-white mb-4">
                 Προϊόντα ({order.order_menus?.length || 0})
               </h3>
@@ -636,7 +722,7 @@ export function AdminOrderDetailsModal({
                   order.order_menus.map((menu) => (
                     <div
                       key={menu.order_menu_id}
-                      className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-700"
+                      className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-700/50 hover:border-gray-600 transition-colors"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
@@ -667,13 +753,25 @@ export function AdminOrderDetailsModal({
                           <div className="space-y-1">
                             {menu.menu_options.map(
                               (option: any, idx: number) => {
-                                const quantity = option.quantity > 1 ? `${option.quantity} × ` : '';
-                                const price = option.order_option_price && parseFloat(option.order_option_price) > 0 
-                                  ? ` (${parseFloat(option.order_option_price).toFixed(2)}€)` 
-                                  : '';
+                                const quantity =
+                                  option.quantity > 1
+                                    ? `${option.quantity} × `
+                                    : "";
+                                const price =
+                                  option.order_option_price &&
+                                  parseFloat(option.order_option_price) > 0
+                                    ? ` (${parseFloat(
+                                        option.order_option_price
+                                      ).toFixed(2)}€)`
+                                    : "";
                                 return (
-                                  <p key={idx} className="text-gray-300 text-xs">
-                                    • {quantity}{option.order_option_name || option.name}{price}
+                                  <p
+                                    key={idx}
+                                    className="text-gray-300 text-xs"
+                                  >
+                                    • {quantity}
+                                    {option.order_option_name || option.name}
+                                    {price}
                                   </p>
                                 );
                               }
@@ -692,7 +790,7 @@ export function AdminOrderDetailsModal({
             </div>
 
             {/* Order Totals */}
-            <div className="bg-[#2a2a2a] rounded-lg p-4">
+            <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
               <h3 className="text-lg font-semibold text-white mb-4">
                 Σύνοψη Παραγγελίας
               </h3>
@@ -731,29 +829,29 @@ export function AdminOrderDetailsModal({
 
             {/* Comment */}
             {order.comment && (
-              <div className="bg-[#2a2a2a] rounded-lg p-4">
+              <div className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700/50 shadow-lg">
                 <h3 className="text-lg font-semibold text-white mb-2">
                   Σχόλιο
                 </h3>
                 <p className="text-gray-300">{order.comment}</p>
               </div>
             )}
+          </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 space-y-3">
-              <Button
-                onClick={() => setIsInvoiceModalOpen(true)}
-                className="w-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600"
-              >
-                Προβολή τιμολογίου
-              </Button>
-              <Button
-                onClick={onClose}
-                className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white"
-              >
-                Κλείσιμο
-              </Button>
-            </div>
+          {/* Action Buttons - Fixed at bottom */}
+          <div className="p-6 pt-0 space-y-3 border-t border-gray-700 bg-[#1a1a1a] rounded-b-xl">
+            <Button
+              onClick={() => setIsInvoiceModalOpen(true)}
+              className="w-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600 transition-all"
+            >
+              Προβολή τιμολογίου
+            </Button>
+            <Button
+              onClick={onClose}
+              className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white transition-all"
+            >
+              Κλείσιμο
+            </Button>
           </div>
         </div>
       </div>
@@ -764,38 +862,38 @@ export function AdminOrderDetailsModal({
           {/* Print Styles */}
           <PrintStyles paperSize={paperSize} />
           <div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-[200] p-4 no-print"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4 no-print overflow-y-auto"
             onClick={() => setIsInvoiceModalOpen(false)}
           >
             <div
-              className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative invoice-print-content"
+              className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative invoice-print-content my-auto"
               data-paper-size={paperSize}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Invoice Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-300 p-4 flex items-center justify-between shadow-sm no-print">
+              <div className="sticky top-0 bg-white border-b border-gray-300 p-4 flex items-center justify-between shadow-sm no-print z-10 rounded-t-xl">
                 <h2 className="text-xl font-bold text-black">
                   Παραγγελία #{order.order_id}
                 </h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrint}
-                    className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded"
+                    className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-lg"
                     title="Εκτύπωση"
                   >
                     <Printer className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setIsInvoiceModalOpen(false)}
-                    className="text-gray-600 hover:text-black transition-colors"
+                    className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-lg"
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
 
-              {/* Invoice Content */}
-              <div className="p-5 bg-white text-black">
+              {/* Invoice Content - Scrollable */}
+              <div className="p-5 bg-white text-black overflow-y-auto flex-1">
                 {/* Invoice Title */}
                 <div className="mb-4">
                   <div className="flex justify-between items-start">
@@ -828,6 +926,18 @@ export function AdminOrderDetailsModal({
                         <br />
                         <address className="not-italic">
                           {order.location_name || "N/A"}
+                          {order.floor && (
+                            <>
+                              <br />
+                              Όροφος: {order.floor}
+                            </>
+                          )}
+                          {order.bell_name && (
+                            <>
+                              <br />
+                              Κουδούνι: {order.bell_name}
+                            </>
+                          )}
                         </address>
                       </div>
                     )}
@@ -879,23 +989,39 @@ export function AdminOrderDetailsModal({
                                     <td className="border border-gray-300 p-2 text-left">
                                       <b>{menu.name}</b>
                                       <br />
-                                      {menu.menu_options && menu.menu_options.length > 0 && (
-                                        <ul className="list-none pl-0 mt-1">
-                                          {menu.menu_options.map(
-                                            (option: any, idx: number) => {
-                                              const quantity = option.quantity > 1 ? `${option.quantity} × ` : '';
-                                              const price = option.order_option_price && parseFloat(option.order_option_price) > 0 
-                                                ? ` (${parseFloat(option.order_option_price).toFixed(2)}€)` 
-                                                : '';
-                                              return (
-                                                <li key={idx} className="text-xs">
-                                                  • {quantity}{option.order_option_name || option.name}{price}
-                                                </li>
-                                              );
-                                            }
-                                          )}
-                                        </ul>
-                                      )}
+                                      {menu.menu_options &&
+                                        menu.menu_options.length > 0 && (
+                                          <ul className="list-none pl-0 mt-1">
+                                            {menu.menu_options.map(
+                                              (option: any, idx: number) => {
+                                                const quantity =
+                                                  option.quantity > 1
+                                                    ? `${option.quantity} × `
+                                                    : "";
+                                                const price =
+                                                  option.order_option_price &&
+                                                  parseFloat(
+                                                    option.order_option_price
+                                                  ) > 0
+                                                    ? ` (${parseFloat(
+                                                        option.order_option_price
+                                                      ).toFixed(2)}€)`
+                                                    : "";
+                                                return (
+                                                  <li
+                                                    key={idx}
+                                                    className="text-xs"
+                                                  >
+                                                    • {quantity}
+                                                    {option.order_option_name ||
+                                                      option.name}
+                                                    {price}
+                                                  </li>
+                                                );
+                                              }
+                                            )}
+                                          </ul>
+                                        )}
                                       {menu.comment && (
                                         <div className="mt-1">
                                           <small>

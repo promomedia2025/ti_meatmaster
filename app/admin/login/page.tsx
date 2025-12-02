@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-function AdminLoginForm() {
+function AdminLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
@@ -147,11 +147,11 @@ function AdminLoginForm() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a]">
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
         <div className="text-white">Loading...</div>
       </div>
     }>
-      <AdminLoginForm />
+      <AdminLoginContent />
     </Suspense>
   );
 }

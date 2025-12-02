@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
       state,
       postcode,
       country,
+      bell_name,
+      floor,
       is_default,
     } = body;
 
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
       state: state || "",
       postcode,
       country,
+      bell_name: bell_name || "",
+      floor: floor || "",
       is_default: is_default || false,
     });
 
@@ -90,6 +94,8 @@ export async function POST(request: NextRequest) {
         state: state || "",
         postcode,
         country,
+        bell_name: bell_name || "",
+        floor: floor || "",
         is_default: is_default || false,
       }),
     });

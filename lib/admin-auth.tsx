@@ -45,7 +45,9 @@ export function useAdminAuth() {
           isExpired: false,
           error: null,
         });
-        router.push("/admin/login");
+        if (pathname !== "/admin/login") {
+          router.replace("/admin/login");
+        }
         return;
       }
 
@@ -76,9 +78,11 @@ export function useAdminAuth() {
 
         if (result.expired) {
           toast.error("Your token has expired, please login again");
-          router.push("/admin/login?expired=true");
+          router.replace("/admin/login?expired=true");
         } else {
-          router.push("/admin/login");
+          if (pathname !== "/admin/login") {
+            router.replace("/admin/login");
+          }
         }
       }
     } catch (error) {
@@ -94,7 +98,9 @@ export function useAdminAuth() {
         toast.error("Failed to verify authentication. Please login again.");
       }
 
-      router.push("/admin/login");
+      if (pathname !== "/admin/login") {
+        router.replace("/admin/login");
+      }
     }
   }, [router, pathname]);
 
@@ -113,7 +119,7 @@ export function useAdminAuth() {
         error: "Your token has expired, please login again",
       });
       toast.error("Your token has expired, please login again");
-      router.push("/admin/login");
+      router.replace("/admin/login?expired=true");
       return true;
     }
     return false;

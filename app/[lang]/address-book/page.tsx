@@ -16,6 +16,8 @@ interface Address {
   city: string;
   state: string;
   postcode: string;
+  bell_name: string | null;
+  floor: string | null;
   country: {
     id: number;
     name: string;
@@ -264,6 +266,24 @@ export default function AddressBookPage() {
                       <p className="text-gray-400">
                         {address.formatted_address}
                       </p>
+                      {(address.bell_name || address.floor) && (
+                        <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-300">
+                          {address.bell_name && (
+                            <div>
+                              <span className="text-gray-500">Κουδούνι:</span>{" "}
+                              <span className="font-medium">
+                                {address.bell_name}
+                              </span>
+                            </div>
+                          )}
+                          {address.floor && (
+                            <div>
+                              <span className="text-gray-500">Όροφος:</span>{" "}
+                              <span className="font-medium">{address.floor}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">

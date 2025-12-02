@@ -448,6 +448,10 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const buildInitialSelections = useCallback(
     (menuItem: LocationMenuItem, cartItem: CartItem): SelectedOption[] => {
       if (!menuItem.menu_options || !cartItem.options) {
+        console.log("No menu options or cart item options found:", {
+          hasMenuOptions: !!menuItem.menu_options,
+          hasCartOptions: !!cartItem.options,
+        });
         return [];
       }
 
@@ -472,6 +476,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           );
 
         if (!matchingValues.length) {
+          console.log(
+            `No matching values found for option ${option.option_name}`
+          );
           return;
         }
 
@@ -493,6 +500,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         });
       });
 
+      console.log(
+        `Built ${selections.length} initial selections from ${cartItem.options.length} cart options`
+      );
       return selections;
     },
     [isSingleSelectMenuOption]
@@ -541,6 +551,8 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
   const handleCartItemOptionsClick = useCallback(
     async (cart: ServerLocationCart, cartItem: CartItem) => {
+      console.log("Cart item clicked:", cartItem);
+
       if (
         !locationId ||
         isLoadingMenuOptions ||
@@ -556,27 +568,82 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         let menuItems = menuItemsCacheRef.current.get(cart.locationId);
 
         if (!menuItems) {
-          const response = await fetch(
-            `https://cocofino.bettersolution.gr/api/locations/${cart.locationId}/menu-items`
-          );
-          const data = await response.json();
+          // Fetch all menu items with pagination support
+          let allMenuItems: LocationMenuItem[] = [];
+          let page = 1;
+          const perPage = 100;
 
-          if (!data.success || !Array.isArray(data.data?.menu_items)) {
-            throw new Error("Invalid menu data response");
+          while (true) {
+            const response = await fetch(
+              `https://cocofino.bettersolution.gr/api/locations/${cart.locationId}/menu-items?page=${page}&per_page=${perPage}`
+            );
+            const data = await response.json();
+
+            if (!data.success || !Array.isArray(data.data?.menu_items)) {
+              throw new Error("Invalid menu data response");
+            }
+
+            allMenuItems.push(...(data.data.menu_items as LocationMenuItem[]));
+
+            // Check if there are more pages
+            const pagination = data.data?.pagination;
+            if (
+              !pagination ||
+              !pagination.last_page ||
+              page >= pagination.last_page
+            ) {
+              break;
+            }
+
+            page++;
           }
 
-          menuItems = data.data.menu_items as LocationMenuItem[];
+          menuItems = allMenuItems;
           menuItemsCacheRef.current.set(cart.locationId, menuItems);
         }
 
-        const menuItem = menuItems.find((item) => item.menu_id === cartItem.id);
+        console.log("Looking for menu item with id:", cartItem.id);
+        console.log("Available menu items count:", menuItems.length);
+        console.log(
+          "Available menu item IDs:",
+          menuItems.map((item) => item.menu_id)
+        );
+
+        // Try to find menu item - check both strict and loose equality for type mismatches
+        let menuItem = menuItems.find((item) => item.menu_id === cartItem.id);
+
+        // If not found, try with type coercion (in case of number vs string mismatch)
+        if (!menuItem) {
+          menuItem = menuItems.find(
+            (item) => Number(item.menu_id) === Number(cartItem.id)
+          );
+        }
 
         if (!menuItem) {
-          toast.error("Δεν βρέθηκαν επιλογές για αυτό το προϊόν.");
+          console.error("Menu item not found:", {
+            cartItemId: cartItem.id,
+            cartItemIdType: typeof cartItem.id,
+            cartItemName: cartItem.name,
+            locationId: cart.locationId,
+            availableMenuIds: menuItems.map((item) => item.menu_id),
+            availableMenuIdTypes: menuItems.map((item) => typeof item.menu_id),
+            menuItemsCount: menuItems.length,
+            firstFewMenuItems: menuItems.slice(0, 3).map((item) => ({
+              id: item.menu_id,
+              name: item.menu_name,
+              type: typeof item.menu_id,
+            })),
+          });
+          toast.error(
+            `Δεν βρέθηκε το προϊόν "${cartItem.name}" στο μενού. Ίσως έχει αφαιρεθεί.`
+          );
           return;
         }
 
         const initialSelections = buildInitialSelections(menuItem, cartItem);
+        console.log("Initial selections built:", initialSelections);
+        console.log("Cart item options:", cartItem.options);
+        console.log("Menu item options:", menuItem.menu_options);
 
         setModalMenuItem(menuItem);
         setModalCartItem(cartItem);
@@ -1066,12 +1133,13 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                           </div>
                                         ) : (
                                           <div
-                                            onClick={(e) =>
+                                            onClick={(e) => {
+                                              e.stopPropagation();
                                               toggleQuantityControls(
                                                 item.rowId,
                                                 e
-                                              )
-                                            }
+                                              );
+                                            }}
                                             className="border-2 border-[#505050] hover:border-blue-400 text-blue-400 text-center cursor-pointer transition-colors text-xs font-medium p-2 rounded w-[40px] h-[40px] flex items-center justify-center"
                                           >
                                             {item.qty}
@@ -1103,7 +1171,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (isDeliveryBlocked(locationCart.locationId)) {
+                                if (
+                                  isDeliveryBlocked(locationCart.locationId)
+                                ) {
                                   toast.error(
                                     "Η διεύθυνσή σας είναι εκτός περιοχής παράδοσης"
                                   );
@@ -1114,14 +1184,16 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                 );
                                 onClose();
                               }}
-                              disabled={isDeliveryBlocked(locationCart.locationId)}
+                              disabled={isDeliveryBlocked(
+                                locationCart.locationId
+                              )}
                               className={`w-full font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center shadow-2xl backdrop-blur-sm ${
                                 isDeliveryBlocked(locationCart.locationId)
                                   ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                                   : "bg-[#ff9328ff] hover:bg-[#915316] text-white shadow-blue-500/25"
                               }`}
                             >
-                              Ολοκληρωση παραγγελιας
+                              Ολοκλήρωση παραγγελίας
                             </button>
                           </div>
                         </div>
