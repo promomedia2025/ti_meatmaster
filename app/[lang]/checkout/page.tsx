@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { usePusher } from "@/lib/pusher-context";
 import { useDeliveryAvailability } from "@/lib/delivery-availability-context";
 import { useLocation } from "@/lib/location-context";
+import { useRestaurantStatus } from "@/lib/use-restaurant-status";
 import { addActiveOrder } from "@/lib/active-orders";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,24 @@ function CheckoutPageContent() {
   const locationCart = locationId
     ? getLocationCart(parseInt(locationId))
     : null;
+
+  // Fetch restaurant status using the custom hook
+  const { status: restaurantStatus, isLoading: isLoadingRestaurantStatus } =
+    useRestaurantStatus(locationId ? parseInt(locationId) : null);
+
+  // Log restaurant status when it loads or changes
+  useEffect(() => {
+    console.log("🍽️ [CHECKOUT] Restaurant Status:", {
+      locationId: locationId ? parseInt(locationId) : null,
+      isLoading: isLoadingRestaurantStatus,
+      restaurantStatus,
+      isOpen: restaurantStatus?.is_open,
+      pickupAvailable: restaurantStatus?.pickup_available,
+      deliveryAvailable: restaurantStatus?.delivery_available,
+      statusMessage: restaurantStatus?.status_message,
+      nextOpeningTime: restaurantStatus?.next_opening_time,
+    });
+  }, [locationId, restaurantStatus, isLoadingRestaurantStatus]);
 
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("delivery");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
@@ -360,9 +379,11 @@ function CheckoutPageContent() {
         isCheckingDelivery,
       });
 
-      // Check if delivery is available from restaurant status
+      // Check if delivery is available from restaurant status (use hook status first)
       const isDeliveryAvailable =
-        locationCart?.restaurantStatus?.deliveryAvailable ?? true;
+        restaurantStatus?.delivery_available ??
+        locationCart?.restaurantStatus?.deliveryAvailable ??
+        true;
 
       if (
         !locationCart?.locationId ||
@@ -540,6 +561,21 @@ function CheckoutPageContent() {
     // Check if user is authenticated
     if (!isAuthenticated || !user) {
       alert("Παρακαλώ συνδεθείτε για να ολοκληρώσετε την παραγγελία.");
+      return;
+    }
+
+    // Check if restaurant is closed using the hook status (most up-to-date)
+    const isRestaurantOpen =
+      restaurantStatus?.is_open ??
+      locationCart?.restaurantStatus?.isOpen ??
+      true;
+
+    if (!isRestaurantOpen) {
+      const statusMessage =
+        restaurantStatus?.status_message ||
+        locationCart?.restaurantStatus?.statusMessage ||
+        "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
+      toast.error(statusMessage);
       return;
     }
 
@@ -1160,33 +1196,58 @@ function CheckoutPageContent() {
             deliveryData &&
             !deliveryData.is_within_delivery_area;
 
+          // Use hook status first (most up-to-date), fallback to locationCart status
+          const isRestaurantOpen =
+            restaurantStatus?.is_open ??
+            locationCart?.restaurantStatus?.isOpen ??
+            true;
+          const isRestaurantClosed = !isRestaurantOpen;
+
+          // Get status message from hook first, then fallback to locationCart
+          const statusMessage =
+            restaurantStatus?.status_message ||
+            locationCart?.restaurantStatus?.statusMessage ||
+            "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
+
           return (
             <div className="space-y-2">
               <Button
                 onClick={handleSubmitOrder}
                 disabled={
                   isSubmitting ||
+                  isLoadingRestaurantStatus ||
+                  isRestaurantClosed ||
                   (orderType === "delivery" &&
                     locationCart &&
                     isDeliveryBlocked(locationCart.locationId))
                 }
                 className={`w-full py-3 text-lg font-medium transition-all duration-200 ${
-                  orderType === "delivery" &&
-                  locationCart &&
-                  isDeliveryBlocked(locationCart.locationId)
+                  isRestaurantClosed ||
+                  (orderType === "delivery" &&
+                    locationCart &&
+                    isDeliveryBlocked(locationCart.locationId))
                     ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                     : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 }`}
               >
                 {isSubmitting
                   ? "Υποβολή..."
+                  : isLoadingRestaurantStatus
+                  ? "Ελέγχοντας κατάσταση..."
+                  : isRestaurantClosed
+                  ? "Το εστιατόριο είναι κλειστό"
                   : orderType === "delivery" &&
                     locationCart &&
                     isDeliveryBlocked(locationCart.locationId)
                   ? "Η διεύθυνση είναι εκτός περιοχής"
                   : "Υποβολή παραγγελίας"}
               </Button>
-              {isOutsideDeliveryArea && (
+              {isRestaurantClosed && !isLoadingRestaurantStatus && (
+                <p className="text-red-400 text-sm text-center">
+                  {statusMessage}
+                </p>
+              )}
+              {isOutsideDeliveryArea && !isRestaurantClosed && (
                 <p className="text-red-400 text-sm text-center">
                   Το καταστημα δεν εξυπηρετει την συγκεκριμενη διευθυνση
                 </p>

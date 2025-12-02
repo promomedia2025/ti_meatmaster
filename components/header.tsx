@@ -46,8 +46,13 @@ interface UserLocation {
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
-  const { locationCarts, globalSummary, removeItem, updateQuantity, getLocationCart } =
-    useServerCart();
+  const {
+    locationCarts,
+    globalSummary,
+    removeItem,
+    updateQuantity,
+    getLocationCart,
+  } = useServerCart();
   const { setCoordinates } = useLocation();
   const { locationId } = useLocationFromUrl();
   const { setCartViewLocationId } = useCartSidebar();
@@ -93,7 +98,9 @@ export function Header() {
 
       const locationIds = locationCarts.map((cart) => cart.locationId);
       const missingIds = locationIds.filter(
-        (id) => !locationImages.has(id) && !locationCarts.find(c => c.locationId === id)?.locationImage
+        (id) =>
+          !locationImages.has(id) &&
+          !locationCarts.find((c) => c.locationId === id)?.locationImage
       );
 
       if (missingIds.length === 0) return;
@@ -453,7 +460,6 @@ export function Header() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-
               {isAuthenticated ? (
                 <>
                   {/* User Dropdown */}
@@ -783,10 +789,19 @@ export function Header() {
                             {/* Location Header */}
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
-                                {(locationCart.locationImage || locationImages.get(locationCart.locationId)) && (
+                                {(locationCart.locationImage ||
+                                  locationImages.get(
+                                    locationCart.locationId
+                                  )) && (
                                   <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                                     <Image
-                                      src={locationCart.locationImage || locationImages.get(locationCart.locationId) || ""}
+                                      src={
+                                        locationCart.locationImage ||
+                                        locationImages.get(
+                                          locationCart.locationId
+                                        ) ||
+                                        ""
+                                      }
                                       alt={locationCart.locationName}
                                       fill
                                       className="object-cover"

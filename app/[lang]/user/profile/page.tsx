@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 import {
   User,
   Edit3,
@@ -9,8 +10,8 @@ import {
   X,
   Mail,
   Phone,
-  MapPin,
   Calendar,
+  Loader2,
 } from "lucide-react";
 
 interface UserProfile {
@@ -20,17 +21,13 @@ interface UserProfile {
   last_name: string;
   telephone: string;
   date_of_birth: string;
-  address: string;
-  city: string;
-  postcode: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export default function UserProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<UserProfile>({
     id: user?.id || 0,
     email: user?.email || "",
@@ -38,11 +35,6 @@ export default function UserProfilePage() {
     last_name: user?.last_name || "",
     telephone: user?.telephone || user?.phone || "",
     date_of_birth: user?.date_of_birth || "",
-    address: user?.address || "",
-    city: user?.city || "",
-    postcode: user?.postcode || "",
-    created_at: user?.created_at || "",
-    updated_at: user?.updated_at || "",
   });
 
   const handleEdit = (field: string) => {
@@ -69,6 +61,75 @@ export default function UserProfilePage() {
     }));
   };
 
+  const handleSaveAllChanges = async () => {
+    if (!user?.id) {
+      toast.error("Σφάλμα", {
+        description: "Δεν βρέθηκε αναγνωριστικό χρήστη",
+      });
+      return;
+    }
+
+    // Validate that all required fields are present
+    if (
+      !formData.first_name ||
+      !formData.last_name ||
+      !formData.email ||
+      !formData.telephone
+    ) {
+      toast.error("Σφάλμα", {
+        description: "Όλα τα πεδία είναι υποχρεωτικά",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/auth/user", {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          telephone: formData.telephone,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error || result.message || "Αποτυχία αποθήκευσης"
+        );
+      }
+
+      // Refresh user data to get updated information
+      await refreshUser();
+
+      toast.success("Επιτυχία", {
+        description: "Οι αλλαγές αποθηκεύτηκαν επιτυχώς",
+      });
+
+      setIsEditing(false);
+      setEditingField(null);
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast.error("Σφάλμα", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Σφάλμα κατά την αποθήκευση των αλλαγών",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Update form data when user data changes
   useEffect(() => {
     if (user) {
@@ -79,11 +140,6 @@ export default function UserProfilePage() {
         last_name: user.last_name || "",
         telephone: user.telephone || user.phone || "",
         date_of_birth: user.date_of_birth || "",
-        address: user.address || "",
-        city: user.city || "",
-        postcode: user.postcode || "",
-        created_at: user.created_at || "",
-        updated_at: user.updated_at || "",
       });
     }
   }, [user]);
@@ -210,90 +266,24 @@ export default function UserProfilePage() {
               "tel",
               <Phone className="w-4 h-4 text-gray-400" />
             )}
-            {renderEditableField(
-              "Date of Birth",
-              "date_of_birth",
-              "date",
-              <Calendar className="w-4 h-4 text-gray-400" />
-            )}
           </div>
         </div>
 
-        {/* Address Information */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            Address Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderEditableField(
-              "Address",
-              "address",
-              "text",
-              <MapPin className="w-4 h-4 text-gray-400" />
-            )}
-            {renderEditableField(
-              "City",
-              "city",
-              "text",
-              <MapPin className="w-4 h-4 text-gray-400" />
-            )}
-            {renderEditableField(
-              "Postcode",
-              "postcode",
-              "text",
-              <MapPin className="w-4 h-4 text-gray-400" />
-            )}
-          </div>
-        </div>
-
-        {/* Account Information */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            Account Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <label className="text-gray-300 text-sm font-medium">
-                  Member Since
-                </label>
-              </div>
-              <div className="text-white">
-                {formData.created_at
-                  ? new Date(formData.created_at).toLocaleDateString()
-                  : "Not available"}
-              </div>
-            </div>
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <label className="text-gray-300 text-sm font-medium">
-                  Last Updated
-                </label>
-              </div>
-              <div className="text-white">
-                {formData.updated_at
-                  ? new Date(formData.updated_at).toLocaleDateString()
-                  : "Not available"}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4">
+        {/* Save Changes Button */}
+        <div className="flex justify-start mt-8">
           <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            onClick={handleSaveAllChanges}
+            disabled={isSaving}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {isEditing ? "Cancel Editing" : "Edit Profile"}
-          </button>
-          <button
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            disabled={!isEditing}
-          >
-            Save All Changes
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Αποθήκευση...
+              </>
+            ) : (
+              "Αποθήκευση των αλλαγών"
+            )}
           </button>
         </div>
       </div>

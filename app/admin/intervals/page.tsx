@@ -41,7 +41,7 @@ export default function AdminIntervalsPage() {
     try {
       setIsLoadingData(true);
       const response = await fetch("/api/admin/get-location-options", {
-        method: "GET",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -153,91 +153,13 @@ export default function AdminIntervalsPage() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex">
-      {/* Sidebar */}
-      <div
-        className={`fixed left-0 top-0 h-full bg-[#2a2a2a] border-r border-gray-700 z-50 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } w-64`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-white">Admin Menu</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(false)}
-              className="text-white hover:bg-[#3a3a3a]"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Sidebar Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            <Link
-              href="/admin"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/admin/orders"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Παραγγελιες
-            </Link>
-            <Link
-              href="/admin/menu"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Menu
-            </Link>
-            <button
-              onClick={() => {
-                setIsSidebarOpen(false);
-              }}
-              className="w-full text-left px-4 py-3 rounded-lg text-white hover:bg-[#3a3a3a] transition-colors"
-            >
-              Ιστορικο παραγγελιων
-            </button>
-            <Link
-              href="/admin/intervals"
-              onClick={() => setIsSidebarOpen(false)}
-              className="block w-full text-left px-4 py-3 rounded-lg text-white bg-[#3a3a3a] transition-colors"
-            >
-              Χρονος παραγγελιας
-            </Link>
-          </nav>
-        </div>
-      </div>
-
-      {/* Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-start mb-8">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSidebarOpen(true)}
-                className="text-white hover:bg-[#2a2a2a]"
-              >
-                <Menu className="w-6 h-6" />
-              </Button>
               <h1 className="text-4xl font-bold text-white">
-                Χρονος παραγγελιας
+                Χρόνος παραλαβής και παράδοσης
               </h1>
             </div>
             <Button
