@@ -1,4 +1,4 @@
-# Cocofino Restaurant v0.8.5
+# Cocofino Restaurant v0.8.6
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/nikosandr13s-projects/v0-wolt-restaurants)
