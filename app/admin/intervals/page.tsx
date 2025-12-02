@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -17,6 +17,7 @@ export default function AdminIntervalsPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSavingCollection, setIsSavingCollection] = useState(false);
   const [isSavingDelivery, setIsSavingDelivery] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,15 +30,10 @@ export default function AdminIntervalsPage() {
       setIsLoading(false);
     };
     checkAuth();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchIntervals();
-    }
-  }, [isAuthenticated]);
-
-  const fetchIntervals = async () => {
+  const fetchIntervals = useCallback(async () => {
     try {
       setIsLoadingData(true);
       const response = await fetch("/api/admin/get-location-options", {
@@ -70,7 +66,14 @@ export default function AdminIntervalsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchIntervals();
+    }
+  }, [isAuthenticated, fetchIntervals]);
 
   const handleSaveCollection = async () => {
     try {
@@ -129,10 +132,13 @@ export default function AdminIntervalsPage() {
   };
 
   // Generate options from 10 to 70 in increments of 10
-  const intervalOptions = [];
-  for (let i = 10; i <= 70; i += 10) {
-    intervalOptions.push(i);
-  }
+  const intervalOptions = useMemo(() => {
+    const options = [];
+    for (let i = 10; i <= 70; i += 10) {
+      options.push(i);
+    }
+    return options;
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");

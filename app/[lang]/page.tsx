@@ -40,17 +40,12 @@ export default function HomePage() {
   // Subscribe to all active orders for real-time notifications
   useEffect(() => {
     if (!isConnected) {
-      console.log("⚠️ Homepage: Pusher not connected yet");
       return;
     }
 
     const activeOrderIds = getActiveOrderIds();
-    console.log(
-      `📡 Homepage: Found ${activeOrderIds.length} active orders to track`
-    );
 
     if (activeOrderIds.length === 0) {
-      console.log("ℹ️ Homepage: No active orders to track");
       return;
     }
 
@@ -60,11 +55,9 @@ export default function HomePage() {
 
       // Skip if already subscribed
       if (subscribedChannelsRef.current.has(channelName)) {
-        console.log(`⏭️ Already subscribed to ${channelName}`);
         return;
       }
 
-      console.log(`📡 Homepage: Subscribing to ${channelName}`);
       const channel = subscribe(channelName);
 
       if (channel) {
@@ -73,22 +66,14 @@ export default function HomePage() {
 
         subscribedChannelsRef.current.add(channelName);
 
-        channel.bind("pusher:subscription_succeeded", () => {
-          console.log(`✅ Homepage: Successfully subscribed to ${channelName}`);
-        });
+        channel.bind("pusher:subscription_succeeded", () => {});
 
         channel.bind("pusher:subscription_error", (error: any) => {
-          console.error(
-            `❌ Homepage: Failed to subscribe to ${channelName}:`,
-            error
-          );
           subscribedChannelsRef.current.delete(channelName);
         });
 
         // Listen for order status updates
         channel.bind("orderStatusUpdated", (data: any) => {
-          console.log(`📦 Homepage: Order ${orderId} status updated:`, data);
-
           const statusName = data.status_name || data.statusName || "Updated";
           toast.success("Ενημέρωση Παραγγελίας", {
             description: `Παραγγελία #${orderId}: ${statusName}`,
@@ -107,8 +92,6 @@ export default function HomePage() {
     // Cleanup function
     return () => {
       subscribedChannelsRef.current.forEach((channelName) => {
-        console.log(`🔌 Homepage: Unsubscribing from ${channelName}`);
-
         // Get the channel and unbind all event handlers
         if (pusher) {
           const channel = pusher.channel(channelName);

@@ -57,8 +57,6 @@ export default function AddressBookPage() {
       const response = await fetch(`/api/address-book?customer_id=${user?.id}`);
       const data = await response.json();
 
-      console.log("Address book API response:", data);
-
       // Handle the specific API response structure
       if (data.success && data.data && data.data.addresses) {
         setAddresses(data.data.addresses);
@@ -111,7 +109,6 @@ export default function AddressBookPage() {
       const result = await response.json();
 
       if (result.success) {
-        console.log("✅ Address deleted successfully:", result);
         // Refresh the addresses list
         fetchAddresses();
       } else {
@@ -149,7 +146,6 @@ export default function AddressBookPage() {
       const result = await response.json();
 
       if (result.success) {
-        console.log("✅ Address set as default successfully:", result);
         // Refresh the addresses list
         fetchAddresses();
       } else {
@@ -279,7 +275,9 @@ export default function AddressBookPage() {
                           {address.floor && (
                             <div>
                               <span className="text-gray-500">Όροφος:</span>{" "}
-                              <span className="font-medium">{address.floor}</span>
+                              <span className="font-medium">
+                                {address.floor}
+                              </span>
                             </div>
                           )}
                         </div>

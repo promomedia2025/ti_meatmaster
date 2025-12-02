@@ -57,7 +57,7 @@ export default function AdminMenuPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOptions, setMenuOptions] = useState<MenuOption[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
-  const itemsPerPage = 5;
+  const itemsPerPage = 15;
 
   // Fetch categories
   useEffect(() => {
