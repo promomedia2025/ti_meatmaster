@@ -71,7 +71,7 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
 
         <div className="flex items-center gap-1">
           <Euro className="w-4 h-4" />
-          <span>Ελάχιστη παραγγελία {restaurant.minOrder}€</span>
+          <span>Ελάχιστη παραγγελία 7.00€</span>
         </div>
       </div>
     </div>
