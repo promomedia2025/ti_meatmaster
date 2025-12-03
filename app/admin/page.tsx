@@ -390,7 +390,22 @@ export default function AdminDashboardPage() {
 
   // Separate orders by status
   const pendingOrders = orders.filter((order) => order.status_id === 2);
-  const otherOrders = orders.filter((order) => order.status_id !== 2);
+  const otherOrders = orders.filter((order) => {
+    // Filter out pending orders (status_id === 2)
+    if (order.status_id === 2) return false;
+    // Filter out cancelled orders (status_id === 7 or status_name contains "Ακυρώθηκε" or "cancelled")
+    if (order.status_id === 7) return false;
+    const statusLower = order.status_name?.toLowerCase() || "";
+    if (statusLower.includes("ακυρώθηκε") || statusLower.includes("cancelled") || statusLower.includes("canceled")) {
+      return false;
+    }
+    // Filter out completed orders (status_id === 6 or status_name contains "Ολοκληρώθηκε" or "completed")
+    if (order.status_id === 6) return false;
+    if (statusLower.includes("ολοκληρώθηκε") || statusLower.includes("completed")) {
+      return false;
+    }
+    return true;
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -403,6 +418,20 @@ export default function AdminDashboardPage() {
 
   const formatTime = (timeString: string) => {
     return timeString;
+  };
+
+  const formatLocationName = (locationName: string) => {
+    if (!locationName) return locationName;
+    // Remove duplicate commas (replace multiple commas with single comma)
+    const cleaned = locationName.replace(/,+/g, ",");
+    // Split into array
+    const parts = cleaned.split(",").map(part => part.trim()).filter(part => part);
+    // Remove last 2 indices
+    if (parts.length > 2) {
+      parts.splice(-2);
+    }
+    // Join back to string
+    return parts.join(", ");
   };
 
   const openOrderModal = useCallback((order: AdminOrder) => {
@@ -440,7 +469,7 @@ export default function AdminDashboardPage() {
     (order: AdminOrder) => {
       toast.success("Νέα Παραγγελία", {
         description: `Παραγγελία #${order.order_id} από ${
-          order.location_name || "άγνωστη τοποθεσία"
+          formatLocationName(order.location_name) || "άγνωστη τοποθεσία"
         }`,
         action: {
           label: "Προβολή",
@@ -898,7 +927,7 @@ export default function AdminDashboardPage() {
           <h3 className="text-white font-semibold text-lg">
             Παραγγελία #{order.order_id}
           </h3>
-          <p className="text-gray-400 text-sm">{order.location_name}</p>
+          <p className="text-gray-400 text-sm">{formatLocationName(order.location_name)}</p>
         </div>
         <span className="bg-[#009DE0]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}

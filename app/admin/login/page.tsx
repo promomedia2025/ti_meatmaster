@@ -48,6 +48,22 @@ function AdminLoginContent() {
     checkAuth();
   }, [router, searchParams]);
 
+  // Auto-fill credentials when running in Electron
+  useEffect(() => {
+    // Check if Electron API is available
+    if (typeof window !== "undefined" && window.electron) {
+      // Get credentials from environment variables
+      // In Next.js, client-side env variables must be prefixed with NEXT_PUBLIC_
+      const electronUsername = process.env.NEXT_PUBLIC_ELECTRON_ADMIN_USERNAME;
+      const electronPassword = process.env.NEXT_PUBLIC_ELECTRON_ADMIN_PASSWORD;
+
+      if (electronUsername && electronPassword) {
+        setUsername(electronUsername);
+        setPassword(electronPassword);
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -94,14 +110,23 @@ function AdminLoginContent() {
           <p className="text-gray-400">Please sign in to access the admin dashboard</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-4" 
+          name="adminLoginForm"
+          autoComplete="on"
+          method="post"
+          action="#"
+        >
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
               Username
             </label>
             <Input
               id="username"
+              name="username"
               type="text"
+              autoComplete="username"
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -116,7 +141,9 @@ function AdminLoginContent() {
             </label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

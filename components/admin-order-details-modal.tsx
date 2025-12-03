@@ -100,22 +100,23 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     
     .invoice-print-content > div.p-5 {
       padding: 8px !important;
-      font-size: 10px !important;
+      font-size: 9.8325px !important;
       line-height: 1.2 !important;
     }
     
     /* Headers and titles - smaller */
     .invoice-print-content h2,
     .invoice-print-content h3 {
-      font-size: 14px !important;
+      font-size: 25.4955px !important;
       margin: 4px 0 !important;
       font-weight: bold !important;
     }
     
     /* All text smaller */
     .invoice-print-content {
-      font-size: 9px !important;
+      font-size: 25.76225px !important;
       line-height: 1.2 !important;
+      font-weight: 600 !important;
     }
     
     /* Spacing adjustments */
@@ -135,20 +136,24 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     /* Table adjustments for thermal */
     .invoice-print-content table {
       width: 100% !important;
-      font-size: 9px !important;
+      font-size: 30.35425px !important;
       border-collapse: collapse !important;
     }
     
     .invoice-print-content table th,
     .invoice-print-content table td {
       padding: 3px 2px !important;
-      border: 1px solid #000 !important;
-      font-size: 9px !important;
+      border-top: 1px solid #000 !important;
+      border-bottom: 1px solid #000 !important;
+      border-left: none !important;
+      border-right: none !important;
+      font-size: 14.35425px !important;
       line-height: 1.1 !important;
+      font-weight: 600 !important;
     }
     
     .invoice-print-content table th {
-      font-size: 9px !important;
+      font-size: 30.35425px !important;
       font-weight: bold !important;
       padding: 4px 2px !important;
     }
@@ -163,7 +168,7 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     
     .invoice-print-content table th:nth-child(2),
     .invoice-print-content table td:nth-child(2) {
-      width: 50% !important;
+      width: 70% !important;
       word-wrap: break-word !important;
       word-break: break-word !important;
       overflow-wrap: break-word !important;
@@ -171,13 +176,6 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     
     .invoice-print-content table th:nth-child(3),
     .invoice-print-content table td:nth-child(3) {
-      width: 20% !important;
-      text-align: right !important;
-      white-space: nowrap !important;
-    }
-    
-    .invoice-print-content table th:nth-child(4),
-    .invoice-print-content table td:nth-child(4) {
       width: 20% !important;
       text-align: right !important;
       white-space: nowrap !important;
@@ -203,10 +201,11 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     
     .invoice-print-content li {
       margin: 1px 0 !important;
-      font-size: 8px !important;
+      font-size: 16.376px !important;
       line-height: 1.1 !important;
       word-wrap: break-word !important;
       word-break: break-word !important;
+      font-weight: 300 !important;
     }
     
     /* Long text handling */
@@ -239,12 +238,41 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     /* Remove excessive spacing */
     .invoice-print-content p {
       margin: 2px 0 !important;
+      font-weight: 600 !important;
     }
     
     /* Address and customer info */
     .invoice-print-content address {
-      font-size: 8px !important;
+      font-size: 14.626px !important;
       line-height: 1.2 !important;
+      font-weight: 600 !important;
+    }
+    
+    /* Make customer and delivery sections bigger */
+    .invoice-print-content .invoice-customer-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-customer-section strong {
+      font-size: 20px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section strong {
+      font-size: 20px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section,
+    .invoice-print-content .invoice-date-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section strong,
+    .invoice-print-content .invoice-date-section strong {
+      font-size: 20px !important;
     }
     
     body {
@@ -255,39 +283,106 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     ? `
     /* A5 - Medium layout */
     .invoice-print-content {
-      font-size: 11px !important;
+      font-size: 14.61075px !important;
+      font-weight: 600 !important;
     }
     
     .invoice-print-content h2,
     .invoice-print-content h3 {
-      font-size: 18px !important;
+      font-size: 23.9085px !important;
     }
     
     .invoice-print-content table {
-      font-size: 10px !important;
+      font-size: 13.2825px !important;
     }
     
     .invoice-print-content table th,
     .invoice-print-content table td {
       padding: 6px 4px !important;
+      font-weight: 600 !important;
+    }
+    
+    /* Make customer and delivery sections bigger for A5 */
+    .invoice-print-content .invoice-customer-section {
+      font-size: 16px !important;
+    }
+    
+    .invoice-print-content .invoice-customer-section strong {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section {
+      font-size: 16px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section strong {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section,
+    .invoice-print-content .invoice-date-section {
+      font-size: 16px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section strong,
+    .invoice-print-content .invoice-date-section strong {
+      font-size: 18px !important;
     }
   `
     : `
     /* A4 - Standard layout (default) */
     .invoice-print-content {
-      font-size: 12px !important;
+      font-size: 15.939px !important;
+      font-weight: 600 !important;
     }
     
     .invoice-print-content h2 {
-      font-size: 24px !important;
+      font-size: 31.878px !important;
     }
     
     .invoice-print-content h3 {
-      font-size: 20px !important;
+      font-size: 26.565px !important;
     }
     
     .invoice-print-content table {
-      font-size: 12px !important;
+      font-size: 15.939px !important;
+    }
+    
+    .invoice-print-content table td {
+      font-weight: 600 !important;
+    }
+    
+    .invoice-print-content p,
+    .invoice-print-content address,
+    .invoice-print-content li {
+      font-weight: 600 !important;
+    }
+    
+    /* Make customer and delivery sections bigger for A4 */
+    .invoice-print-content .invoice-customer-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-customer-section strong {
+      font-size: 20px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-delivery-section strong {
+      font-size: 20px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section,
+    .invoice-print-content .invoice-date-section {
+      font-size: 18px !important;
+    }
+    
+    .invoice-print-content .invoice-payment-section strong,
+    .invoice-print-content .invoice-date-section strong {
+      font-size: 20px !important;
     }
   `;
 
@@ -545,9 +640,40 @@ export function AdminOrderDetailsModal({
     return numValue.toFixed(2);
   };
 
+  const formatLocationName = (locationName: string) => {
+    if (!locationName) return locationName;
+    // Remove duplicate commas (replace multiple commas with single comma)
+    const cleaned = locationName.replace(/,+/g, ",");
+    // Split into array
+    const parts = cleaned
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part);
+    // Remove last 2 indices
+    if (parts.length > 2) {
+      parts.splice(-2);
+    }
+    // Join back to string
+    return parts.join(", ");
+  };
+
   const getPaymentMethodName = (payment?: string) => {
     if (!payment) return "";
     return payment === "cod" ? "Μετρητά" : "Κάρτα";
+  };
+
+  const translateTotalTitle = (title: string, code: string) => {
+    // Translate based on code first, then fallback to title
+    if (code === "subtotal") return "Υποσύνολο";
+    if (code === "total") return "Σύνολο";
+    // Also check title text as fallback
+    if (title.toLowerCase().includes("subtotal")) return "Υποσύνολο";
+    if (
+      title.toLowerCase().includes("total") &&
+      !title.toLowerCase().includes("subtotal")
+    )
+      return "Σύνολο";
+    return title;
   };
 
   const groupMenuOptions = (menuOptions: any[]) => {
@@ -606,7 +732,7 @@ export function AdminOrderDetailsModal({
                 Παραγγελία #{order.order_id}
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                {order.location_name}
+                {formatLocationName(order.location_name)}
               </p>
             </div>
             <button
@@ -694,7 +820,9 @@ export function AdminOrderDetailsModal({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-400">Διεύθυνση:</span>
-                    <p className="text-white">{order.location_name}</p>
+                    <p className="text-white">
+                      {formatLocationName(order.location_name)}
+                    </p>
                   </div>
                   {order.floor && (
                     <div>
@@ -908,11 +1036,10 @@ export function AdminOrderDetailsModal({
                 {/* Customer and Invoice Info */}
                 <div className="flex mb-4">
                   <div className="w-1/2">
-                    <p>
+                    <p className="invoice-customer-section">
                       <strong>Πελάτης</strong>
                       <br />
                       {order.customer_name || "N/A"}
-                      {order.email && ` (${order.email})`}
                       {order.telephone && (
                         <>
                           <br />
@@ -921,11 +1048,11 @@ export function AdminOrderDetailsModal({
                       )}
                     </p>
                     {order.order_type === "delivery" && (
-                      <div className="mt-2">
+                      <div className="mt-2 invoice-delivery-section">
                         <strong>Διεύθυνση Παράδοσης</strong>
                         <br />
                         <address className="not-italic">
-                          {order.location_name || "N/A"}
+                          {formatLocationName(order.location_name) || "N/A"}
                           {order.floor && (
                             <>
                               <br />
@@ -943,12 +1070,12 @@ export function AdminOrderDetailsModal({
                     )}
                   </div>
                   <div className="w-1/2 text-right">
-                    <p>
+                    <p className="invoice-payment-section">
                       <strong>Πληρωμή</strong>
                       <br />
                       {getPaymentMethodName(order.payment)}
                     </p>
-                    <p>
+                    <p className="invoice-date-section">
                       <strong>Ημερομηνία Παραγγελίας</strong>
                       <br />
                       {formatDateTime(order.order_date, order.order_time)}
@@ -960,21 +1087,7 @@ export function AdminOrderDetailsModal({
                 <div>
                   <div>
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 p-2 text-left w-[2%]"></th>
-                            <th className="border border-gray-300 p-2 text-left w-[65%]">
-                              <b>Όνομα / Επιλογές</b>
-                            </th>
-                            <th className="border border-gray-300 p-2 text-left">
-                              <b>Τιμή</b>
-                            </th>
-                            <th className="border border-gray-300 p-2 text-right">
-                              <b>Σύνολο</b>
-                            </th>
-                          </tr>
-                        </thead>
+                      <table className="w-full border-collapse">
                         <tbody>
                           {order.order_menus && order.order_menus.length > 0
                             ? order.order_menus.map((menu) => {
@@ -983,10 +1096,10 @@ export function AdminOrderDetailsModal({
                                 );
                                 return (
                                   <tr key={menu.order_menu_id}>
-                                    <td className="border border-gray-300 p-2">
+                                    <td className="border-t border-b border-gray-300 p-2">
                                       {menu.quantity}x
                                     </td>
-                                    <td className="border border-gray-300 p-2 text-left">
+                                    <td className="border-t border-b border-gray-300 p-2 text-left">
                                       <b>{menu.name}</b>
                                       <br />
                                       {menu.menu_options &&
@@ -1030,13 +1143,11 @@ export function AdminOrderDetailsModal({
                                         </div>
                                       )}
                                     </td>
-                                    <td className="border border-gray-300 p-2 text-left">
-                                      {formatCurrency(menu.price)}{" "}
-                                      {order.currency}
-                                    </td>
-                                    <td className="border border-gray-300 p-2 text-right">
+                                    <td className="border-t border-b border-gray-300 p-2 text-right">
                                       {formatCurrency(menu.subtotal)}{" "}
-                                      {order.currency}
+                                      {order.currency === "EUR"
+                                        ? "€"
+                                        : order.currency}
                                     </td>
                                   </tr>
                                 );
@@ -1057,14 +1168,18 @@ export function AdminOrderDetailsModal({
                                 }
                                 return (
                                   <tr key={total.order_total_id}>
-                                    <td className="border border-gray-300 p-2"></td>
-                                    <td className="border border-gray-300 p-2"></td>
-                                    <td className="border border-gray-300 p-2 text-left">
-                                      {total.title}
+                                    <td className="border-t border-b border-gray-300 p-2"></td>
+                                    <td className="border-t border-b border-gray-300 p-2 text-left">
+                                      {translateTotalTitle(
+                                        total.title,
+                                        total.code
+                                      )}
                                     </td>
-                                    <td className="border border-gray-300 p-2 text-right">
+                                    <td className="border-t border-b border-gray-300 p-2 text-right">
                                       {formatCurrency(total.value)}{" "}
-                                      {order.currency}
+                                      {order.currency === "EUR"
+                                        ? "€"
+                                        : order.currency}
                                     </td>
                                   </tr>
                                 );
