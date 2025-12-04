@@ -2,10 +2,12 @@
 
 import AutoSelect from "@/components/AutoSelect";
 import { useState, useEffect, useRef } from "react";
+import { ShoppingCart } from "lucide-react";
 import MenuCategory from "./menu-category";
 import { MenuOptionsModal } from "./menu-options-modal";
 import { useServerCart } from "@/lib/server-cart-context";
 import { useAuth } from "@/lib/auth-context";
+import { useLocationFromUrl } from "@/lib/use-location-from-url";
 import { getRestaurantStatusDisplay } from "@/lib/restaurant-status";
 import { useCartSidebar } from "@/lib/cart-sidebar-context";
 
@@ -25,42 +27,13 @@ interface MenuItem {
     priority: number;
     permalink_slug: string;
   }>;
-  image?: {
-    url: string;
-    path: string;
-    name: string;
-    size: number | null;
-    type: string;
-    width: number | null;
-    height: number | null;
-  };
-  menu_options?: Array<{
-    menu_option_id: number;
-    option_id: number;
-    option_name: string;
-    display_type: string;
-    priority: number;
-    required: boolean;
-    min_selected: number;
-    max_selected: number;
-    option_values: Array<{
-      menu_option_value_id: number;
-      option_value_id: number;
-      name: string;
-      price: number;
-      quantity: number | null;
-      is_default: boolean | null;
-      priority: number;
-    }>;
-  }>;
+  menu_options?: any[];
+  image?: any;
 }
 
 interface MenuData {
   data: {
-    location: {
-      id: number;
-      name: string;
-    };
+    location: { id: number; name: string };
     menu_items: MenuItem[];
   };
 }
@@ -70,14 +43,7 @@ interface Restaurant {
   name: string;
   categories: string[];
   menuData?: MenuData | null;
-  selectedCategory?: string;
-  restaurant_status?: {
-    is_open: boolean;
-    pickup_available: boolean;
-    delivery_available: boolean;
-    status_message: string;
-    next_opening_time?: string | null;
-  };
+  restaurant_status?: any;
 }
 
 interface RestaurantMenuProps {
@@ -85,8 +51,11 @@ interface RestaurantMenuProps {
 }
 
 export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
-  const { addItem } = useServerCart();
+  const { addItem, getLocationCart } = useServerCart();
   const { isAuthenticated } = useAuth();
+  const { locationId } = useLocationFromUrl();
+  const { isCartSidebarOpen, setIsCartSidebarOpen, setCartViewLocationId } =
+    useCartSidebar();
 
   const [loadingItemId, setLoadingItemId] = useState<number | null>(null);
   const [isMenuOptionsModalOpen, setIsMenuOptionsModalOpen] = useState(false);
@@ -95,25 +64,25 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
   const [isSticky, setIsSticky] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  /** refs */
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const navigationRef = useRef<HTMLDivElement>(null);
 
-  /** Sticky Logic */
+  /** Sticky nav toggle */
   useEffect(() => {
-    const handleScrollSticky = () => {
+    const handleScroll = () => {
       const el = navigationRef.current;
       if (!el) return;
-
       const rect = el.getBoundingClientRect();
       setIsSticky(rect.top <= 84);
     };
 
-    handleScrollSticky();
-    window.addEventListener("scroll", handleScrollSticky);
-    return () => window.removeEventListener("scroll", handleScrollSticky);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  /** Scroll Spy */
+  /** Scroll spy for vertical movement */
   useEffect(() => {
     const offset = 120;
 
@@ -122,7 +91,6 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
 
       for (const [name, el] of Object.entries(categoryRefs.current)) {
         if (!el) continue;
-
         const dist = Math.abs(el.getBoundingClientRect().top - offset);
         if (!closest || dist < closest.distance) {
           closest = { name, distance: dist };
@@ -139,20 +107,18 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
     return () => window.removeEventListener("scroll", spy);
   }, [activeCategory]);
 
-  /** Scroll Spy Horizontal Sync */
+  /** Scroll spy → horizontal nav auto-scroll */
   useEffect(() => {
-    if (!navigationRef.current || !activeCategory) return;
+    if (!activeCategory || !navigationRef.current) return;
 
     const container = navigationRef.current.querySelector(
       ".category-scroll-container"
     ) as HTMLElement | null;
-
     if (!container) return;
 
     const activeBtn = container.querySelector(
       `[data-category="${activeCategory}"]`
     ) as HTMLElement | null;
-
     if (!activeBtn) return;
 
     const btnLeft = activeBtn.offsetLeft;
@@ -161,29 +127,23 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
     const viewLeft = container.scrollLeft;
     const viewRight = viewLeft + container.clientWidth;
 
-    // Scroll only when out of view
+    // only scroll if outside view
     if (btnLeft < viewLeft || btnRight > viewRight) {
       container.scrollTo({
-        left:
-          btnLeft -
-          container.clientWidth / 2 +
-          activeBtn.offsetWidth / 2,
+        left: btnLeft - container.clientWidth / 2 + activeBtn.offsetWidth / 2,
         behavior: "smooth",
       });
     }
   }, [activeCategory]);
 
-  /** Scroll to category on click */
   const handleCategoryChange = (category: string) => {
-    const el = categoryRefs.current[category];
-    if (!el) return;
-
-    const top =
-      window.pageYOffset +
-      el.getBoundingClientRect().top -
-      120;
-
-    window.scrollTo({ top, behavior: "smooth" });
+    setTimeout(() => {
+      const el = categoryRefs.current[category];
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const offset = window.pageYOffset + rect.top - 140;
+      window.scrollTo({ top: offset, behavior: "smooth" });
+    }, 100);
   };
 
   const handleMenuItemClick = (item: MenuItem) => {
@@ -222,30 +182,30 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
     }
   };
 
-  /** Construct category list */
   const items = restaurant.menuData?.data.menu_items || [];
 
+  /** Unique categories sorted by priority */
   const categories = (() => {
     const map = new Map<string, number>();
-
     items.forEach((item) =>
       item.categories.forEach((c) => {
         if (!map.has(c.name)) map.set(c.name, c.priority);
       })
     );
-
     return [...map.entries()]
       .map(([name, priority]) => ({ name, priority }))
       .sort((a, b) => a.priority - b.priority);
   })();
 
   return (
-    <div className="bg-black w-full relative">
+    <div className="bg-black relative w-full">
 
-      {/* Sticky Full-Width Category Nav */}
+      <AutoSelect />
+
+      {/* Sticky Nav */}
       <div
         ref={navigationRef}
-        className={`sticky top-[75px] w-full z-30 border-b border-gray-800 shadow-lg transition-colors ${
+        className={`sticky top-[75px] w-full border-b border-gray-800 z-30 shadow-lg transition-colors duration-200 ${
           isSticky ? "bg-[#242424]" : "bg-black"
         }`}
       >
@@ -275,7 +235,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
         </div>
       </div>
 
-      {/* Centered Content */}
+      {/* CONTENT */}
       <div className="max-w-[1600px] mx-auto px-4 py-6 pb-24 md:pb-6">
         {!isAuthenticated && (
           <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
@@ -304,7 +264,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
         )}
       </div>
 
-      {/* Modal */}
+      {/* MODAL */}
       <MenuOptionsModal
         isOpen={isMenuOptionsModalOpen}
         onClose={() => {
@@ -314,6 +274,48 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
         menuItem={selectedMenuItem}
         onAddToCart={handleAddToCart}
       />
+
+      {/* Floating Cart Button */}
+      <div
+        className={`fixed bottom-5 left-4 right-4 z-50 md:hidden transition-transform duration-500 ease-in-out ${
+          isCartSidebarOpen || isMenuOptionsModalOpen
+            ? "bottom-[-60px] translate-y-full"
+            : "translate-y-0"
+        }`}
+      >
+        <button
+          onClick={() => {
+            setCartViewLocationId(locationId || undefined);
+            setIsCartSidebarOpen(true);
+          }}
+          className="w-full bg-[#ff9328ff] hover:bg-[#915316] text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-between shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
+        >
+          {(() => {
+            const cart = getLocationCart(locationId || 0);
+            return cart?.summary.count && cart.summary.count > 0;
+          })() && (
+            <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
+              {getLocationCart(locationId || 0)?.summary.count}
+            </span>
+          )}
+
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="w-5 h-5" />
+            <span>Δες την παραγγελία σου</span>
+          </div>
+
+          {(() => {
+            const cart = getLocationCart(locationId || 0);
+            return cart?.summary.total && cart.summary.total > 0;
+          })() && (
+            <div className="text-right">
+              <div className="text-lg font-bold">
+                €{getLocationCart(locationId || 0)?.summary.total.toFixed(2)}
+              </div>
+            </div>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
