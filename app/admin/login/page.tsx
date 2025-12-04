@@ -53,13 +53,48 @@ function AdminLoginContent() {
     // Check if Electron API is available
     if (typeof window !== "undefined" && window.electron) {
       // Get credentials from environment variables
-      // In Next.js, client-side env variables must be prefixed with NEXT_PUBLIC_
-      const electronUsername = process.env.NEXT_PUBLIC_ELECTRON_ADMIN_USERNAME;
-      const electronPassword = process.env.NEXT_PUBLIC_ELECTRON_ADMIN_PASSWORD;
+      const electronUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME;
+      const electronPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+
+      console.log("🔐 Electron detected - Environment variables:", {
+        hasUsername: !!electronUsername,
+        hasPassword: !!electronPassword,
+        usernameLength: electronUsername?.length,
+        passwordLength: electronPassword?.length,
+        usernamePreview: electronUsername ? `${electronUsername.substring(0, 3)}...` : "undefined",
+      });
 
       if (electronUsername && electronPassword) {
+        console.log("🔐 Electron: Auto-filling credentials");
         setUsername(electronUsername);
         setPassword(electronPassword);
+        
+        // Trigger input events to ensure form validation recognizes the values
+        setTimeout(() => {
+          const usernameInput = document.getElementById("username") as HTMLInputElement;
+          const passwordInput = document.getElementById("password") as HTMLInputElement;
+          
+          if (usernameInput) {
+            // Set the value directly on the input element as well
+            usernameInput.value = electronUsername;
+            usernameInput.dispatchEvent(new Event("input", { bubbles: true }));
+            usernameInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          
+          if (passwordInput) {
+            // Set the value directly on the input element as well
+            passwordInput.value = electronPassword;
+            passwordInput.dispatchEvent(new Event("input", { bubbles: true }));
+            passwordInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          
+          console.log("🔐 Electron: Input events triggered, values set:", {
+            usernameInputValue: usernameInput?.value,
+            passwordInputValue: passwordInput?.value ? "***" : "empty",
+          });
+        }, 100);
+      } else {
+        console.warn("⚠️ Electron: Environment variables not found or empty");
       }
     }
   }, []);
@@ -68,6 +103,14 @@ function AdminLoginContent() {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+
+    // Log the values being sent for debugging
+    console.log("🔐 Login attempt:", {
+      username,
+      passwordLength: password?.length,
+      hasUsername: !!username,
+      hasPassword: !!password,
+    });
 
     try {
       const response = await fetch("/api/auth/admin/login", {
@@ -83,6 +126,12 @@ function AdminLoginContent() {
       });
 
       const result = await response.json();
+      
+      console.log("🔐 Login response:", {
+        success: result.success,
+        error: result.error,
+        status: response.status,
+      });
 
       if (result.success) {
         // Store a token or flag to indicate admin is logged in

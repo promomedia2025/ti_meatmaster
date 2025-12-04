@@ -8,6 +8,11 @@ import { usePusher } from "@/lib/pusher-context";
 import { toast } from "sonner";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import {
+  focusElectronWindow,
+  isElectron,
+  isWindowFocused,
+} from "@/lib/electron-utils";
 
 interface AdminOrder {
   order_id: number;
@@ -396,12 +401,19 @@ export default function AdminDashboardPage() {
     // Filter out cancelled orders (status_id === 7 or status_name contains "Ακυρώθηκε" or "cancelled")
     if (order.status_id === 7) return false;
     const statusLower = order.status_name?.toLowerCase() || "";
-    if (statusLower.includes("ακυρώθηκε") || statusLower.includes("cancelled") || statusLower.includes("canceled")) {
+    if (
+      statusLower.includes("ακυρώθηκε") ||
+      statusLower.includes("cancelled") ||
+      statusLower.includes("canceled")
+    ) {
       return false;
     }
     // Filter out completed orders (status_id === 6 or status_name contains "Ολοκληρώθηκε" or "completed")
     if (order.status_id === 6) return false;
-    if (statusLower.includes("ολοκληρώθηκε") || statusLower.includes("completed")) {
+    if (
+      statusLower.includes("ολοκληρώθηκε") ||
+      statusLower.includes("completed")
+    ) {
       return false;
     }
     return true;
@@ -425,7 +437,10 @@ export default function AdminDashboardPage() {
     // Remove duplicate commas (replace multiple commas with single comma)
     const cleaned = locationName.replace(/,+/g, ",");
     // Split into array
-    const parts = cleaned.split(",").map(part => part.trim()).filter(part => part);
+    const parts = cleaned
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part);
     // Remove last 2 indices
     if (parts.length > 2) {
       parts.splice(-2);
@@ -450,18 +465,52 @@ export default function AdminDashboardPage() {
   };
 
   const playNotificationSound = useCallback(() => {
+    console.log("🔔 playNotificationSound: Function called");
+
     if (typeof window === "undefined") {
+      console.warn("⚠️ playNotificationSound: window is undefined");
       return;
     }
 
+    // Check Electron and focus window
+    const electronDetected = isElectron();
+    const windowFocused = isWindowFocused();
+
+    console.log("🔔 playNotificationSound: Electron check", {
+      isElectron: electronDetected,
+      isWindowFocused: windowFocused,
+      hasWindowElectron: !!(typeof window !== "undefined" && window.electron),
+    });
+
+    // Focus and restore Electron window when notification sound plays
+    if (electronDetected) {
+      console.log(
+        "🔔 playNotificationSound: Electron detected, calling focusElectronWindow()"
+      );
+      focusElectronWindow();
+    } else {
+      console.log(
+        "ℹ️ playNotificationSound: Electron not detected, skipping window focus"
+      );
+    }
+
     try {
+      console.log("🔔 playNotificationSound: Playing audio");
       const audio = new Audio("/phone-ringtone-normal-444775.mp3");
       audio.volume = 0.7; // Set volume to 70%
-      audio.play().catch((error) => {
-        console.warn("🔇 Failed to play notification sound", error);
-      });
+      audio
+        .play()
+        .then(() => {
+          console.log("✅ playNotificationSound: Audio playback started");
+        })
+        .catch((error) => {
+          console.warn(
+            "🔇 playNotificationSound: Failed to play notification sound",
+            error
+          );
+        });
     } catch (error) {
-      console.warn("🔇 Failed to play notification sound", error);
+      console.warn("🔇 playNotificationSound: Error creating audio", error);
     }
   }, []);
 
@@ -927,7 +976,9 @@ export default function AdminDashboardPage() {
           <h3 className="text-white font-semibold text-lg">
             Παραγγελία #{order.order_id}
           </h3>
-          <p className="text-gray-400 text-sm">{formatLocationName(order.location_name)}</p>
+          <p className="text-gray-400 text-sm">
+            {formatLocationName(order.location_name)}
+          </p>
         </div>
         <span className="bg-[#009DE0]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}
