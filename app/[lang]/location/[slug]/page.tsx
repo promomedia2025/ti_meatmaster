@@ -258,7 +258,6 @@ export default async function LocationPage({
     restaurant_status: location.restaurant_status, // Pass restaurant status to components
     categories: menuCategoriesData?.data?.categories
       ? [
-          "Όλα",
           ...menuCategoriesData.data.categories.map((cat) => cat.name),
         ]
       : menuData?.data?.menu_items
@@ -272,26 +271,31 @@ export default async function LocationPage({
 
   return (
     <div className="min-h-screen bg-black">
-      <DeliveryAvailabilityChecker
-        locationId={location.id}
-        deliveryAvailable={location.restaurant_status?.delivery_available ?? true}
-      />
-      <RestaurantHeader
-        restaurant={restaurant}
-        isFavorite={favoriteStatus}
-        onFavorite={favoriteLocation}
-        onUnfavorite={unfavoriteLocation}
-      />
-      <div className="max-w-[1600px] mx-auto">
-        <RestaurantInfo restaurant={restaurant} />
-        <Suspense
-          fallback={
-            <div className="text-center py-8 text-white">Loading menu...</div>
-          }
-        >
-          <RestaurantMenu restaurant={restaurant} />
-        </Suspense>
-      </div>
-    </div>
+  <DeliveryAvailabilityChecker
+    locationId={location.id}
+    deliveryAvailable={location.restaurant_status?.delivery_available ?? true}
+  />
+
+  <RestaurantHeader
+    restaurant={restaurant}
+    isFavorite={favoriteStatus}
+    onFavorite={favoriteLocation}
+    onUnfavorite={unfavoriteLocation}
+  />
+
+  {/* Only info is centered */}
+  <div className="max-w-[1600px] mx-auto">
+    <RestaurantInfo restaurant={restaurant} />
+  </div>
+
+  {/* Menu is full-width */}
+  <Suspense
+    fallback={
+      <div className="text-center py-8 text-white">Loading menu...</div>
+    }
+  >
+    <RestaurantMenu restaurant={restaurant} />
+  </Suspense>
+</div>
   );
 }
