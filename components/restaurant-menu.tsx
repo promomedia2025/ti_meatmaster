@@ -246,41 +246,54 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
           </div>
         )}
 
-        {restaurant.menuData?.data?.menu_items ? (
-          <div key="menu-items-container">
-            {/* Get all unique categories from menu items */}
-            {(() => {
-              const allCategories = new Set<string>();
-              restaurant.menuData.data.menu_items.forEach((item) => {
-                item.categories.forEach((category) => {
-                  allCategories.add(category.name);
-                });
-              });
+{restaurant.menuData?.data?.menu_items ? (
+    <div key="menu-items-container">
+      {(() => {
+        // 1. Create a Map to store Name -> Priority
+        // This automatically deduplicates categories while keeping their priority data
+        const categoryMap = new Map<string, number>();
 
-              // Sort categories alphabetically
-              const sortedCategories = Array.from(allCategories).sort();
+        restaurant.menuData.data.menu_items.forEach((item) => {
+          item.categories.forEach((category) => {
+            if (!categoryMap.has(category.name)) {
+              categoryMap.set(category.name, category.priority);
+            }
+          });
+        });
 
-              return sortedCategories.map((categoryName) => (
-                <MenuCategory
-                  key={`category-${categoryName}`}
-                  categoryName={categoryName}
-                  menuItems={restaurant.menuData?.data?.menu_items || []}
-                  onMenuItemClick={handleMenuItemClick}
-                  loadingItemId={loadingItemId}
-                  isAuthenticated={isAuthenticated}
-                  categoryRef={(el) => {
-                    categoryRefs.current[categoryName] = el;
-                  }}
-                />
-              ));
-            })()}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400">No menu items available</p>
-          </div>
-        )}
-      </div>
+        // 2. Convert Map to an array of objects
+        const categoryArray = Array.from(categoryMap.entries()).map(
+          ([name, priority]) => ({
+            name,
+            priority,
+          })
+        );
+
+        // 3. Sort by Priority (Low numbers represent higher priority/top of list)
+        categoryArray.sort((a, b) => a.priority - b.priority);
+
+        // 4. Map the sorted list to your components
+        return categoryArray.map((cat) => (
+          <MenuCategory
+            key={`category-${cat.name}`}
+            categoryName={cat.name}
+            menuItems={restaurant.menuData?.data?.menu_items || []}
+            onMenuItemClick={handleMenuItemClick}
+            loadingItemId={loadingItemId}
+            isAuthenticated={isAuthenticated}
+            categoryRef={(el) => {
+              categoryRefs.current[cat.name] = el;
+            }}
+          />
+        ));
+      })()}
+    </div>
+  ) : (
+    <div className="text-center py-8">
+      <p className="text-gray-400">No menu items available</p>
+    </div>
+  )}
+</div>
 
       {/* Menu Options Modal */}
       <MenuOptionsModal

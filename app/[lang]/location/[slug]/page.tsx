@@ -258,7 +258,7 @@ export default async function LocationPage({
     restaurant_status: location.restaurant_status, // Pass restaurant status to components
     categories: menuCategoriesData?.data?.categories
       ? [
-          "All Items",
+          "Όλα",
           ...menuCategoriesData.data.categories.map((cat) => cat.name),
         ]
       : menuData?.data?.menu_items
