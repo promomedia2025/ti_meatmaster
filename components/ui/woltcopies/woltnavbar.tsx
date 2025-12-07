@@ -21,6 +21,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { User, X, ShoppingCart, Package } from "lucide-react";
 import Logo from "@/public/logo.png";
 import Link from "next/link";
+import LocationCartCTA from "@/components/LocationCartCTA"; // 👈 ADDED
 
 interface WoltNavbarProps {
   lang: Locale;
@@ -352,7 +353,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             )}
           </div>
 
-
           {/* Right section: Mobile search, Active Orders, Profile, Cart */}
           <div className="flex-1 h-[50px] flex items-center justify-end gap-2 sm:flex-none sm:flex-shrink-0">
             <div className="sm:hidden">
@@ -480,68 +480,23 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             </div>
 
             {/* Cart Buttons */}
-            {isAuthenticated && (
-              <div
-                className={`flex items-center gap-3 ${
-                  isSearchExpanded ? "hidden sm:flex" : ""
-                }`}
-              >
-                {/* Small Circular Cart Icon - Shows Global Cart */}
-                <button
-                  onClick={() => {
-                    setCartViewLocationId(undefined); // Show global cart
-                    setIsCartSidebarOpen(true);
-                  }}
-                  className="relative flex items-center justify-center w-10 h-10 rounded-full bg-background hover:bg-muted border-2 border-border transition-colors focus-visible:ring-2 focus-visible:ring-[#FF9800] focus-visible:border-[#FF9800] focus-visible:outline-none"
-                >
-                  <ShoppingCart
-                    className="w-5 h-5 text-muted-foreground"
-                    strokeWidth={2.5}
-                  />
-                  {/* Cart count badge - shows total items across all locations */}
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border border-gray-200">
-                    {globalSummary.totalItems}
-                  </span>
-                </button>
+{isAuthenticated && (
+  <div
+    className={`flex items-center gap-3 ${
+      isSearchExpanded ? "hidden sm:flex" : ""
+    }`}
+  >
+    {pathname.includes("/location/") && locationId && (
+      <div
+        className="hidden md:flex"
+        onClick={() => setCartViewLocationId(locationId)}
+      >
+        <LocationCartCTA locationId={locationId} />
+      </div>
+    )}
+  </div>
+)}
 
-                {/* Large Cart Button - only show on restaurant menu pages */}
-                {pathname.startsWith("/location/") && (
-                  <button
-                    onClick={() => {
-                      setCartViewLocationId(locationId || undefined); // Show location-specific cart
-                      setIsCartSidebarOpen(true);
-                    }}
-                    className="hidden md:flex items-center gap-3 bg-[#915316] hover:bg-[#915316] text-white font-medium py-3 px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-blue-500/25"
-                  >
-                    {(() => {
-                      const cart = getLocationCart(locationId || 0);
-                      return cart?.summary.count && cart.summary.count > 0;
-                    })() && (
-                      <span className="bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                        {getLocationCart(locationId || 0)?.summary.count}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <ShoppingCart className="w-4 h-4" />
-                      <span>{dict.navigation.viewOrder}</span>
-                    </div>
-                    {(() => {
-                      const cart = getLocationCart(locationId || 0);
-                      return cart?.summary.total && cart.summary.total > 0;
-                    })() && (
-                      <div className="text-right">
-                        <div className="text-sm font-bold">
-                          €
-                          {getLocationCart(
-                            locationId || 0
-                          )?.summary.total.toFixed(2)}
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
