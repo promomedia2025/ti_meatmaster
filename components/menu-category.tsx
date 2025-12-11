@@ -99,7 +99,7 @@ export default function MenuCategory({
                 </p>
               </div>
               <div className="mt-3">
-                <p className="text-[#9E2E29] font-bold text-lg">
+                <p className="text-[#ffff] font-bold text-lg">
                   {item.menu_price.toFixed(2)} {item.currency}
                 </p>
                 {item.minimum_qty > 1 && (
