@@ -1,0 +1,513 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #9E2E29;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: #9E2E29;
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.205 0 0);
+  --ring: #9E2E29;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #9E2E29;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: #9E2E29;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #9E2E29;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: #9E2E29;
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.205 0 0);
+  --ring: oklch(0.6 0.2 264);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #9E2E29;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: #9E2E29;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Prevent Google Translate from interfering with our i18n */
+  .notranslate {
+    -webkit-transform: none !important;
+    -moz-transform: none !important;
+    -ms-transform: none !important;
+    -o-transform: none !important;
+    transform: none !important;
+  }
+
+  /* Hide scrollbar for draggable carousel */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+/* Google Places Autocomplete Styling */
+.pac-container {
+  background-color: #2a2a2a !important;
+  border: 1px solid #404040 !important;
+  border-radius: 0.625rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+  margin-top: 4px !important;
+  font-family: inherit !important;
+  z-index: 9999 !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+.pac-container:after {
+  /* Keep Google branding visible per Terms of Service */
+  content: "" !important;
+  background-image: url(https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  display: block !important;
+  width: 120px !important;
+  height: 20px !important;
+  margin: 12px auto 8px !important;
+  filter: brightness(0.9) !important;
+}
+
+.pac-item {
+  background-color: #2a2a2a !important;
+  border: none !important;
+  border-bottom: 1px solid #404040 !important;
+  color: #ffffff !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.pac-item:last-child {
+  border-bottom: none !important;
+  border-radius: 0 0 0.625rem 0.625rem !important;
+}
+
+.pac-item:first-child {
+  border-radius: 0.625rem 0.625rem 0 0 !important;
+}
+
+.pac-item:hover,
+.pac-item-selected {
+  background-color: #3a3a3a !important;
+}
+
+.pac-item-query {
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+.pac-matched {
+  color: #8b5cf6 !important;
+  font-weight: 600 !important;
+}
+
+.pac-item-query .pac-matched {
+  color: #8b5cf6 !important;
+}
+
+.pac-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E") !important;
+  background-size: 16px 16px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 8px !important;
+}
+
+.pac-logo:after {
+  /* Keep Google branding visible per Terms of Service */
+  content: "" !important;
+  background-image: url(https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  display: block !important;
+  width: 120px !important;
+  height: 20px !important;
+  filter: brightness(0.9) !important;
+}
+
+/* Loading state styling */
+.pac-container .pac-loading {
+  color: #8b5cf6 !important;
+  text-align: center !important;
+  padding: 16px !important;
+}
+
+/* No results styling */
+.pac-container .pac-no-results {
+  color: #9ca3af !important;
+  text-align: center !important;
+  padding: 16px !important;
+  font-style: italic !important;
+}
+
+/* Custom scrollbar for pac-container */
+.pac-container::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.pac-container::-webkit-scrollbar-track {
+  background: #1a1a1a !important;
+  border-radius: 3px !important;
+}
+
+.pac-container::-webkit-scrollbar-thumb {
+  background: #404040 !important;
+  border-radius: 3px !important;
+}
+
+.pac-container::-webkit-scrollbar-thumb:hover {
+  background: #555555 !important;
+}
+
+/* Focus states */
+.pac-item:focus {
+  outline: 2px solid #8b5cf6 !important;
+  outline-offset: -2px !important;
+}
+
+/* Animation for smooth appearance */
+.pac-container {
+  animation: fadeInDown 0.2s ease-out !important;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Range slider styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.slider:hover {
+  transform: scaleY(1.2);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #9E2E29;;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #9E2E29;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom scrollbar for category navigation */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(156, 163, 175, 1);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.8) rgba(55, 65, 81, 0.3);
+}
+
+/* Custom scrollbar for cart sidebar */
+.cart-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb {
+  background: #3f3f3f;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox scrollbar styling for cart */
+.cart-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f #1a1a1a;
+}
+
+/* Custom scrollbar for admin orders list */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #009DE0;
+}
+
+/* Firefox scrollbar styling for admin */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 #1a1a1a;
+}
+
+/* Prettier custom scrollbar - global style */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(26, 26, 26, 0.5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3f3f3f 0%, #2a2a2a 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(26, 26, 26, 0.5);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9E2E29 0%, #e67e22 100%);
+  border-color: rgba(255, 147, 40, 0.3);
+  box-shadow: 0 0 8px rgba(255, 147, 40, 0.4);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #e67e22 0%, #d35400 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(26, 26, 26, 0.5);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f rgba(26, 26, 26, 0.5);
+}
+
+/* Enhanced cart scrollbar */
+.cart-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-track {
+  background: rgba(26, 26, 26, 0.8);
+  border-radius: 10px;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3f3f3f 0%, #2a2a2a 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(26, 26, 26, 0.5);
+  transition: all 0.3s ease;
+}
+
+.cart-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9E2E29 0%, #e67e22 100%);
+  border-color: rgba(255, 147, 40, 0.3);
+  box-shadow: 0 0 8px rgba(255, 147, 40, 0.4);
+}
+
+.cart-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f rgba(26, 26, 26, 0.8);
+}
+
+/* Menu options modal scrollbar */
+.menu-options-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.menu-options-scrollbar::-webkit-scrollbar-track {
+  background: rgba(26, 26, 26, 0.5);
+  border-radius: 10px;
+}
+
+.menu-options-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3f3f3f 0%, #2a2a2a 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(26, 26, 26, 0.5);
+  transition: all 0.3s ease;
+}
+
+.menu-options-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9E2E29 0%, #e67e22 100%);
+  border-color: rgba(255, 147, 40, 0.3);
+  box-shadow: 0 0 8px rgba(255, 147, 40, 0.4);
+}
+
+.menu-options-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f rgba(26, 26, 26, 0.5);
+}

@@ -1,0 +1,18 @@
+// Server Component - Renders the video structure with SSR
+import { HeroVideoCarouselClient } from "./HeroVideoCarouselClient";
+
+const VIDEOS = [
+  "/1.mp4",
+  "/2.mp4",
+  "/3.mp4",
+  "/4.mp4",
+  "/5.mp4",
+  "/6.mp4",
+  "/7.mp4",
+  "/8.mp4",
+  "/9.mp4",
+];
+
+export default function HeroVideoCarousel() {
+  return <HeroVideoCarouselClient videos={VIDEOS} />;
+}
