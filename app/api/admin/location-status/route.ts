@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     // Fetch location status from external API
     // This endpoint appears to be public and doesn't require authentication
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/locations/13/status",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/locations/13/status`,
       {
         method: "GET",
         headers: {
@@ -47,4 +47,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

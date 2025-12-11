@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to external API
-    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/create`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/create`;
     console.log("📝 Creating address via API:", apiUrl);
     console.log("📤 Request body:", {
       customer_id,

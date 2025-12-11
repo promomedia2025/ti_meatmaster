@@ -83,89 +83,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
-  const fetchDefaultAddress = async (customerId: number) => {
-    try {
-      const response = await fetch(
-        `https://cocofino.bettersolution.gr/api/address-book/${customerId}?default=true`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (
-          data.success &&
-          data.data.addresses &&
-          data.data.addresses.length > 0
-        ) {
-          const address = data.data.addresses[0];
-          setDefaultAddress(address);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching default address:", error);
-    }
-  };
-
-  const startLocationTracking = (lang: string = "el") => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by this browser");
-      return;
-    }
-
-    setIsTrackingLocation(true);
-    setLocationError(null);
-
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000, // 5 minutes
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-        setCoordinates(coords);
-        setIsTrackingLocation(false);
-
-        // Automatically reverse geocode the coordinates
-        const address = await reverseGeocode(
-          coords.latitude,
-          coords.longitude,
-          lang
-        );
-        if (address) {
-          setFormattedAddress(address);
-        }
-      },
-      (error) => {
-        setIsTrackingLocation(false);
-        let errorMessage = "Unable to retrieve your location";
-
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied by user";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out";
-            break;
-        }
-
-        setLocationError(errorMessage);
-      },
-      options
-    );
-  };
-
-  const stopLocationTracking = () => {
-    setIsTrackingLocation(false);
-    setLocationError(null);
-  };
-
+  // Reverse geocode: convert coordinates to formatted address
   const reverseGeocode = useCallback(
     async (
       lat: number,
@@ -222,6 +140,296 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // Forward geocode: convert address string to coordinates
+  const forwardGeocode = useCallback(
+    async (
+      addressString: string,
+      lang: string = "el"
+    ): Promise<LocationCoordinates | null> => {
+      try {
+        console.log(
+          "📍 [FORWARD GEOCODE] Starting forward geocoding for address:",
+          addressString
+        );
+        setIsGeocoding(true);
+
+        const response = await fetch(
+          `/api/geocode?address=${encodeURIComponent(
+            addressString
+          )}&lang=${lang}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Forward geocoding failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("📍 [FORWARD GEOCODE] API response:", data);
+
+        if (data && data.success && data.data && data.data.length > 0) {
+          const firstResult = data.data[0];
+          const coords = {
+            latitude: parseFloat(firstResult.lat),
+            longitude: parseFloat(firstResult.lon),
+          };
+          console.log("📍 [FORWARD GEOCODE] ✅ Coordinates found:", coords);
+          return coords;
+        }
+
+        console.log("📍 [FORWARD GEOCODE] ⚠️ No coordinates found for address");
+        return null;
+      } catch (error) {
+        console.error(
+          "📍 [FORWARD GEOCODE] ❌ Error during forward geocoding:",
+          error
+        );
+        return null;
+      } finally {
+        setIsGeocoding(false);
+      }
+    },
+    []
+  );
+
+  const fetchDefaultAddress = useCallback(
+    async (customerId: number) => {
+      console.log(
+        "📍 [ADDRESS FETCH] Starting to fetch default address for customer:",
+        customerId
+      );
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl = `${baseUrl}/api/address-book/${customerId}?default=true`;
+        console.log("📍 [ADDRESS FETCH] API URL:", apiUrl);
+
+        const response = await fetch(apiUrl);
+        console.log(
+          "📍 [ADDRESS FETCH] Response status:",
+          response.status,
+          response.ok
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("📍 [ADDRESS FETCH] API response data:", data);
+
+          if (
+            data.success &&
+            data.data.addresses &&
+            data.data.addresses.length > 0
+          ) {
+            const address = data.data.addresses[0];
+            console.log("📍 [ADDRESS FETCH] ✅ Default address found:", {
+              id: address.id,
+              address_1: address.address_1,
+              city: address.city,
+              postcode: address.postcode,
+              formatted_address: address.formatted_address,
+              has_coordinates: !!(
+                address.coordinates &&
+                address.coordinates.latitude &&
+                address.coordinates.longitude
+              ),
+            });
+
+            setDefaultAddress(address);
+
+            let coords: LocationCoordinates | null = null;
+
+            // Check if coordinates are available in the address
+            if (
+              address.coordinates &&
+              address.coordinates.latitude &&
+              address.coordinates.longitude
+            ) {
+              coords = {
+                latitude: parseFloat(address.coordinates.latitude),
+                longitude: parseFloat(address.coordinates.longitude),
+              };
+              console.log(
+                "📍 [ADDRESS FETCH] Using coordinates from address:",
+                coords
+              );
+            } else {
+              // No coordinates available, use forward geocoding to get them
+              console.log(
+                "📍 [ADDRESS FETCH] ⚠️ No coordinates in address, attempting forward geocoding..."
+              );
+
+              // Build address string for geocoding
+              const addressParts = [
+                address.address_1,
+                address.address_2,
+                address.city,
+                address.postcode,
+                address.country?.name || "Greece",
+              ].filter(Boolean);
+              const addressString = addressParts.join(", ");
+
+              console.log(
+                "📍 [ADDRESS FETCH] Geocoding address string:",
+                addressString
+              );
+              coords = await forwardGeocode(addressString);
+
+              if (coords) {
+                console.log(
+                  "📍 [ADDRESS FETCH] ✅ Successfully geocoded address to coordinates:",
+                  coords
+                );
+              } else {
+                console.log(
+                  "📍 [ADDRESS FETCH] ❌ Failed to geocode address, coordinates not available"
+                );
+              }
+            }
+
+            // If we have coordinates (either from address or geocoding), set them and reverse geocode
+            if (coords) {
+              setCoordinates(coords);
+
+              // Use reverse geocoding to get properly formatted address
+              const formatted = await reverseGeocode(
+                coords.latitude,
+                coords.longitude,
+                "el"
+              );
+              if (formatted) {
+                // Preserve bell_name and floor from the original address
+                const formattedWithExtras: FormattedAddress = {
+                  ...formatted,
+                  bell_name: address.bell_name || null,
+                  floor: address.floor || null,
+                };
+                console.log(
+                  "📍 [ADDRESS FETCH] Setting formatted address from reverse geocoding (with bell_name & floor):",
+                  formattedWithExtras
+                );
+                setFormattedAddress(formattedWithExtras);
+              } else {
+                // Fallback to address data if reverse geocoding fails
+                const formatted: FormattedAddress = {
+                  street: address.address_1 || "",
+                  area: address.city || "",
+                  postcode: address.postcode || "",
+                  fullAddress:
+                    address.formatted_address ||
+                    `${address.address_1}, ${address.city} ${address.postcode}`,
+                  bell_name: address.bell_name || null,
+                  floor: address.floor || null,
+                };
+                console.log(
+                  "📍 [ADDRESS FETCH] Setting formatted address from address data (fallback):",
+                  formatted
+                );
+                setFormattedAddress(formatted);
+              }
+            } else {
+              // No coordinates available at all, just set formatted address from address data
+              const formatted: FormattedAddress = {
+                street: address.address_1 || "",
+                area: address.city || "",
+                postcode: address.postcode || "",
+                fullAddress:
+                  address.formatted_address ||
+                  `${address.address_1}, ${address.city} ${address.postcode}`,
+                bell_name: address.bell_name || null,
+                floor: address.floor || null,
+              };
+              console.log(
+                "📍 [ADDRESS FETCH] Setting formatted address from address data (no coordinates):",
+                formatted
+              );
+              setFormattedAddress(formatted);
+            }
+          } else {
+            console.log(
+              "📍 [ADDRESS FETCH] ℹ️ No default address found for customer"
+            );
+          }
+        } else {
+          console.log(
+            "📍 [ADDRESS FETCH] ❌ API response not OK, status:",
+            response.status
+          );
+        }
+      } catch (error) {
+        console.error(
+          "📍 [ADDRESS FETCH] ❌ Error fetching default address:",
+          error
+        );
+      }
+    },
+    [forwardGeocode, reverseGeocode]
+  );
+
+  const startLocationTracking = (lang: string = "el") => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser");
+      return;
+    }
+
+    setIsTrackingLocation(true);
+    setLocationError(null);
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000, // 5 minutes
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        setCoordinates(coords);
+        setIsTrackingLocation(false);
+
+        // Automatically reverse geocode the coordinates
+        const address = await reverseGeocode(
+          coords.latitude,
+          coords.longitude,
+          lang
+        );
+        if (address) {
+          // Preserve bell_name and floor from defaultAddress if it exists
+          const addressWithExtras: FormattedAddress = {
+            ...address,
+            bell_name: defaultAddress?.bell_name || null,
+            floor: defaultAddress?.floor || null,
+          };
+          setFormattedAddress(addressWithExtras);
+        }
+      },
+      (error) => {
+        setIsTrackingLocation(false);
+        let errorMessage = "Unable to retrieve your location";
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied by user";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            break;
+        }
+
+        setLocationError(errorMessage);
+      },
+      options
+    );
+  };
+
+  const stopLocationTracking = () => {
+    setIsTrackingLocation(false);
+    setLocationError(null);
+  };
+
   const refreshAddress = useCallback(
     async (lang: string) => {
       if (coordinates) {
@@ -231,25 +439,49 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           lang
         );
         if (address) {
-          setFormattedAddress(address);
+          // Preserve bell_name and floor from defaultAddress if it exists
+          const addressWithExtras: FormattedAddress = {
+            ...address,
+            bell_name: defaultAddress?.bell_name || null,
+            floor: defaultAddress?.floor || null,
+          };
+          setFormattedAddress(addressWithExtras);
         }
       }
     },
-    [coordinates, reverseGeocode]
+    [coordinates, reverseGeocode, defaultAddress]
   );
 
-  // Auto-start location tracking when user logs in (only if no manual address is set)
+  // Fetch default address when user logs in
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      // Only start automatic tracking if no manual address has been set
-      if (!formattedAddress) {
-        startLocationTracking();
-      }
-    } else {
-      stopLocationTracking();
-      setCoordinates(null);
+    if (isAuthenticated && user?.id && !defaultAddress) {
+      console.log(
+        "📍 [ADDRESS FETCH] User logged in, triggering default address fetch for user:",
+        user.id
+      );
+      fetchDefaultAddress(user.id);
+    } else if (isAuthenticated && user?.id && defaultAddress) {
+      console.log(
+        "📍 [ADDRESS FETCH] User logged in but default address already exists, skipping fetch"
+      );
     }
-  }, [isAuthenticated, user?.id, formattedAddress]);
+  }, [isAuthenticated, user?.id, defaultAddress, fetchDefaultAddress]);
+
+  // Expose a function to manually refresh the default address (for when user sets a new default)
+  const refreshDefaultAddress = useCallback(async () => {
+    if (isAuthenticated && user?.id) {
+      console.log(
+        "📍 [ADDRESS FETCH] Manually refreshing default address for user:",
+        user.id
+      );
+      // Clear existing default address to force re-fetch
+      setDefaultAddress(null);
+      await fetchDefaultAddress(user.id);
+    }
+  }, [isAuthenticated, user?.id, fetchDefaultAddress]);
+
+  // Note: Auto-start location tracking removed - location detection now only happens
+  // when user explicitly clicks the button in the location modal
 
   return (
     <LocationContext.Provider
@@ -259,6 +491,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         defaultAddress,
         setDefaultAddress,
         fetchDefaultAddress,
+        refreshDefaultAddress,
         isTrackingLocation,
         locationError,
         startLocationTracking,

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Get user favorites from API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/public/locations/favorites",
+      `${process.env.NEXT_PUBLIC_API_URL}/public/locations/favorites`,
       {
         method: "GET",
         headers: {

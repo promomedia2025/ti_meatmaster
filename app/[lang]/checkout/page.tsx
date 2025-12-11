@@ -796,7 +796,7 @@ function CheckoutPageContent() {
         if (
           error.message.includes("access control") ||
           error.message.includes("CORS") ||
-          error.message.includes("cocofino.bettersolution.gr")
+          error.message.includes(process.env.NEXT_PUBLIC_API_URL || "")
         ) {
           errorMessage =
             "Σφάλμα ασφαλείας δικτύου. Παρακαλώ ανανεώστε τη σελίδα και δοκιμάστε ξανά.";
@@ -812,449 +812,460 @@ function CheckoutPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+      <div className="bg-gray-900 border-b border-gray-800 flex-shrink-0">
+        <div className="container mx-auto px-3 sm:px-4 py-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+              className="p-1.5 sm:p-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-lg sm:text-xl font-bold text-white">
               Ολοκλήρωση παραγγελίας
             </h1>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-2xl">
-        {/* Restaurant Info */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-2">
-            {locationCart.locationName}
-          </h2>
-          <div className="text-gray-400 text-sm">
-            {locationCart.summary.count}{" "}
-            {locationCart.summary.count === 1 ? "αντικείμενο" : "αντικείμενα"} •
-            Σύνολο: €{locationCart.summary.total.toFixed(2)}
-          </div>
-        </Card>
-
-        {/* Customer Info */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Στοιχεία πελάτη
-          </h3>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-gray-300 text-sm mb-1">Όνομα</label>
-              <Input
-                value={
-                  user?.name ||
-                  `${user?.first_name || ""} ${user?.last_name || ""}`.trim() ||
-                  ""
-                }
-                readOnly
-                className="bg-gray-800 border-gray-700 text-white"
-                placeholder="Όνομα"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-300 text-sm mb-1">Email</label>
-              <Input
-                value={user?.email || ""}
-                readOnly
-                className="bg-gray-800 border-gray-700 text-white"
-                placeholder="Email"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Order Type */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Τρόπος παραλαβής
-          </h3>
-          <div className="space-y-3">
-            {(() => {
-              const deliveryData = locationCart
-                ? getDeliveryData(locationCart.locationId)
-                : null;
-              const isDeliveryDisabled = !!(
-                deliveryData && !deliveryData.delivery_enabled
-              );
-
-              return (
-                <label
-                  className={`flex items-center gap-3 ${
-                    isDeliveryDisabled
-                      ? "cursor-not-allowed opacity-50"
-                      : "cursor-pointer"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="orderType"
-                    value="delivery"
-                    checked={orderType === "delivery"}
-                    onChange={(e) => setOrderType(e.target.value as "delivery")}
-                    disabled={isDeliveryDisabled}
-                    className="w-4 h-4 text-primary disabled:cursor-not-allowed"
-                  />
-                  <div className="flex items-center gap-2 flex-1">
-                    <MapPin className="w-4 h-4 text-blue-400" />
-                    <span className="text-white">Παράδοση</span>
-                    {isDeliveryDisabled && (
-                      <span className="text-red-400 text-sm ml-auto">
-                        Το delivery δεν είναι διαθεσιμο
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })()}
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="orderType"
-                value="pickup"
-                checked={orderType === "pickup"}
-                onChange={(e) => setOrderType(e.target.value as "pickup")}
-                className="w-4 h-4 text-primary"
-              />
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-green-400" />
-                <span className="text-white">Παραλαβή</span>
-              </div>
-            </label>
-          </div>
-        </Card>
-
-        {/* Delivery Address (only if delivery is selected) */}
-        {orderType === "delivery" && (
-          <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Διεύθυνση παράδοσης
-            </h3>
-            {userLocation ? (
-              <div className="space-y-3">
-                {isAuthenticated && (
-                  <Button
-                    onClick={() => setIsAddressBookModalOpen(true)}
-                    className="w-full mb-3 bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Επιλεξτε μια απο τις αποθηκευμένες διευθύνσεις
-                  </Button>
-                )}
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">
-                    Διεύθυνση
-                  </label>
-                  <Input
-                    value={`${userLocation.addressDetails.street || ""}`.trim()}
-                    readOnly
-                    className="bg-gray-800 border-gray-700 text-white"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+      {/* Main Content - Grid Layout */}
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+            {/* Left Column - Form */}
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+              {/* Customer Info */}
+              <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                  Στοιχεία πελάτη
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <div>
-                    <label className="block text-gray-300 text-sm mb-1">
-                      Πόλη
+                    <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                      Όνομα
                     </label>
                     <Input
-                      value={userLocation.city}
-                      readOnly
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">
-                      Ταχυδρομικός κώδικας
-                    </label>
-                    <Input
-                      value={userLocation.addressDetails.postalCode || ""}
-                      readOnly
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">
-                      Όνομα στο Κουδούνι
-                    </label>
-                    <Input
-                      value={bellName}
-                      onChange={(e) => setBellName(e.target.value)}
-                      placeholder="π.χ. Παππάς"
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-1">
-                      Όροφος
-                    </label>
-                    <Input
-                      value={floor}
-                      onChange={(e) => setFloor(e.target.value)}
-                      placeholder="π.χ. 3"
-                      className="bg-gray-800 border-gray-700 text-white"
-                    />
-                  </div>
-                </div>
-                {isAuthenticated && (
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Checkbox
-                      id="save-address"
-                      checked={saveAddress}
-                      onCheckedChange={(checked) =>
-                        setSaveAddress(checked === true)
+                      value={
+                        user?.name ||
+                        `${user?.first_name || ""} ${
+                          user?.last_name || ""
+                        }`.trim() ||
+                        ""
                       }
+                      readOnly
+                      className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                      placeholder="Όνομα"
                     />
-                    <label
-                      htmlFor="save-address"
-                      className="text-sm text-gray-300 cursor-pointer"
-                    >
-                      Αποθήκευση διεύθυνσης στο βιβλίο διευθύνσεων
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                      Email
+                    </label>
+                    <Input
+                      value={user?.email || ""}
+                      readOnly
+                      className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                      placeholder="Email"
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Order Type */}
+              <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                  Τρόπος παραλαβής
+                </h3>
+                <div className="space-y-2">
+                  {(() => {
+                    const deliveryData = locationCart
+                      ? getDeliveryData(locationCart.locationId)
+                      : null;
+                    const isDeliveryDisabled = !!(
+                      deliveryData && !deliveryData.delivery_enabled
+                    );
+
+                    return (
+                      <label
+                        className={`flex items-center gap-3 ${
+                          isDeliveryDisabled
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value="delivery"
+                          checked={orderType === "delivery"}
+                          onChange={(e) =>
+                            setOrderType(e.target.value as "delivery")
+                          }
+                          disabled={isDeliveryDisabled}
+                          className="w-4 h-4 text-primary disabled:cursor-not-allowed"
+                        />
+                        <div className="flex items-center gap-2 flex-1">
+                          <MapPin className="w-4 h-4 text-blue-400" />
+                          <span className="text-white">Παράδοση</span>
+                          {isDeliveryDisabled && (
+                            <span className="text-red-400 text-sm ml-auto">
+                              Το delivery δεν είναι διαθεσιμο
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })()}
+                  <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="pickup"
+                      checked={orderType === "pickup"}
+                      onChange={(e) => setOrderType(e.target.value as "pickup")}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-green-400" />
+                      <span className="text-white text-sm sm:text-base">
+                        Παραλαβή
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </Card>
+
+              {/* Delivery Address (only if delivery is selected) */}
+              {orderType === "delivery" && (
+                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                    Διεύθυνση παράδοσης
+                  </h3>
+                  {userLocation ? (
+                    <div className="space-y-2 sm:space-y-3">
+                      {isAuthenticated && (
+                        <Button
+                          onClick={() => setIsAddressBookModalOpen(true)}
+                          className="w-full bg-blue-600 text-white hover:bg-blue-700 h-9 sm:h-10 text-xs sm:text-sm"
+                        >
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                          <span className="truncate">
+                            Επιλεξτε αποθηκευμένες
+                          </span>
+                        </Button>
+                      )}
+                      <div>
+                        <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                          Διεύθυνση
+                        </label>
+                        <Input
+                          value={`${
+                            userLocation.addressDetails.street || ""
+                          }`.trim()}
+                          readOnly
+                          className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div>
+                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                            Πόλη
+                          </label>
+                          <Input
+                            value={userLocation.city}
+                            readOnly
+                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                            Τ.Κ.
+                          </label>
+                          <Input
+                            value={userLocation.addressDetails.postalCode || ""}
+                            readOnly
+                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div>
+                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                            Κουδούνι
+                          </label>
+                          <Input
+                            value={bellName}
+                            onChange={(e) => setBellName(e.target.value)}
+                            placeholder="π.χ. Παππάς"
+                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                            Όροφος
+                          </label>
+                          <Input
+                            value={floor}
+                            onChange={(e) => setFloor(e.target.value)}
+                            placeholder="π.χ. 3"
+                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                          />
+                        </div>
+                      </div>
+                      {isAuthenticated && (
+                        <div className="flex items-center space-x-2 pt-1">
+                          <Checkbox
+                            id="save-address"
+                            checked={saveAddress}
+                            onCheckedChange={(checked) =>
+                              setSaveAddress(checked === true)
+                            }
+                          />
+                          <label
+                            htmlFor="save-address"
+                            className="text-xs sm:text-sm text-gray-300 cursor-pointer"
+                          >
+                            Αποθήκευση διεύθυνσης
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 sm:space-y-3">
+                      <p className="text-gray-400 text-xs sm:text-sm">
+                        Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
+                        εισάγετε μια νέα διεύθυνση
+                      </p>
+                      {isAuthenticated && (
+                        <Button
+                          onClick={() => setIsAddressBookModalOpen(true)}
+                          disabled={isLoadingLocation}
+                          className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-9 sm:h-10 text-xs sm:text-sm"
+                        >
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                          <span className="truncate">
+                            Επιλεξτε αποθηκευμένες
+                          </span>
+                        </Button>
+                      )}
+                      <Button
+                        onClick={handleAutocompleteFromNavbar}
+                        disabled={!coordinates || isLoadingLocation}
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed h-9 sm:h-10 text-xs sm:text-sm"
+                      >
+                        {isLoadingLocation ? (
+                          <>
+                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                            Φόρτωση...
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                            <span className="truncate">
+                              Χρησιμοποίησε τοποθεσία
+                            </span>
+                          </>
+                        )}
+                      </Button>
+                      <div>
+                        <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                          Ή εισάγετε διεύθυνση
+                        </label>
+                        <GooglePlacesCustom
+                          onPlaceSelect={handleGooglePlaceSelect}
+                          value={addressInput}
+                          onChange={setAddressInput}
+                          placeholder="Εισάγετε διεύθυνση παράδοσης..."
+                          className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              )}
+            </div>
+
+            {/* Right Column - Order Summary (Sticky on desktop) */}
+            <div className="lg:col-span-3">
+              <div className="lg:sticky lg:top-4 space-y-3 sm:space-y-4">
+                {/* Payment Method */}
+                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                    Τρόπος πληρωμής
+                  </h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cash"
+                        checked={paymentMethod === "cash"}
+                        onChange={(e) =>
+                          setPaymentMethod(e.target.value as "cash")
+                        }
+                        className="w-4 h-4 text-primary"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-white text-sm sm:text-base">
+                          Πληρωμή στην παράδοση/παραλαβή
+                        </span>
+                      </div>
                     </label>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-gray-400 text-sm mb-3">
-                  Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
-                  εισάγετε μια νέα διεύθυνση
-                </p>
-                {isAuthenticated && (
-                  <Button
-                    onClick={() => setIsAddressBookModalOpen(true)}
-                    disabled={isLoadingLocation}
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Επιλεξτε μια απο τις αποθηκευμένες διευθύνσεις
-                  </Button>
-                )}
-                <Button
-                  onClick={handleAutocompleteFromNavbar}
-                  disabled={!coordinates || isLoadingLocation}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-                >
-                  {isLoadingLocation ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Φόρτωση...
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Χρησιμοποίησε τοποθεσία από γραμμή πλοήγησης
-                    </>
-                  )}
-                </Button>
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">
-                    Ή εισάγετε διεύθυνση
-                  </label>
-                  <GooglePlacesCustom
-                    onPlaceSelect={handleGooglePlaceSelect}
-                    value={addressInput}
-                    onChange={setAddressInput}
-                    placeholder="Εισάγετε διεύθυνση παράδοσης..."
-                    className="bg-gray-800 border-gray-700 text-white"
+                </Card>
+
+                {/* Order Comments */}
+                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                    Σχόλια παραγγελίας
+                  </h3>
+                  <textarea
+                    value={orderComments}
+                    onChange={(e) => setOrderComments(e.target.value)}
+                    placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
+                    className="w-full h-20 sm:h-24 bg-gray-800 border border-gray-700 rounded-lg p-2 sm:p-3 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   />
-                </div>
-              </div>
-            )}
-          </Card>
-        )}
+                </Card>
 
-        {/* Payment Method */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Τρόπος πληρωμής
-          </h3>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="cash"
-                checked={paymentMethod === "cash"}
-                onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                className="w-4 h-4 text-primary"
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-white">
-                  Πληρωμή στην παράδοση/παραλαβή
-                </span>
-              </div>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="card"
-                checked={paymentMethod === "card"}
-                onChange={(e) => setPaymentMethod(e.target.value as "card")}
-                className="w-4 h-4 text-primary"
-              />
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-blue-400" />
-                <span className="text-white">Χρεωστική/Πιστωτική Κάρτα</span>
-              </div>
-            </label>
-          </div>
-        </Card>
-
-        {/* Order Comments */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Σχόλια παραγγελίας
-          </h3>
-          <textarea
-            value={orderComments}
-            onChange={(e) => setOrderComments(e.target.value)}
-            placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
-            className="w-full h-24 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </Card>
-
-        {/* Order Summary */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Σύνοψη παραγγελίας
-          </h3>
-          <div className="space-y-3">
-            {locationCart.items.map((item) => (
-              <div
-                key={item.rowId}
-                className="border-b border-gray-700 pb-2 last:border-b-0"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">
-                    {item.name} x{item.qty}
-                  </span>
-                  <span className="text-white font-medium">
-                    €{item.subtotal.toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Display menu options if any */}
-                {item.options && item.options.length > 0 && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.options.flatMap((opt) =>
-                      opt.values.map((val, index) => (
-                        <div
-                          key={`${item.rowId}-${opt.menu_option_id}-${val.menu_option_value_id}-${index}`}
-                          className="flex justify-between items-center text-sm"
-                        >
-                          <span className="text-gray-400">
-                            + {val.option_value_name}
-                            {val.price > 0 && ` (€${val.price.toFixed(2)})`}
+                {/* Order Summary */}
+                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+                    Σύνοψη παραγγελίας
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
+                    {locationCart.items.map((item) => (
+                      <div
+                        key={item.rowId}
+                        className="border-b border-gray-700 pb-2 last:border-b-0"
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-gray-300 text-sm flex-1">
+                            {item.name} x{item.qty}
+                          </span>
+                          <span className="text-white font-medium text-sm whitespace-nowrap">
+                            €{item.subtotal.toFixed(2)}
                           </span>
                         </div>
-                      ))
-                    )}
-                  </div>
-                )}
 
-                {/* Display item comment if any */}
-                {item.comment && (
-                  <div className="ml-4 mt-1">
-                    <span className="text-gray-400 text-sm italic">
-                      "{item.comment}"
-                    </span>
+                        {/* Display menu options if any */}
+                        {item.options && item.options.length > 0 && (
+                          <div className="ml-2 sm:ml-4 mt-1 space-y-0.5 sm:space-y-1">
+                            {item.options.flatMap((opt) =>
+                              opt.values.map((val, index) => (
+                                <div
+                                  key={`${item.rowId}-${opt.menu_option_id}-${val.menu_option_value_id}-${index}`}
+                                  className="flex justify-between items-center text-xs sm:text-sm"
+                                >
+                                  <span className="text-gray-400">
+                                    + {val.option_value_name}
+                                    {val.price > 0 &&
+                                      ` (€${val.price.toFixed(2)})`}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+
+                        {/* Display item comment if any */}
+                        {item.comment && (
+                          <div className="ml-2 sm:ml-4 mt-1">
+                            <span className="text-gray-400 text-xs sm:text-sm italic">
+                              "{item.comment}"
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div className="border-t border-gray-700 pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white font-semibold text-sm sm:text-base">
+                          Σύνολο
+                        </span>
+                        <span className="text-white font-bold text-base sm:text-lg">
+                          €{locationCart.summary.total.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-            <div className="border-t border-gray-700 pt-2 mt-2">
-              <div className="flex justify-between items-center">
-                <span className="text-white font-semibold">Σύνολο</span>
-                <span className="text-white font-bold text-lg">
-                  €{locationCart.summary.total.toFixed(2)}
-                </span>
+
+                  {/* Submit Button - Moved to summary card */}
+                  {(() => {
+                    const deliveryData = locationCart
+                      ? getDeliveryData(locationCart.locationId)
+                      : null;
+                    const isOutsideDeliveryArea =
+                      orderType === "delivery" &&
+                      deliveryData &&
+                      !deliveryData.is_within_delivery_area;
+
+                    // Use hook status first (most up-to-date), fallback to locationCart status
+                    const isRestaurantOpen =
+                      restaurantStatus?.is_open ??
+                      locationCart?.restaurantStatus?.isOpen ??
+                      true;
+                    const isRestaurantClosed = !isRestaurantOpen;
+
+                    // Get status message from hook first, then fallback to locationCart
+                    const statusMessage =
+                      restaurantStatus?.status_message ||
+                      locationCart?.restaurantStatus?.statusMessage ||
+                      "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
+
+                    return (
+                      <div className="space-y-2 mt-4">
+                        <Button
+                          onClick={handleSubmitOrder}
+                          disabled={
+                            isSubmitting ||
+                            isLoadingRestaurantStatus ||
+                            isRestaurantClosed ||
+                            (orderType === "delivery" &&
+                              locationCart &&
+                              isDeliveryBlocked(locationCart.locationId))
+                          }
+                          className={`w-full py-2.5 sm:py-3 text-sm sm:text-base font-medium transition-all duration-200 ${
+                            isRestaurantClosed ||
+                            (orderType === "delivery" &&
+                              locationCart &&
+                              isDeliveryBlocked(locationCart.locationId))
+                              ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+                              : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          }`}
+                        >
+                          {isSubmitting
+                            ? "Υποβολή..."
+                            : isLoadingRestaurantStatus
+                            ? "Ελέγχοντας..."
+                            : isRestaurantClosed
+                            ? "Το εστιατόριο είναι κλειστό"
+                            : orderType === "delivery" &&
+                              locationCart &&
+                              isDeliveryBlocked(locationCart.locationId)
+                            ? "Η διεύθυνση είναι εκτός περιοχής"
+                            : "Υποβολή παραγγελίας"}
+                        </Button>
+                        {isRestaurantClosed && !isLoadingRestaurantStatus && (
+                          <p className="text-red-400 text-xs sm:text-sm text-center">
+                            {statusMessage}
+                          </p>
+                        )}
+                        {isOutsideDeliveryArea && !isRestaurantClosed && (
+                          <p className="text-red-400 text-xs sm:text-sm text-center">
+                            Το καταστημα δεν εξυπηρετει την συγκεκριμενη
+                            διευθυνση
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </Card>
               </div>
             </div>
           </div>
-        </Card>
-
-        {/* Submit Button */}
-        {(() => {
-          const deliveryData = locationCart
-            ? getDeliveryData(locationCart.locationId)
-            : null;
-          const isOutsideDeliveryArea =
-            orderType === "delivery" &&
-            deliveryData &&
-            !deliveryData.is_within_delivery_area;
-
-          // Use hook status first (most up-to-date), fallback to locationCart status
-          const isRestaurantOpen =
-            restaurantStatus?.is_open ??
-            locationCart?.restaurantStatus?.isOpen ??
-            true;
-          const isRestaurantClosed = !isRestaurantOpen;
-
-          // Get status message from hook first, then fallback to locationCart
-          const statusMessage =
-            restaurantStatus?.status_message ||
-            locationCart?.restaurantStatus?.statusMessage ||
-            "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
-
-          return (
-            <div className="space-y-2">
-              <Button
-                onClick={handleSubmitOrder}
-                disabled={
-                  isSubmitting ||
-                  isLoadingRestaurantStatus ||
-                  isRestaurantClosed ||
-                  (orderType === "delivery" &&
-                    locationCart &&
-                    isDeliveryBlocked(locationCart.locationId))
-                }
-                className={`w-full py-3 text-lg font-medium transition-all duration-200 ${
-                  isRestaurantClosed ||
-                  (orderType === "delivery" &&
-                    locationCart &&
-                    isDeliveryBlocked(locationCart.locationId))
-                    ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                }`}
-              >
-                {isSubmitting
-                  ? "Υποβολή..."
-                  : isLoadingRestaurantStatus
-                  ? "Ελέγχοντας κατάσταση..."
-                  : isRestaurantClosed
-                  ? "Το εστιατόριο είναι κλειστό"
-                  : orderType === "delivery" &&
-                    locationCart &&
-                    isDeliveryBlocked(locationCart.locationId)
-                  ? "Η διεύθυνση είναι εκτός περιοχής"
-                  : "Υποβολή παραγγελίας"}
-              </Button>
-              {isRestaurantClosed && !isLoadingRestaurantStatus && (
-                <p className="text-red-400 text-sm text-center">
-                  {statusMessage}
-                </p>
-              )}
-              {isOutsideDeliveryArea && !isRestaurantClosed && (
-                <p className="text-red-400 text-sm text-center">
-                  Το καταστημα δεν εξυπηρετει την συγκεκριμενη διευθυνση
-                </p>
-              )}
-            </div>
-          );
-        })()}
+        </div>
       </div>
 
       {/* Address Book Modal */}

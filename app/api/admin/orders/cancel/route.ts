@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Make the request to the external API server-side (avoids CORS)
-    const externalApiUrl = `https://cocofino.bettersolution.gr/admin/orders/cancelOrder/${order_id}`;
+    const externalApiUrl = `${process.env.NEXT_PUBLIC_API_URL}/admin/orders/cancelOrder/${order_id}`;
 
     console.log("🌐 [CANCEL-ORDER] Calling external API:", externalApiUrl);
 
@@ -97,4 +97,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

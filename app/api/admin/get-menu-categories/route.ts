@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     // Make request to the external API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/get-menu-categories",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/get-menu-categories`,
       {
         method: "GET",
         headers: {

@@ -12,7 +12,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "All fields are required: user_id, first_name, last_name, email, telephone",
+          error:
+            "All fields are required: user_id, first_name, last_name, email, telephone",
         },
         { status: 400 }
       );
@@ -20,7 +21,7 @@ export async function PUT(request: NextRequest) {
 
     // Get CSRF token first
     const csrfResponse = await fetch(
-      "https://cocofino.bettersolution.gr/api/csrf",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/csrf`,
       {
         method: "GET",
         headers: {
@@ -64,7 +65,7 @@ export async function PUT(request: NextRequest) {
 
     // Make the PUT request to the external API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/auth/user",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/user`,
       {
         method: "PUT",
         credentials: "include",
@@ -130,4 +131,3 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
-

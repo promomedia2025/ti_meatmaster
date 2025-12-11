@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   console.log("🔍 [search-tags] Request received");
   try {
-    const apiUrl = "https://cocofino.bettersolution.gr/api/search-tags";
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/search-tags`;
     console.log("🔍 [search-tags] External API URL:", apiUrl);
 
     const response = await fetch(apiUrl, {

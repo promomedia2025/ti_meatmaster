@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Make request to the external API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/orders?sort=order_id desc&pageLimit=100",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/orders?sort=order_id desc&pageLimit=100`,
       {
         method: "GET",
         headers: {
@@ -46,11 +46,19 @@ export async function GET(request: NextRequest) {
     console.log("✅ External API response status:", response.status);
     console.log("✅ External API response data type:", typeof data);
     console.log("✅ External API response keys:", Object.keys(data || {}));
-    
+
     // Log a sample order to see what's available
     if (data.data && data.data.length > 0) {
-      console.log("📋 Sample order attributes:", JSON.stringify(data.data[0].attributes, null, 2));
-      console.log("📋 Sample order includes:", data.included ? JSON.stringify(data.included, null, 2) : "No included data");
+      console.log(
+        "📋 Sample order attributes:",
+        JSON.stringify(data.data[0].attributes, null, 2)
+      );
+      console.log(
+        "📋 Sample order includes:",
+        data.included
+          ? JSON.stringify(data.included, null, 2)
+          : "No included data"
+      );
     }
 
     // Transform the response structure
@@ -59,11 +67,11 @@ export async function GET(request: NextRequest) {
     const transformedOrders = Array.isArray(data.data)
       ? data.data.map((item: any) => {
           const attrs = item.attributes || {};
-          
+
           // Extract bell_name and floor - they should be directly in attrs
           const bell_name = attrs.bell_name || null;
           const floor = attrs.floor || null;
-          
+
           return {
             order_id: attrs.order_id,
             order_date: attrs.order_date || attrs.created_at,

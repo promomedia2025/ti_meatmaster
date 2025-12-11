@@ -22,7 +22,8 @@ async function getFavoriteStatus(
   cookieHeader?: string
 ): Promise<boolean> {
   try {
-    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/is-favorite`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${baseUrl}/api/locations/${locationId}/is-favorite`;
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -97,7 +98,7 @@ async function getLocationData(slug: string): Promise<Location | null> {
 
     // Fetch location data directly from external API
     const response = await fetch(
-      `https://cocofino.bettersolution.gr/api/locations`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/locations`,
       {
         cache: "no-store", // Ensure fresh data
       }
@@ -129,7 +130,8 @@ async function getMenuData(locationId: number, categorySlug?: string) {
     const allItems: any[] = [];
 
     while (true) {
-      let apiUrl = `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-items?page=${page}&per_page=${perPage}`;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      let apiUrl = `${baseUrl}/api/locations/${locationId}/menu-items?page=${page}&per_page=${perPage}`;
 
       if (categorySlug) {
         apiUrl += `&category_slug=${categorySlug}`;
@@ -152,10 +154,9 @@ async function getMenuData(locationId: number, categorySlug?: string) {
     return {
       success: true,
       data: {
-        menu_items: allItems,  // ← restore original shape
+        menu_items: allItems, // ← restore original shape
       },
     };
-
   } catch (error) {
     console.error("Failed to fetch menu data:", error);
 
@@ -168,12 +169,11 @@ async function getMenuData(locationId: number, categorySlug?: string) {
   }
 }
 
-
 // Function to get menu categories from API
 async function getMenuCategories(locationId: number) {
   try {
     const response = await fetch(
-      `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-categories`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${locationId}/menu-categories`,
       {
         cache: "no-store", // Ensure fresh data
       }
@@ -257,9 +257,7 @@ export default async function LocationPage({
     minOrder: location.options?.delivery_min_order_amount || "5.00",
     restaurant_status: location.restaurant_status, // Pass restaurant status to components
     categories: menuCategoriesData?.data?.categories
-      ? [
-          ...menuCategoriesData.data.categories.map((cat) => cat.name),
-        ]
+      ? [...menuCategoriesData.data.categories.map((cat) => cat.name)]
       : menuData?.data?.menu_items
       ? ["All Items", "Popular", "Specials"]
       : ["All Items"], // Basic categories
@@ -271,31 +269,33 @@ export default async function LocationPage({
 
   return (
     <div className="min-h-screen bg-black">
-  <DeliveryAvailabilityChecker
-    locationId={location.id}
-    deliveryAvailable={location.restaurant_status?.delivery_available ?? true}
-  />
+      <DeliveryAvailabilityChecker
+        locationId={location.id}
+        deliveryAvailable={
+          location.restaurant_status?.delivery_available ?? true
+        }
+      />
 
-  <RestaurantHeader
-    restaurant={restaurant}
-    isFavorite={favoriteStatus}
-    onFavorite={favoriteLocation}
-    onUnfavorite={unfavoriteLocation}
-  />
+      <RestaurantHeader
+        restaurant={restaurant}
+        isFavorite={favoriteStatus}
+        onFavorite={favoriteLocation}
+        onUnfavorite={unfavoriteLocation}
+      />
 
-  {/* Only info is centered */}
-  <div className="max-w-[1600px] mx-auto">
-    <RestaurantInfo restaurant={restaurant} />
-  </div>
+      {/* Only info is centered */}
+      <div className="max-w-[1600px] mx-auto">
+        <RestaurantInfo restaurant={restaurant} />
+      </div>
 
-  {/* Menu is full-width */}
-  <Suspense
-    fallback={
-      <div className="text-center py-8 text-white">Loading menu...</div>
-    }
-  >
-    <RestaurantMenu restaurant={restaurant} />
-  </Suspense>
-</div>
+      {/* Menu is full-width */}
+      <Suspense
+        fallback={
+          <div className="text-center py-8 text-white">Loading menu...</div>
+        }
+      >
+        <RestaurantMenu restaurant={restaurant} />
+      </Suspense>
+    </div>
   );
 }

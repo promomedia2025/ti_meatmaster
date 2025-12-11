@@ -21,16 +21,14 @@ export async function GET(
     }
 
     // Fetch user's entire cart from BetterSolution API
-    const response = await fetch(
-      `https://cocofino.bettersolution.gr/api/cart/user/${userId}/all`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      }
-    );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/cart/user/${userId}/all`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       throw new Error(`API request failed with status: ${response.status}`);
@@ -38,7 +36,14 @@ export async function GET(
 
     const data = await response.json();
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error fetching user cart:", error);
     return NextResponse.json(

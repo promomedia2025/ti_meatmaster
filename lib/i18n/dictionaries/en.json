@@ -19,7 +19,8 @@
     "enableLocation": "Enable location access",
     "trackingLocation": "Tracking location...",
     "gettingAddress": "Getting address...",
-    "locationUnavailable": "Location unavailable"
+    "locationUnavailable": "Location unavailable",
+    "clickToEnterAddress": "Click to enter your address"
   },
   "home": {
     "title": "Restaurants near me",

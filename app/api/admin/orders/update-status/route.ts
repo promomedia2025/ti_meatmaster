@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Make the request to the external API server-side (avoids CORS)
-    const externalApiUrl =
-      "https://cocofino.bettersolution.gr/admin/orders/updateOrderStatus";
+    const externalApiUrl = `${process.env.NEXT_PUBLIC_API_URL}/admin/orders/updateOrderStatus`;
     const requestBody = {
       order_id,
       status_id,

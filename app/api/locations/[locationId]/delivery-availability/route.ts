@@ -36,7 +36,7 @@ export async function GET(
 
     // Call external API
     const response = await fetch(
-      `https://cocofino.bettersolution.gr/customer-api/locations/${locationId}/delivery-availability`,
+      `${process.env.NEXT_PUBLIC_API_URL}/customer-api/locations/${locationId}/delivery-availability`,
       {
         method: "GET",
         headers: {
@@ -73,5 +73,3 @@ export async function GET(
     );
   }
 }
-
-

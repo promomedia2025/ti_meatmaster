@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/save-location-options",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/save-location-options`,
       {
         method: "POST",
         headers: {

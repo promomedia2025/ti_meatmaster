@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     // Forward the request to the external API with credentials
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/get-menu-items",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/get-menu-items`,
       {
         method: "GET",
         headers: {
@@ -50,4 +50,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

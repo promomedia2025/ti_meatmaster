@@ -19,7 +19,8 @@
     "enableLocation": "Ενεργοποιήστε την πρόσβαση τοποθεσίας",
     "trackingLocation": "Εντοπισμός τοποθεσίας...",
     "gettingAddress": "Λήψη διεύθυνσης...",
-    "locationUnavailable": "Η τοποθεσία δεν είναι διαθέσιμη"
+    "locationUnavailable": "Η τοποθεσία δεν είναι διαθέσιμη",
+    "clickToEnterAddress": "Πατήστε για να εισάγετε τη διεύθυνσή σας"
   },
   "home": {
     "title": "Παραγγείλτε σε 1'",

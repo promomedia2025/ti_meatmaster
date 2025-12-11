@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external API to logout
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/auth/logout",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
       {
         method: "POST",
         credentials: "include",

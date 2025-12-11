@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
+import { useLocation } from "@/lib/location-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MapPin, Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
@@ -32,6 +33,7 @@ interface Address {
 
 export default function AddressBookPage() {
   const { user, isAuthenticated } = useAuth();
+  const { refreshDefaultAddress } = useLocation();
   const router = useRouter();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,6 +150,10 @@ export default function AddressBookPage() {
       if (result.success) {
         // Refresh the addresses list
         fetchAddresses();
+        
+        // Refresh the default address in location context to update Wolt navbar
+        console.log("📍 [ADDRESS BOOK] Refreshing default address in location context");
+        await refreshDefaultAddress();
       } else {
         console.error("❌ Failed to set address as default:", result);
         alert(`Failed to set address as default: ${result.message}`);
@@ -284,6 +290,14 @@ export default function AddressBookPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {!address.is_default && (
+                        <button
+                          onClick={() => handleSetAsDefault(address.id)}
+                          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                          Ορισμός ως προεπιλογή
+                        </button>
+                      )}
                       <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
                         <Edit className="w-4 h-4 text-gray-400 hover:text-white" />
                       </button>

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     // Forward search parameters to the external API
     const queryString = searchParams.toString();
-    const apiUrl = `https://cocofino.bettersolution.gr/api/locations`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/locations`;
 
     const response = await fetch(apiUrl, {
       method: "GET",

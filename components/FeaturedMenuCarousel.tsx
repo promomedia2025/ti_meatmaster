@@ -38,7 +38,7 @@ export default function FeaturedMenuCarousel({
 
       try {
         const firstRes = await fetch(
-          `https://cocofino.bettersolution.gr/api/locations/${LOCATION_ID}/menu-items?page=1`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${LOCATION_ID}/menu-items?page=1`
         );
         const firstData = await firstRes.json();
 
@@ -49,7 +49,7 @@ export default function FeaturedMenuCarousel({
         for (let p = 2; p <= totalPages; p++) {
           pageRequests.push(
             fetch(
-              `https://cocofino.bettersolution.gr/api/locations/${LOCATION_ID}/menu-items?page=${p}`
+              `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${LOCATION_ID}/menu-items?page=${p}`
             ).then((res) => res.json())
           );
         }

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log("📤 [TOGGLE-MENU-OPTION-VALUE] Calling external API:", {
-      url: "https://cocofino.bettersolution.gr/admin/helloworld/toggle-menu-option-value",
+      url: `${process.env.NEXT_PUBLIC_API_URL}/admin/hellowworld/toggle-menu-option-value`,
       method: "POST",
       payload: requestPayload,
     });
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Make request to the external API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/toggle-menu-option-value",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/toggle-menu-option-value`,
       {
         method: "POST",
         headers: {

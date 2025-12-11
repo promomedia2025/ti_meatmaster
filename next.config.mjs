@@ -13,7 +13,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "cocofino.bettersolution.gr",
+        hostname: process.env.NEXT_PUBLIC_API_URL,
         pathname: "/**",
       },
     ],

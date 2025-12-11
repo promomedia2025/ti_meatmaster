@@ -20,7 +20,7 @@ export async function GET(
       );
     }
 
-    const apiUrl = `https://cocofino.bettersolution.gr/api/address-book/${customerId}`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/${customerId}`;
     console.log("🔍 API URL:", apiUrl);
     const response = await fetch(apiUrl, {
       method: "GET",
@@ -48,4 +48,3 @@ export async function GET(
     );
   }
 }
-

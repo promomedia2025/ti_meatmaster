@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external API from the server
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/auth/customer/register",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/customer/register`,
       {
         method: "POST",
         credentials: "include",

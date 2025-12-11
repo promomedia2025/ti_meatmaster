@@ -22,7 +22,8 @@ export async function favoriteLocation(
     );
     console.log("❤️ [FAVORITE] Cookie string length:", cookieString.length);
 
-    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/favorite`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${baseUrl}/api/locations/${locationId}/favorite`;
     console.log("❤️ [FAVORITE] Request URL:", url);
 
     const response = await fetch(url, {
@@ -108,7 +109,8 @@ export async function unfavoriteLocation(
     );
     console.log("💔 [UNFAVORITE] Cookie string length:", cookieString.length);
 
-    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/favorite`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${baseUrl}/api/locations/${locationId}/favorite`;
     console.log("💔 [UNFAVORITE] Request URL:", url);
 
     const response = await fetch(url, {

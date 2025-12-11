@@ -23,7 +23,8 @@ async function getFavoriteStatus(locationId: number): Promise<boolean> {
       locationId
     );
 
-    const url = `https://cocofino.bettersolution.gr/api/locations/${locationId}/is-favorite`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${baseUrl}/api/locations/${locationId}/is-favorite`;
     console.log("📡 [Server] Making request to:", url);
 
     const response = await fetch(url, {

@@ -18,13 +18,17 @@ export async function POST(request: NextRequest) {
 
     if (collection_time_interval === undefined || !location_id) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: collection_time_interval and location_id" },
+        {
+          success: false,
+          error:
+            "Missing required fields: collection_time_interval and location_id",
+        },
         { status: 400 }
       );
     }
 
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/save-location-options",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/save-location-options`,
       {
         method: "POST",
         headers: {
@@ -63,4 +67,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

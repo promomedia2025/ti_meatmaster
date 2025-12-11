@@ -18,14 +18,17 @@ export async function POST(request: NextRequest) {
 
     if (status === undefined || !location_id) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: status and location_id" },
+        {
+          success: false,
+          error: "Missing required fields: status and location_id",
+        },
         { status: 400 }
       );
     }
 
     // Make request to the external API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/toggle-all-schedules",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/toggle-all-schedules`,
       {
         method: "POST",
         headers: {
@@ -70,4 +73,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

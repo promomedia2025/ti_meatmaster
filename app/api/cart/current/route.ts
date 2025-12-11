@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch current cart from BetterSolution API
     const response = await fetch(
-      `https://cocofino.bettersolution.gr/api/cart/current?user_id=${userId}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/cart/current?user_id=${userId}`,
       {
         method: "GET",
         headers: {
@@ -50,4 +50,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

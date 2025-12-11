@@ -13,7 +13,7 @@ export default function LocationCartCTA({ locationId }: Props) {
   const { setIsCartSidebarOpen, setCartViewLocationId } = useCartSidebar();
 
   const cart = locationId ? getLocationCart(locationId) : undefined;
-
+  console.log(cart);
   const count = cart?.summary?.count ?? 0;
   const total = cart?.summary?.total ?? 0;
 
@@ -43,9 +43,7 @@ export default function LocationCartCTA({ locationId }: Props) {
         <span>Δες την παραγγελία σου</span>
       </div>
 
-      <div className="font-bold">
-        €{total.toFixed(2)}
-      </div>
+      <div className="font-bold">€{total.toFixed(2)}</div>
     </button>
   );
 }

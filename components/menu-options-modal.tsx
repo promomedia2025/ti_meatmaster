@@ -417,13 +417,13 @@ export function MenuOptionsModal({
   return (
     <div
       className={`fixed inset-0 bg-black/50 flex items-end justify-center z-50 transition-all duration-300 ease-out ${
-        isOpen && menuItem ? "opacity-100" : "opacity-0 pointer-events-none"
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={onClose}
     >
       <div
         className={`bg-gray-900 rounded-t-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transition-all duration-300 ease-out transform ${
-          isOpen && menuItem ? "translate-y-0" : "translate-y-full"
+          isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -446,7 +446,17 @@ export function MenuOptionsModal({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 menu-options-scrollbar">
+          {/* Loading State */}
+          {!menuItem && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff9328ff] mx-auto mb-4"></div>
+                <p className="text-gray-400">Φόρτωση επιλογών...</p>
+              </div>
+            </div>
+          )}
+          
           {/* Item Image */}
           {menuItem?.image?.url && (
             <div className="relative h-48 mb-4 rounded-lg overflow-hidden">

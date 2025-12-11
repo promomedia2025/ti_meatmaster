@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external admin login API
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/auth/admin/login",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin/login`,
       {
         method: "POST",
         credentials: "include",

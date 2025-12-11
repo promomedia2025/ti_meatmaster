@@ -31,23 +31,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Make request to external API
-    const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/cart/add",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          menu_id,
-          quantity,
-          options: options || [],
-          comment: comment || "",
-          location_id,
-          user_id,
-        }),
-      }
-    );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/cart/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        menu_id,
+        quantity,
+        options: options || [],
+        comment: comment || "",
+        location_id,
+        user_id,
+      }),
+    });
 
     console.log("🛒 [SERVER] External API response:", {
       status: response.status,

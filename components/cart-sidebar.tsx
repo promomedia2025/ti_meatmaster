@@ -152,6 +152,10 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const [modalRestaurantStatus, setModalRestaurantStatus] =
     useState<ServerLocationCart["restaurantStatus"]>();
   const menuItemsCacheRef = useRef<Map<number, LocationMenuItem[]>>(new Map());
+  // Map cache for O(1) menu item lookup by ID: locationId -> Map<menu_id, menuItem>
+  const menuItemsMapCacheRef = useRef<
+    Map<number, Map<number, LocationMenuItem>>
+  >(new Map());
 
   // Handle clearing individual cart with optimistic UI
   const handleClearCart = useCallback(
@@ -293,7 +297,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         for (const [locationId, menuIds] of locationMenuMap.entries()) {
           try {
             const response = await fetch(
-              `https://cocofino.bettersolution.gr/api/locations/${locationId}/menu-items`
+              `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${locationId}/menu-items`
             );
             const data = await response.json();
 
@@ -455,24 +459,33 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         return [];
       }
 
+      // Optimized: Create Maps for O(1) lookups instead of O(N) linear searches
+      const cartOptionsMap = new Map<number, CartItemOption>(
+        cartItem.options.map((opt) => [opt.menu_option_id, opt])
+      );
+
       const selections: SelectedOption[] = [];
 
+      // O(M) where M = menu options count
       menuItem.menu_options.forEach((option) => {
-        const cartOption = cartItem.options.find(
-          (opt: CartItemOption) => opt.menu_option_id === option.menu_option_id
-        );
+        // O(1) lookup instead of O(C) linear search
+        const cartOption = cartOptionsMap.get(option.menu_option_id);
         if (!cartOption) return;
 
+        // Create Map for option values for O(1) lookup
+        const optionValuesMap = new Map<number, MenuOptionValueData>(
+          option.option_values.map((val) => [val.menu_option_value_id, val])
+        );
+
+        // O(V) where V = cart values count (was O(V × OV))
         const matchingValues = cartOption.values
-          .map((value) =>
-            option.option_values.find(
-              (optValue) =>
-                optValue.menu_option_value_id === value.menu_option_value_id
-            )
-          )
+          .map((value) => {
+            // O(1) lookup instead of O(OV) linear search
+            const optValue = optionValuesMap.get(value.menu_option_value_id);
+            return optValue && optValue.available !== false ? optValue : null;
+          })
           .filter(
-            (optValue): optValue is MenuOptionValueData =>
-              !!optValue && optValue.available !== false
+            (optValue): optValue is MenuOptionValueData => optValue !== null
           );
 
         if (!matchingValues.length) {
@@ -562,10 +575,21 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         return;
       }
 
+      // Open modal immediately with loading state
+      setModalCartItem(cartItem);
+      setModalLocationId(cart.locationId);
+      setModalInitialQuantity(cartItem.qty);
+      setModalInitialComment(cartItem.comment || "");
+      setModalRestaurantStatus(cart.restaurantStatus);
+      setIsMenuOptionsModalOpen(true);
       setIsLoadingMenuOptions(true);
+      // Set menuItem to null initially - modal will show loading state
+      setModalMenuItem(null);
+      setModalInitialSelections([]);
 
       try {
         let menuItems = menuItemsCacheRef.current.get(cart.locationId);
+        let menuItemsMap = menuItemsMapCacheRef.current.get(cart.locationId);
 
         if (!menuItems) {
           // Fetch all menu items with pagination support
@@ -574,8 +598,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           const perPage = 100;
 
           while (true) {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL;
             const response = await fetch(
-              `https://cocofino.bettersolution.gr/api/locations/${cart.locationId}/menu-items?page=${page}&per_page=${perPage}`
+              `${baseUrl}/api/locations/${cart.locationId}/menu-items?page=${page}&per_page=${perPage}`
             );
             const data = await response.json();
 
@@ -600,6 +625,20 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
           menuItems = allMenuItems;
           menuItemsCacheRef.current.set(cart.locationId, menuItems);
+
+          // Create Map for O(1) lookup by menu_id
+          menuItemsMap = new Map<number, LocationMenuItem>();
+          menuItems.forEach((item) => {
+            menuItemsMap.set(item.menu_id, item);
+          });
+          menuItemsMapCacheRef.current.set(cart.locationId, menuItemsMap);
+        } else if (!menuItemsMap) {
+          // If we have menuItems from cache but no Map, create it
+          menuItemsMap = new Map<number, LocationMenuItem>();
+          menuItems.forEach((item) => {
+            menuItemsMap.set(item.menu_id, item);
+          });
+          menuItemsMapCacheRef.current.set(cart.locationId, menuItemsMap);
         }
 
         console.log("Looking for menu item with id:", cartItem.id);
@@ -609,14 +648,28 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           menuItems.map((item) => item.menu_id)
         );
 
-        // Try to find menu item - check both strict and loose equality for type mismatches
-        let menuItem = menuItems.find((item) => item.menu_id === cartItem.id);
+        // Optimized: Use Map for O(1) lookup instead of O(N) linear search
+        let menuItem: LocationMenuItem | undefined;
 
-        // If not found, try with type coercion (in case of number vs string mismatch)
-        if (!menuItem) {
-          menuItem = menuItems.find(
-            (item) => Number(item.menu_id) === Number(cartItem.id)
+        if (menuItemsMap) {
+          // O(1) lookup - try with cartItem.id as-is (assuming it's a number)
+          const cartItemId =
+            typeof cartItem.id === "number" ? cartItem.id : Number(cartItem.id);
+          menuItem = menuItemsMap.get(cartItemId);
+
+          // If not found and we have a valid number, the item doesn't exist
+          // (No need for additional type coercion since Map keys are numbers)
+        } else {
+          // Fallback to linear search if Map doesn't exist (shouldn't happen)
+          console.warn(
+            "Menu items Map cache not found, falling back to linear search"
           );
+          menuItem = menuItems.find((item) => item.menu_id === cartItem.id);
+          if (!menuItem) {
+            menuItem = menuItems.find(
+              (item) => Number(item.menu_id) === Number(cartItem.id)
+            );
+          }
         }
 
         if (!menuItem) {
@@ -637,6 +690,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           toast.error(
             `Δεν βρέθηκε το προϊόν "${cartItem.name}" στο μενού. Ίσως έχει αφαιρεθεί.`
           );
+          setIsMenuOptionsModalOpen(false);
           return;
         }
 
@@ -645,17 +699,13 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         console.log("Cart item options:", cartItem.options);
         console.log("Menu item options:", menuItem.menu_options);
 
+        // Update modal with menu item data
         setModalMenuItem(menuItem);
-        setModalCartItem(cartItem);
-        setModalLocationId(cart.locationId);
         setModalInitialSelections(initialSelections);
-        setModalInitialQuantity(cartItem.qty);
-        setModalInitialComment(cartItem.comment || "");
-        setModalRestaurantStatus(cart.restaurantStatus);
-        setIsMenuOptionsModalOpen(true);
       } catch (error) {
         console.error("Error loading menu item details:", error);
         toast.error("Δεν ήταν δυνατή η φόρτωση των επιλογών του προϊόντος.");
+        setIsMenuOptionsModalOpen(false);
       } finally {
         setIsLoadingMenuOptions(false);
       }
@@ -1211,7 +1261,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         </div>
       </div>
       <MenuOptionsModal
-        isOpen={isMenuOptionsModalOpen && !!modalMenuItem}
+        isOpen={isMenuOptionsModalOpen}
         onClose={closeMenuOptionsModal}
         menuItem={modalMenuItem}
         onAddToCart={handleMenuOptionsSubmit}

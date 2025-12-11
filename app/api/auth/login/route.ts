@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     console.log(csrfToken);
     // Make the request to the external API from the server
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/api/auth/customer/login",
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/customer/login`,
       {
         method: "POST",
         credentials: "include",

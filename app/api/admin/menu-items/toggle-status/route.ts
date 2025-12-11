@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Forward the request to the external API with credentials
     const response = await fetch(
-      "https://cocofino.bettersolution.gr/admin/helloworld/toggle-menu-status",
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/toggle-menu-status`,
       {
         method: "POST",
         headers: {
