@@ -28,7 +28,7 @@ export default function AboutUsPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-16 text-sm leading-7 text-gray-300 space-y-6">
+     <div className="max-w-4xl mx-auto px-6 py-16 text-lg leading-7 text-gray-300 space-y-6"> 
         <p>
           Το Coco Fino, το μαγαζί που όλοι αγαπάτε, τώρα με το δικό του online
           delivery, βρίσκεται ένα βήμα πιο κοντά σας.
