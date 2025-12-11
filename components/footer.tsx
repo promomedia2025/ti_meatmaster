@@ -27,7 +27,7 @@ export function Footer({ lang, dict }: FooterProps) {
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="hover:text-white transition-colors">
-                  Για συνεργάτες
+                  Γίνε συνεργάτης μας
                 </a>
               </li>
             </ul>
@@ -42,36 +42,27 @@ export function Footer({ lang, dict }: FooterProps) {
                   Σχετικά με εμάς
                 </a>
               </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Τι αντιπροσωπεύουμε
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Εργασία
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Υπευθυνότητα
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Ασφάλεια
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Επενδυτές
-                </a>
-              </li>
             </ul>
           </div>
 
-          <div> </div>
-          <div> </div>
+          {/* Column */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">Πολιτικές</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Πολιτική Απορρήτου
+                </a>
+     
+              </li>
+                 <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                  Πολιτική Επιστροφών
+                 </a>
+                </li>
+            </ul>
+          </div>
+
           {/* Follow Us Column */}
           <div>
             <h3 className="text-white font-semibold mb-4">Ακολουθήστε μας</h3>
@@ -99,15 +90,6 @@ export function Footer({ lang, dict }: FooterProps) {
         <div className="border-t border-gray-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-6 text-sm">
-              <button className="hover:text-white transition-colors">
-                🇬🇷 Ελλάδα
-              </button>
-              <button className="hover:text-white transition-colors">
-                🌐 Ελληνικά
-              </button>
-              <button className="hover:text-white transition-colors">
-                📍 Αποδοχές
-              </button>
               <button className="hover:text-white transition-colors">
                 🍪 Cookies
               </button>
