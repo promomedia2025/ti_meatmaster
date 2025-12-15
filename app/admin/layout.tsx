@@ -2,6 +2,7 @@
 
 import { PusherProvider } from "@/lib/pusher-context";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminGlobalNotifications } from "@/components/admin-global-notifications";
 import { useAdminAuth } from "@/lib/admin-auth";
 import { usePathname } from "next/navigation";
 
@@ -37,6 +38,7 @@ export default function AdminLayout({
   // Authenticated - show full layout
   return (
     <PusherProvider>
+      <AdminGlobalNotifications />
       <div className="min-h-screen bg-[#1a1a1a] flex">
         <AdminSidebar />
         <div className="flex-1 lg:ml-64">{children}</div>

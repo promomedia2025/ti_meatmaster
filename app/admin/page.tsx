@@ -42,15 +42,40 @@ interface AdminOrder {
 const PENDING_STATUS_ID = 2;
 
 const ORDER_STATUS_OPTIONS = [
-  { label: "Ελήφθη", value: "RECEIVED", statusId: 3 },
-  { label: "Προετοιμασία", value: "PREPARATION", statusId: 4 },
-  { label: "Παράδοση", value: "DELIVERY", statusId: 5 },
-  { label: "Ολοκληρώθηκε", value: "COMPLETED", statusId: 6 },
-  { label: "Ακυρώθηκε", value: "CANCELLED", statusId: 7 },
-  { label: "Έτοιμη Προς Παραλαβή", value: "PICK_UP", statusId: 8 },
+  { label: "Ελήφθη", value: "RECEIVED", statusId: 1 },
+  { label: "Προετοιμασία", value: "PREPARATION", statusId: 3 },
+  { label: "Προς παράδοση", value: "DELIVERY", statusId: 4 },
+  { label: "Ολοκληρώθηκε", value: "COMPLETED", statusId: 5 },
+  { label: "Ακυρώθηκε", value: "CANCELLED", statusId: 9 },
+  { label: "Έτοιμη προς παραλαβή", value: "PICK_UP", statusId: 10 },
 ] as const;
 
 type OrderStatusValue = (typeof ORDER_STATUS_OPTIONS)[number]["value"];
+
+// Helper functions to control which status actions are visible per order type
+const isDeliveryOrder = (order: AdminOrder): boolean => {
+  const type = (order.order_type || order.order_type_name || "")
+    .toString()
+    .toLowerCase();
+  return (
+    type.includes("delivery") ||
+    type.includes("διανομή") ||
+    type.includes("courier")
+  );
+};
+
+const isPickupOrder = (order: AdminOrder): boolean => {
+  const type = (order.order_type || order.order_type_name || "")
+    .toString()
+    .toLowerCase();
+  return (
+    type === "collection" ||
+    type.includes("pick") ||
+    type.includes("παραλαβ") ||
+    type.includes("take away") ||
+    type.includes("takeaway")
+  );
+};
 
 const toNumber = (value: unknown, fallback: number): number => {
   if (typeof value === "number" && !Number.isNaN(value)) {
@@ -138,6 +163,7 @@ export default function AdminDashboardPage() {
   const [statusSelections, setStatusSelections] = useState<
     Record<number, OrderStatusValue | "">
   >({});
+  const [removingOrders, setRemovingOrders] = useState<Set<number>>(new Set());
   const selectedOrderRef = useRef<AdminOrder | null>(null);
   const [locationStatus, setLocationStatus] = useState<{
     is_open: boolean;
@@ -149,6 +175,44 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
   }, [selectedOrder]);
+
+  // Log session cookie expiration info
+  useEffect(() => {
+    const getCookieExpiration = (cookieName: string) => {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split("=");
+        if (name === cookieName) {
+          // Get all cookie attributes from the browser
+          // Note: We can't directly read Max-Age or Expires from document.cookie
+          // But we can check if it's a session cookie (no expiration)
+          return value;
+        }
+      }
+      return null;
+    };
+
+    // Check for common session cookie names
+    const sessionCookieNames = [
+      "tastyigniter_session",
+      "session",
+      "laravel_session",
+    ];
+
+    for (const cookieName of sessionCookieNames) {
+      const cookieValue = getCookieExpiration(cookieName);
+      if (cookieValue) {
+        console.log(`🍪 Found session cookie: ${cookieName}`);
+        console.log(
+          `💡 To see expiration: Open Dev Tools → Application → Cookies → Check "Expires / Max-Age" column`
+        );
+        console.log(
+          `💡 If it says "Session", it expires when browser closes. If it shows a date, that's when it expires.`
+        );
+        break;
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -396,10 +460,14 @@ export default function AdminDashboardPage() {
   // Separate orders by status
   const pendingOrders = orders.filter((order) => order.status_id === 2);
   const otherOrders = orders.filter((order) => {
+    // Keep orders that are animating out
+    if (removingOrders.has(order.order_id)) {
+      return true;
+    }
     // Filter out pending orders (status_id === 2)
     if (order.status_id === 2) return false;
-    // Filter out cancelled orders (status_id === 7 or status_name contains "Ακυρώθηκε" or "cancelled")
-    if (order.status_id === 7) return false;
+    // Filter out cancelled orders (status_id === 9 or status_name contains "Ακυρώθηκε" or "cancelled")
+    if (order.status_id === 9) return false;
     const statusLower = order.status_name?.toLowerCase() || "";
     if (
       statusLower.includes("ακυρώθηκε") ||
@@ -408,8 +476,8 @@ export default function AdminDashboardPage() {
     ) {
       return false;
     }
-    // Filter out completed orders (status_id === 6 or status_name contains "Ολοκληρώθηκε" or "completed")
-    if (order.status_id === 6) return false;
+    // Filter out completed orders (status_id === 5 or status_name contains "Ολοκληρώθηκε" or "completed")
+    if (order.status_id === 5) return false;
     if (
       statusLower.includes("ολοκληρώθηκε") ||
       statusLower.includes("completed")
@@ -564,6 +632,20 @@ export default function AdminDashboardPage() {
       ...prev,
       [orderId]: statusValue,
     }));
+
+    // If status is COMPLETED or CANCELLED, trigger removal animation
+    if (statusValue === "COMPLETED" || statusValue === "CANCELLED") {
+      setRemovingOrders((prev) => new Set(prev).add(orderId));
+      // Remove from list after animation completes (500ms)
+      setTimeout(() => {
+        setOrders((prev) => prev.filter((order) => order.order_id !== orderId));
+        setRemovingOrders((prev) => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+      }, 500);
+    }
 
     // Send POST request to update order status via server-side API (avoids CORS)
     const updateOrderStatus = async () => {
@@ -962,14 +1044,18 @@ export default function AdminDashboardPage() {
     order,
     actions,
     statusControl,
+    isRemoving,
   }: {
     order: AdminOrder;
     actions?: React.ReactNode;
     statusControl?: React.ReactNode;
+    isRemoving?: boolean;
   }) => (
     <div
       onClick={() => handleOrderClick(order)}
-      className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:border-[#009DE0] transition-colors cursor-pointer"
+      className={`bg-[#1a1a1a] rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:border-[#009DE0] transition-all duration-500 cursor-pointer ${
+        isRemoving ? "opacity-0 -translate-x-full" : "opacity-100 translate-x-0"
+      }`}
     >
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -1163,35 +1249,97 @@ export default function AdminDashboardPage() {
                           <OrderCard
                             key={order.order_id}
                             order={order}
+                            isRemoving={removingOrders.has(order.order_id)}
                             statusControl={
                               <div className="flex flex-col gap-2">
                                 <label className="text-xs font-medium text-gray-400">
                                   Ενημέρωση Κατάστασης
                                 </label>
-                                <select
-                                  className="bg-[#0f0f0f] border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#009DE0]"
-                                  value={statusSelections[order.order_id] || ""}
-                                  onChange={(event) => {
-                                    event.stopPropagation();
-                                    const value = event.target.value as
-                                      | OrderStatusValue
-                                      | "";
-                                    if (!value) {
-                                      return;
+                                {(() => {
+                                  // Filter and organize statuses into two rows
+                                  const availableStatuses =
+                                    ORDER_STATUS_OPTIONS.filter((option) => {
+                                      if (option.value === "DELIVERY") {
+                                        return isDeliveryOrder(order);
+                                      }
+                                      if (option.value === "PICK_UP") {
+                                        return isPickupOrder(order);
+                                      }
+                                      return true;
+                                    });
+
+                                  // First row: RECEIVED, PREPARATION, DELIVERY/PICK_UP
+                                  const firstRow = availableStatuses.filter(
+                                    (option) =>
+                                      option.value === "RECEIVED" ||
+                                      option.value === "PREPARATION" ||
+                                      option.value === "DELIVERY" ||
+                                      option.value === "PICK_UP"
+                                  );
+
+                                  // Second row: COMPLETED, CANCELLED
+                                  const secondRow = availableStatuses.filter(
+                                    (option) =>
+                                      option.value === "COMPLETED" ||
+                                      option.value === "CANCELLED"
+                                  );
+
+                                  const renderButton = (
+                                    option: (typeof ORDER_STATUS_OPTIONS)[number]
+                                  ) => {
+                                    const isActive =
+                                      (statusSelections[order.order_id] ||
+                                        normalizeStatusNameToValue(
+                                          order.status_name
+                                        )) === option.value;
+
+                                    // Special colors for completed and cancelled
+                                    let buttonClassName = "";
+                                    if (option.value === "COMPLETED") {
+                                      buttonClassName = isActive
+                                        ? "bg-green-600 hover:bg-green-700 text-white"
+                                        : "bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/50";
+                                    } else if (option.value === "CANCELLED") {
+                                      buttonClassName = isActive
+                                        ? "bg-red-600 hover:bg-red-700 text-white"
+                                        : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
+                                    } else {
+                                      buttonClassName = isActive
+                                        ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                        : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
                                     }
-                                    handleStatusChange(order.order_id, value);
-                                  }}
-                                >
-                                  <option value="">Επιλέξτε κατάσταση</option>
-                                  {ORDER_STATUS_OPTIONS.map((option) => (
-                                    <option
-                                      key={option.value}
-                                      value={option.value}
-                                    >
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
+
+                                    return (
+                                      <Button
+                                        key={option.value}
+                                        size="sm"
+                                        className={buttonClassName}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleStatusChange(
+                                            order.order_id,
+                                            option.value
+                                          );
+                                        }}
+                                      >
+                                        {option.label}
+                                      </Button>
+                                    );
+                                  };
+
+                                  return (
+                                    <>
+                                      {/* First row */}
+                                      <div className="flex flex-wrap gap-2">
+                                        {firstRow.map(renderButton)}
+                                      </div>
+                                      {/* Second row */}
+                                      <div className="flex flex-wrap gap-2">
+                                        {secondRow.map(renderButton)}
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             }
                           />

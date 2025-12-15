@@ -173,6 +173,10 @@ export default function OrderStatusPage() {
         return "Σε διανομή";
       case "ready":
         return "Έτοιμο";
+      case "pick up":
+      case "pickup":
+      case "pick-up":
+        return "Έτοιμη προς παραλαβή";
       default:
         // Check for partial matches (order matters - more specific first)
         if (
@@ -201,6 +205,9 @@ export default function OrderStatusPage() {
         }
         if (statusLower.includes("deliver")) {
           return "Σε διανομή";
+        }
+        if (statusLower.includes("pick") && statusLower.includes("up")) {
+          return "Έτοιμη προς παραλαβή";
         }
         // Return original if no match found
         return statusName;

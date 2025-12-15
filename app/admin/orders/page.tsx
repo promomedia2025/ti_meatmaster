@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AdminOrderDetailsModal } from "@/components/admin-order-details-modal";
@@ -54,7 +54,7 @@ export default function AdminOrdersPage() {
     checkAuth();
   }, [router]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!isAuthenticated) return;
 
     try {
@@ -82,7 +82,7 @@ export default function AdminOrdersPage() {
     } finally {
       setOrdersLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -90,7 +90,43 @@ export default function AdminOrdersPage() {
     }
   }, [isAuthenticated]);
 
-  // Realtime updates removed for now
+  // Listen for global order events to refresh data
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleOrderCreated = () => {
+      console.log("📦 [AdminOrders] Order created event received, refreshing orders");
+      fetchOrders();
+    };
+
+    const handleOrderUpdated = () => {
+      console.log("🔄 [AdminOrders] Order updated event received, refreshing orders");
+      fetchOrders();
+    };
+
+    const handleOrderStatusChanged = () => {
+      console.log("🔄 [AdminOrders] Order status changed event received, refreshing orders");
+      fetchOrders();
+    };
+
+    const handleOrderDeleted = () => {
+      console.log("🗑️ [AdminOrders] Order deleted event received, refreshing orders");
+      fetchOrders();
+    };
+
+    // Listen for custom events from global notification component
+    window.addEventListener("admin:order-created", handleOrderCreated);
+    window.addEventListener("admin:order-updated", handleOrderUpdated);
+    window.addEventListener("admin:order-status-changed", handleOrderStatusChanged);
+    window.addEventListener("admin:order-deleted", handleOrderDeleted);
+
+    return () => {
+      window.removeEventListener("admin:order-created", handleOrderCreated);
+      window.removeEventListener("admin:order-updated", handleOrderUpdated);
+      window.removeEventListener("admin:order-status-changed", handleOrderStatusChanged);
+      window.removeEventListener("admin:order-deleted", handleOrderDeleted);
+    };
+  }, [isAuthenticated, fetchOrders]);
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");

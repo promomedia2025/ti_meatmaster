@@ -44,6 +44,9 @@ export async function POST(request: NextRequest) {
       const setCookieHeader = response.headers.get("set-cookie");
 
       if (setCookieHeader) {
+        // Log the full Set-Cookie header for debugging
+        console.log("🍪 Admin login - Full Set-Cookie header:", setCookieHeader);
+
         // Extract cookie name(s) from set-cookie header for logging
         const cookieNames = setCookieHeader.split(",").map((cookie) => {
           const cookiePart = cookie.trim().split(";")[0];
@@ -53,6 +56,48 @@ export async function POST(request: NextRequest) {
           "🍪 Admin login - Cookie names from set-cookie header:",
           cookieNames
         );
+
+        // Parse each cookie separately to check for expiration
+        const parsedCookies = setCookieHeader.split(",").map((cookie) => cookie.trim());
+        console.log("🍪 Admin login - Parsed cookies:", parsedCookies);
+
+        // Extract and log cookie expiration information
+        const maxAgeMatch = setCookieHeader.match(/Max-Age=(\d+)/i);
+        const expiresMatch = setCookieHeader.match(/Expires=([^;]+)/i);
+        
+        // Also check each individual cookie
+        for (const cookie of parsedCookies) {
+          const cookieMaxAge = cookie.match(/Max-Age=(\d+)/i);
+          const cookieExpires = cookie.match(/Expires=([^;]+)/i);
+          if (cookieMaxAge) {
+            console.log(`🍪 Found Max-Age in cookie: ${cookieMaxAge[0]}`);
+          }
+          if (cookieExpires) {
+            console.log(`🍪 Found Expires in cookie: ${cookieExpires[0]}`);
+          }
+        }
+
+        if (maxAgeMatch) {
+          const maxAgeSeconds = parseInt(maxAgeMatch[1]);
+          const maxAgeHours = Math.floor(maxAgeSeconds / 3600);
+          const maxAgeDays = Math.floor(maxAgeHours / 24);
+          console.log(
+            `🍪 Admin cookie Max-Age: ${maxAgeSeconds} seconds (${maxAgeHours} hours, ${maxAgeDays} days)`
+          );
+        }
+
+        if (expiresMatch) {
+          const expiresDate = new Date(expiresMatch[1]);
+          console.log(
+            `🍪 Admin cookie Expires: ${expiresDate.toISOString()} (${expiresDate.toLocaleString()})`
+          );
+        }
+
+        if (!maxAgeMatch && !expiresMatch) {
+          console.log(
+            "⚠️ Admin cookie - No Max-Age or Expires found. This is likely a session cookie that expires when the browser closes."
+          );
+        }
 
         // Parse and modify cookies for localhost
         const cookies = setCookieHeader.split(",").map((cookie) => {
