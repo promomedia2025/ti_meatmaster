@@ -38,7 +38,7 @@ export function Footer({ lang, dict }: FooterProps) {
             <h3 className="text-white font-semibold mb-4">Εταιρεία</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/about-us" className="hover:text-white transition-colors">
                   Σχετικά με εμάς
                 </a>
               </li>
@@ -50,13 +50,13 @@ export function Footer({ lang, dict }: FooterProps) {
             <h3 className="text-white font-semibold mb-4">Πολιτικές</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/privacy-policy" className="hover:text-white transition-colors">
                   Πολιτική Απορρήτου
                 </a>
      
               </li>
                  <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a href="/refund-policy" className="hover:text-white transition-colors">
                   Πολιτική Επιστροφών
                  </a>
                 </li>
