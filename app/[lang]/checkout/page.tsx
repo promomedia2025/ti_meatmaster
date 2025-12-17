@@ -602,7 +602,59 @@ function CheckoutPageContent() {
       }
     }
 
+    // Fetch current restaurant status right before submitting order
+    if (!locationId || !locationCart) {
+      toast.error("Σφάλμα: Δεν βρέθηκε τοποθεσία");
+      return;
+    }
+
     setIsSubmitting(true);
+
+    try {
+      // Fetch fresh restaurant status before submitting
+      const statusResponse = await fetch("/api/locations", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!statusResponse.ok) {
+        setIsSubmitting(false);
+        toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+        return;
+      }
+
+      const statusData = await statusResponse.json();
+
+      if (!statusData.success || !statusData.data?.locations) {
+        setIsSubmitting(false);
+        toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+        return;
+      }
+
+      // Find the location with matching ID
+      const location = statusData.data.locations.find(
+        (loc: any) => loc.id === parseInt(locationId)
+      );
+
+      if (!location) {
+        setIsSubmitting(false);
+        toast.error("Σφάλμα: Δεν βρέθηκε τοποθεσία");
+        return;
+      }
+
+      // Check if restaurant is open
+      const currentRestaurantStatus = location.restaurant_status;
+      if (!currentRestaurantStatus || !currentRestaurantStatus.is_open) {
+        setIsSubmitting(false);
+        toast.error("Έχουμε κλείσει");
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking restaurant status:", error);
+      setIsSubmitting(false);
+      toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+      return;
+    }
 
     try {
       // Transform cart items to match the expected API format
