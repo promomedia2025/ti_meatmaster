@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
           Cookie: cookieHeader,
         },
         credentials: "include",
+        cache: "no-store",
       }
     );
 

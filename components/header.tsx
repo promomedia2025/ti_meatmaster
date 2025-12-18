@@ -16,7 +16,7 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LocationModal } from "./location-modal";
 import { AuthModal } from "./auth-modal";
@@ -79,6 +79,7 @@ export function Header() {
   const [locationImages, setLocationImages] = useState<Map<number, string>>(
     new Map()
   );
+  const fetchedLocationIdsRef = useRef<Set<number>>(new Set());
 
   // Check if we're on a restaurant or location page
   const isRestaurantPage =
@@ -99,11 +100,15 @@ export function Header() {
       const locationIds = locationCarts.map((cart) => cart.locationId);
       const missingIds = locationIds.filter(
         (id) =>
+          !fetchedLocationIdsRef.current.has(id) &&
           !locationImages.has(id) &&
           !locationCarts.find((c) => c.locationId === id)?.locationImage
       );
 
       if (missingIds.length === 0) return;
+
+      // Mark as being fetched to prevent duplicate requests
+      missingIds.forEach((id) => fetchedLocationIdsRef.current.add(id));
 
       try {
         // Fetch all locations and filter by the ones we need
@@ -111,24 +116,29 @@ export function Header() {
         const data = await response.json();
 
         if (data.success && data.data?.locations) {
-          const newImages = new Map(locationImages);
-          data.data.locations.forEach((location: any) => {
-            if (
-              missingIds.includes(location.id) &&
-              location.images?.thumbnail?.url
-            ) {
-              newImages.set(location.id, location.images.thumbnail.url);
-            }
+          // Use functional update to add new images
+          setLocationImages((prevImages) => {
+            const updatedImages = new Map(prevImages);
+            data.data.locations.forEach((location: any) => {
+              if (
+                missingIds.includes(location.id) &&
+                location.images?.thumbnail?.url
+              ) {
+                updatedImages.set(location.id, location.images.thumbnail.url);
+              }
+            });
+            return updatedImages;
           });
-          setLocationImages(newImages);
         }
       } catch (error) {
         console.error("Error fetching location images:", error);
+        // Remove from fetched set on error so we can retry
+        missingIds.forEach((id) => fetchedLocationIdsRef.current.delete(id));
       }
     };
 
     fetchLocationImages();
-  }, [locationCarts, locationImages]);
+  }, [locationCarts]);
 
   // Handle scroll for background transparency (only on restaurant pages)
   useEffect(() => {
