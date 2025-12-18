@@ -130,6 +130,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const [locationImages, setLocationImages] = useState<Map<number, string>>(
     new Map()
   );
+  const fetchedLocationIdsRef = useRef<Set<number>>(new Set());
   const [menuItemImages, setMenuItemImages] = useState<Map<number, string>>(
     new Map()
   );
@@ -226,14 +227,23 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
     const fetchLocationImages = async () => {
       if (displayCarts.length === 0) return;
 
-      const locationIds = displayCarts.map((cart) => cart.locationId);
-      const missingIds = locationIds.filter(
-        (id) =>
-          !locationImages.has(id) &&
-          !displayCarts.find((c) => c.locationId === id)?.locationImage
-      );
+      // Use functional update to check current state without including it in dependencies
+      let missingIds: number[] = [];
+      setLocationImages((currentImages) => {
+        const locationIds = displayCarts.map((cart) => cart.locationId);
+        missingIds = locationIds.filter(
+          (id) =>
+            !fetchedLocationIdsRef.current.has(id) &&
+            !currentImages.has(id) &&
+            !displayCarts.find((c) => c.locationId === id)?.locationImage
+        );
+        return currentImages; // Don't update yet
+      });
 
       if (missingIds.length === 0) return;
+
+      // Mark as being fetched to prevent duplicate requests
+      missingIds.forEach((id) => fetchedLocationIdsRef.current.add(id));
 
       try {
         // Fetch all locations and filter by the ones we need
@@ -241,24 +251,29 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         const data = await response.json();
 
         if (data.success && data.data?.locations) {
-          const newImages = new Map(locationImages);
-          data.data.locations.forEach((location: any) => {
-            if (
-              missingIds.includes(location.id) &&
-              location.images?.thumbnail?.url
-            ) {
-              newImages.set(location.id, location.images.thumbnail.url);
-            }
+          // Use functional update to add new images
+          setLocationImages((prevImages) => {
+            const updatedImages = new Map(prevImages);
+            data.data.locations.forEach((location: any) => {
+              if (
+                missingIds.includes(location.id) &&
+                location.images?.thumbnail?.url
+              ) {
+                updatedImages.set(location.id, location.images.thumbnail.url);
+              }
+            });
+            return updatedImages;
           });
-          setLocationImages(newImages);
         }
       } catch (error) {
         console.error("Error fetching location images:", error);
+        // Remove from fetched set on error so we can retry
+        missingIds.forEach((id) => fetchedLocationIdsRef.current.delete(id));
       }
     };
 
     fetchLocationImages();
-  }, [displayCarts, locationImages]);
+  }, [displayCarts]);
 
   // Fetch menu item images for cart items
   useEffect(() => {

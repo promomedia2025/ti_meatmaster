@@ -156,6 +156,16 @@ export default function AdminMenuPage() {
       );
     }
 
+    // Sort: first by menu_status (true first, then false), then alphabetically by menu_name
+    filtered.sort((a, b) => {
+      // First, sort by menu_status (true comes before false)
+      if (a.menu_status !== b.menu_status) {
+        return b.menu_status ? 1 : -1; // true items come first
+      }
+      // If menu_status is the same, sort alphabetically by menu_name
+      return a.menu_name.localeCompare(b.menu_name);
+    });
+
     return filtered;
   }, [menuItems, searchQuery, selectedCategory]);
 
