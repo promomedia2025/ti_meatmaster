@@ -19,6 +19,16 @@ interface Restaurant {
   deliveryFee: string;
   minOrder: string;
   restaurant_status?: RestaurantStatus;
+  locationData?: {
+    options?: {
+      delivery_time_interval?: number;
+      delivery_min_order_amount?: string;
+      collection_time_interval?: number;
+      collection_min_order_amount?: string;
+      offer_delivery?: string;
+      offer_collection?: string;
+    };
+  };
 }
 
 interface RestaurantInfoProps {
@@ -59,6 +69,18 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
           <div className="flex items-center gap-1 text-green-400">
             <Truck className="w-4 h-4" />
             <span>Delivery</span>
+            {restaurant.locationData?.options?.delivery_time_interval && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span>{restaurant.locationData.options.delivery_time_interval} λεπτά</span>
+              </>
+            )}
+            {restaurant.locationData?.options?.delivery_min_order_amount && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span>Ελάχ. {restaurant.locationData.options.delivery_min_order_amount}€</span>
+              </>
+            )}
           </div>
         )}
 
@@ -66,13 +88,20 @@ export default function RestaurantInfo({ restaurant }: RestaurantInfoProps) {
           <div className="flex items-center gap-1 text-blue-400">
             <ShoppingBag className="w-4 h-4" />
             <span>Pickup</span>
+            {restaurant.locationData?.options?.collection_time_interval && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span>{restaurant.locationData.options.collection_time_interval} λεπτά</span>
+              </>
+            )}
+            {restaurant.locationData?.options?.collection_min_order_amount && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span>Ελάχ. {restaurant.locationData.options.collection_min_order_amount}€</span>
+              </>
+            )}
           </div>
         )}
-
-        <div className="flex items-center gap-1">
-          <Euro className="w-4 h-4" />
-          <span>Ελάχιστη παραγγελία 7.00€</span>
-        </div>
       </div>
     </div>
   );

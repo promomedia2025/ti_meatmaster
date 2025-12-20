@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, MapPin, CreditCard, Package, Loader2 } from "lucide-react";
 import GooglePlacesCustom from "@/components/google-places-custom";
 import { AddressBookModal } from "@/components/address-book-modal";
+import { Location } from "@/lib/types";
 
 interface UserLocation {
   city: string;
@@ -63,6 +64,9 @@ function CheckoutPageContent() {
     ? getLocationCart(parseInt(locationId))
     : null;
 
+  // State for location data (needed for minimum order checks)
+  const [locationData, setLocationData] = useState<Location | null>(null);
+
   // Fetch restaurant status using the custom hook
   const { status: restaurantStatus, isLoading: isLoadingRestaurantStatus } =
     useRestaurantStatus(locationId ? parseInt(locationId) : null);
@@ -81,7 +85,79 @@ function CheckoutPageContent() {
     });
   }, [locationId, restaurantStatus, isLoadingRestaurantStatus]);
 
+  // Fetch location data to get intervals
+  useEffect(() => {
+    const fetchLocationData = async () => {
+      if (!locationId) {
+        setLocationData(null);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/locations", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch location data");
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data?.locations) {
+          const location = data.data.locations.find(
+            (loc: Location) => loc.id === parseInt(locationId)
+          );
+          if (location) {
+            setLocationData(location);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching location data:", error);
+      }
+    };
+
+    fetchLocationData();
+  }, [locationId]);
+
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("delivery");
+
+  // Auto-switch order type if current selection doesn't meet minimum order
+  useEffect(() => {
+    if (!locationCart || !locationData) return;
+
+    const deliveryData = locationCart
+      ? getDeliveryData(locationCart.locationId)
+      : null;
+    const isDeliveryDisabledByAvailability = !!(
+      deliveryData && !deliveryData.delivery_enabled
+    );
+
+    const deliveryMinOrder = locationData.options?.delivery_min_order_amount
+      ? parseFloat(locationData.options.delivery_min_order_amount)
+      : 0;
+    const pickupMinOrder = locationData.options?.collection_min_order_amount
+      ? parseFloat(locationData.options.collection_min_order_amount)
+      : 0;
+    const cartTotal = locationCart.summary.total || 0;
+
+    const deliveryMeetsMin = deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
+    const pickupMeetsMin = pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
+
+    // If current order type doesn't meet minimum, switch to the one that does
+    if (orderType === "delivery") {
+      const deliveryMeetsAll = deliveryMeetsMin && !isDeliveryDisabledByAvailability;
+      if (!deliveryMeetsAll && pickupMeetsMin) {
+        setOrderType("pickup");
+      }
+    } else if (orderType === "pickup") {
+      if (!pickupMeetsMin && deliveryMeetsMin && !isDeliveryDisabledByAvailability) {
+        setOrderType("delivery");
+      }
+    }
+  }, [locationCart, locationData, orderType, getDeliveryData]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
   const [orderComments, setOrderComments] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -935,9 +1011,19 @@ function CheckoutPageContent() {
                     const deliveryData = locationCart
                       ? getDeliveryData(locationCart.locationId)
                       : null;
-                    const isDeliveryDisabled = !!(
+                    const isDeliveryDisabledByAvailability = !!(
                       deliveryData && !deliveryData.delivery_enabled
                     );
+                    
+                    // Check minimum order for delivery
+                    const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
+                      ? parseFloat(locationData.options.delivery_min_order_amount)
+                      : 0;
+                    const cartTotal = locationCart?.summary.total || 0;
+                    const isDeliveryDisabledByMinOrder = deliveryMinOrder > 0 && cartTotal < deliveryMinOrder;
+                    const isDeliveryDisabled = isDeliveryDisabledByAvailability || isDeliveryDisabledByMinOrder;
+                    
+                    const deliveryInterval = locationData?.options?.delivery_time_interval || 0;
 
                     return (
                       <label
@@ -961,31 +1047,69 @@ function CheckoutPageContent() {
                         <div className="flex items-center gap-2 flex-1">
                           <MapPin className="w-4 h-4 text-blue-400" />
                           <span className="text-white">Παράδοση</span>
-                          {isDeliveryDisabled && (
+                          {!isDeliveryDisabled && deliveryInterval > 0 && (
+                            <span className="text-gray-400 text-xs sm:text-sm ml-auto">
+                              Εκτιμώμενος χρόνος: {deliveryInterval} λεπτά
+                            </span>
+                          )}
+                          {isDeliveryDisabledByAvailability && (
                             <span className="text-red-400 text-sm ml-auto">
                               Το delivery δεν είναι διαθεσιμο
+                            </span>
+                          )}
+                          {!isDeliveryDisabledByAvailability && isDeliveryDisabledByMinOrder && (
+                            <span className="text-red-400 text-sm ml-auto">
+                              Ελάχιστη παραγγελία: {deliveryMinOrder.toFixed(2)}€
                             </span>
                           )}
                         </div>
                       </label>
                     );
                   })()}
-                  <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="orderType"
-                      value="pickup"
-                      checked={orderType === "pickup"}
-                      onChange={(e) => setOrderType(e.target.value as "pickup")}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-green-400" />
-                      <span className="text-white text-sm sm:text-base">
-                        Παραλαβή
-                      </span>
-                    </div>
-                  </label>
+                  {(() => {
+                    // Check minimum order for pickup
+                    const pickupMinOrder = locationData?.options?.collection_min_order_amount
+                      ? parseFloat(locationData.options.collection_min_order_amount)
+                      : 0;
+                    const cartTotal = locationCart?.summary.total || 0;
+                    const isPickupDisabledByMinOrder = pickupMinOrder > 0 && cartTotal < pickupMinOrder;
+
+                    return (
+                      <label
+                        className={`flex items-center gap-2 sm:gap-3 ${
+                          isPickupDisabledByMinOrder
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value="pickup"
+                          checked={orderType === "pickup"}
+                          onChange={(e) => setOrderType(e.target.value as "pickup")}
+                          disabled={isPickupDisabledByMinOrder}
+                          className="w-4 h-4 text-primary disabled:cursor-not-allowed"
+                        />
+                        <div className="flex items-center gap-2 flex-1">
+                          <Package className="w-4 h-4 text-green-400" />
+                          <span className="text-white text-sm sm:text-base">
+                            Παραλαβή
+                          </span>
+                          {!isPickupDisabledByMinOrder && locationData?.options?.collection_time_interval && (
+                            <span className="text-gray-400 text-xs sm:text-sm ml-auto">
+                              Εκτιμώμενος χρόνος: {locationData.options.collection_time_interval} λεπτά
+                            </span>
+                          )}
+                          {isPickupDisabledByMinOrder && (
+                            <span className="text-red-400 text-sm ml-auto">
+                              Ελάχιστη παραγγελία: {pickupMinOrder.toFixed(2)}€
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })()}
                 </div>
               </Card>
 
@@ -1266,6 +1390,31 @@ function CheckoutPageContent() {
                       locationCart?.restaurantStatus?.statusMessage ||
                       "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
 
+                    // Check minimum order requirements
+                    const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
+                      ? parseFloat(locationData.options.delivery_min_order_amount)
+                      : 0;
+                    const pickupMinOrder = locationData?.options?.collection_min_order_amount
+                      ? parseFloat(locationData.options.collection_min_order_amount)
+                      : 0;
+                    const cartTotal = locationCart?.summary.total || 0;
+                    
+                    const deliveryMeetsMin = deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
+                    const pickupMeetsMin = pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
+                    
+                    // Check if delivery is disabled by availability
+                    const isDeliveryDisabledByAvailability = !!(
+                      deliveryData && !deliveryData.delivery_enabled
+                    );
+                    
+                    // Check if current order type meets minimum
+                    const currentOrderTypeMeetsMin = orderType === "delivery"
+                      ? (deliveryMeetsMin && !isDeliveryDisabledByAvailability)
+                      : pickupMeetsMin;
+                    
+                    // Block checkout if neither option meets minimum
+                    const isBlockedByMinOrder = !deliveryMeetsMin && !pickupMeetsMin;
+
                     return (
                       <div className="space-y-2 mt-4">
                         <Button
@@ -1274,15 +1423,19 @@ function CheckoutPageContent() {
                             isSubmitting ||
                             isLoadingRestaurantStatus ||
                             isRestaurantClosed ||
+                            isBlockedByMinOrder ||
                             (orderType === "delivery" &&
                               locationCart &&
-                              isDeliveryBlocked(locationCart.locationId))
+                              isDeliveryBlocked(locationCart.locationId)) ||
+                            !currentOrderTypeMeetsMin
                           }
                           className={`w-full py-2.5 sm:py-3 text-sm sm:text-base font-medium transition-all duration-200 ${
                             isRestaurantClosed ||
+                            isBlockedByMinOrder ||
                             (orderType === "delivery" &&
                               locationCart &&
-                              isDeliveryBlocked(locationCart.locationId))
+                              isDeliveryBlocked(locationCart.locationId)) ||
+                            !currentOrderTypeMeetsMin
                               ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                               : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                           }`}
@@ -1293,10 +1446,14 @@ function CheckoutPageContent() {
                             ? "Ελέγχοντας..."
                             : isRestaurantClosed
                             ? "Το εστιατόριο είναι κλειστό"
+                            : isBlockedByMinOrder
+                            ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
                             : orderType === "delivery" &&
                               locationCart &&
                               isDeliveryBlocked(locationCart.locationId)
                             ? "Η διεύθυνση είναι εκτός περιοχής"
+                            : !currentOrderTypeMeetsMin
+                            ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
                             : "Υποβολή παραγγελίας"}
                         </Button>
                         {isRestaurantClosed && !isLoadingRestaurantStatus && (
@@ -1304,7 +1461,12 @@ function CheckoutPageContent() {
                             {statusMessage}
                           </p>
                         )}
-                        {isOutsideDeliveryArea && !isRestaurantClosed && (
+                        {isBlockedByMinOrder && !isRestaurantClosed && (
+                          <p className="text-red-400 text-xs sm:text-sm text-center">
+                            Ελάχιστη παραγγελία δεν έχει συμπληρωθεί
+                          </p>
+                        )}
+                        {isOutsideDeliveryArea && !isRestaurantClosed && !isBlockedByMinOrder && (
                           <p className="text-red-400 text-xs sm:text-sm text-center">
                             Το καταστημα δεν εξυπηρετει την συγκεκριμενη
                             διευθυνση

@@ -280,40 +280,49 @@ export function RestaurantGrid({ radius = 5 }: RestaurantGridProps) {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span>{deliveryTime}</span>
-                      <span className="text-primary">λεπτά</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                      <span>{deliveryFee}€</span>
-                    </div>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {statusDisplay.deliveryAvailable && location.options?.delivery_time_interval && (
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span>{location.options.delivery_time_interval}</span>
+                        <span className="text-primary">λεπτά</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span>Ελάχ. {location.options.delivery_min_order_amount}€</span>
+                      </div>
+                    )}
+                    {statusDisplay.pickupAvailable && location.options?.collection_time_interval && (
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                          />
+                        </svg>
+                        <span>{location.options.collection_time_interval}</span>
+                        <span className="text-primary">λεπτά</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span>Ελάχ. {location.options.collection_min_order_amount}€</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <svg
