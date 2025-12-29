@@ -130,12 +130,6 @@ export default function HomePage() {
           <HeroVideoCarousel />
         </div>
 
-        <h2 className="text-2xl font-bold mb-4 text-white">Προσφορές</h2>
-        <FeaturedMenuCarousel
-          featuredMenuIds={featuredDiscountIds}
-          locale={lang}
-          locationSlug="cocofino-13"
-        />
 
         <h2 className="text-2xl font-bold mb-4 text-white">Δείτε το μενού</h2>
 
@@ -148,6 +142,16 @@ export default function HomePage() {
         >
           <RestaurantGrid radius={radius} />
         </Suspense>
+
+        <h2 className="text-2xl font-bold mb-4 mt-8 text-white">
+          Προτεινόμενα Πιάτα
+        </h2>
+        
+        <FeaturedMenuCarousel
+          featuredMenuIds={featuredDiscountIds}
+          locale={lang}
+          locationSlug="cocofino-13"
+        />
 
         {/* FEATURED MENU ITEMS CAROUSEL */}
         <h2 className="text-2xl font-bold mb-4 mt-8 text-white">
