@@ -144,9 +144,9 @@ export default function HomePage() {
         </Suspense>
 
         <h2 className="text-2xl font-bold mb-4 mt-8 text-white">
-          Προτεινόμενα Πιάτα
+          Προσφορές
         </h2>
-        
+
         <FeaturedMenuCarousel
           featuredMenuIds={featuredDiscountIds}
           locale={lang}
