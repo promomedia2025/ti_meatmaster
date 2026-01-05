@@ -36,6 +36,23 @@ export function AddAddressModal({
     console.log("🏠 Address Components:", place.address_components);
     console.log("📍 Geometry:", place.geometry);
 
+    // Extract and log coordinates
+    if (place?.geometry?.location) {
+      const lat = typeof place.geometry.location.lat === 'function' 
+        ? place.geometry.location.lat() 
+        : place.geometry.location.lat;
+      const lng = typeof place.geometry.location.lng === 'function' 
+        ? place.geometry.location.lng() 
+        : place.geometry.location.lng;
+      
+      console.log("📍 [ADD-ADDRESS-MODAL] Selected address coordinates:", {
+        latitude: lat,
+        longitude: lng,
+      });
+    } else {
+      console.log("📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place");
+    }
+
     setSelectedPlace(place);
     setAddress(place.formatted_address);
 
@@ -184,6 +201,26 @@ export function AddAddressModal({
                 }
 
                 try {
+                  // Extract coordinates from selected place
+                  let latitude: number | undefined;
+                  let longitude: number | undefined;
+                  
+                  if (selectedPlace?.geometry?.location) {
+                    latitude = typeof selectedPlace.geometry.location.lat === 'function' 
+                      ? selectedPlace.geometry.location.lat() 
+                      : selectedPlace.geometry.location.lat;
+                    longitude = typeof selectedPlace.geometry.location.lng === 'function' 
+                      ? selectedPlace.geometry.location.lng() 
+                      : selectedPlace.geometry.location.lng;
+                    
+                    console.log("📍 [ADD-ADDRESS-MODAL] Address coordinates before saving:", {
+                      latitude,
+                      longitude,
+                    });
+                  } else {
+                    console.log("📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place");
+                  }
+
                   // Extract address components from Google Places
                   const addressComponents =
                     selectedPlace.address_components || [];
@@ -220,7 +257,7 @@ export function AddAddressModal({
                     : route || streetNumber || selectedPlace.formatted_address;
 
                   // API body structure
-                  const apiBody = {
+                  const apiBody: any = {
                     customer_id: user?.id || 3, // Use actual user ID from auth context
                     address_1: address1 || selectedPlace.formatted_address,
                     address_2: "",
@@ -232,6 +269,12 @@ export function AddAddressModal({
                     floor: floor || "",
                     is_default: false,
                   };
+
+                  // Add coordinates if available
+                  if (latitude !== undefined && longitude !== undefined) {
+                    apiBody.latitude = latitude;
+                    apiBody.longitude = longitude;
+                  }
 
                   console.log("📤 API Body for address creation:", apiBody);
 

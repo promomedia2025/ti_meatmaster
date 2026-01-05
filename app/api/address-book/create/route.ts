@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
       bell_name,
       floor,
       is_default,
+      latitude,
+      longitude,
     } = body;
 
     // Validation
@@ -79,6 +81,8 @@ export async function POST(request: NextRequest) {
       bell_name: bell_name || "",
       floor: floor || "",
       is_default: is_default || false,
+      latitude,
+      longitude,
     });
 
     const response = await fetch(apiUrl, {
@@ -97,6 +101,10 @@ export async function POST(request: NextRequest) {
         bell_name: bell_name || "",
         floor: floor || "",
         is_default: is_default || false,
+        ...(latitude !== undefined && longitude !== undefined && {
+          latitude,
+          longitude,
+        }),
       }),
     });
 

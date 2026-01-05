@@ -152,6 +152,34 @@ export interface MenuItemCategory {
   permalink_slug: string;
 }
 
+export interface MenuOptionValue {
+  menu_option_value_id: number;
+  option_value_id: number;
+  name: string;
+  price: number;
+  quantity: number | null;
+  is_default: boolean | null;
+  priority: number;
+  is_enabled?: boolean;
+  available?: boolean;
+}
+
+export interface MenuOption {
+  menu_option_id: number;
+  option_id: number;
+  option_name: string;
+  display_type: string;
+  priority: number;
+  required: boolean;
+  min_selected: number;
+  max_selected: number;
+  is_enabled?: boolean;
+  available?: boolean;
+  free_count: number;
+  free_order_by: "selection_order" | "lowest_price" | "priority";
+  option_values: MenuOptionValue[];
+}
+
 export interface MenuItem {
   menu_id: number;
   menu_name: string;
@@ -162,6 +190,7 @@ export interface MenuItem {
   order_restriction: string | null;
   currency: string;
   categories: MenuItemCategory[];
+  menu_options?: MenuOption[];
   image?: {
     url: string;
     path: string;

@@ -40,69 +40,54 @@ export function WoltLocation({
         return dict?.location?.locationUnavailable || "Location unavailable";
       }
       if (formattedAddress) {
-        // Use the same formatting logic as woltnavbar.tsx line 144
-        const street = formattedAddress.street || "";
-        const postcode = formattedAddress.postcode || "";
-        const city = formattedAddress.area || "";
-
-        // Build display string: "Street HouseNumber, PostalCode, City"
-        const parts = [];
-        if (street) {
-          parts.push(street);
-        }
-        if (postcode) {
-          parts.push(postcode);
-        }
-        if (city) {
-          parts.push(city);
-        }
-
-        const locationDisplay =
-          parts.length > 0 ? parts.join(", ") : formattedAddress.fullAddress;
-
-        return locationDisplay;
+        return formattedAddress.fullAddress;
       }
-      if (coordinates) {
-        return `📍 ${coordinates.latitude.toFixed(
-          4
-        )}, ${coordinates.longitude.toFixed(4)}`;
-      }
-      return dict?.location?.enableLocation || "Enable location access";
     }
 
     // If user is not logged in, always show click to enter address message
-    return dict?.location?.clickToEnterAddress || "Πατήστε για να εισάγετε τη διεύθυνσή σας";
+    return (
+      dict?.location?.clickToEnterAddress ||
+      "Πατήστε για να εισάγετε τη διεύθυνσή σας"
+    );
   };
 
   const displayText = getDisplayText();
   const showLoading = isLoading || isTrackingLocation || isGeocoding;
   const [showTooltip, setShowTooltip] = useState(false);
-  
+
   // Check if we're displaying the default address
   // We show the badge only if:
   // 1. Default address exists
   // 2. We have coordinates
   // 3. The coordinates match the default address coordinates (within small tolerance)
   const isDefaultAddress = (() => {
-    if (!defaultAddress || !formattedAddress || !isAuthenticated || !coordinates) {
+    if (
+      !defaultAddress ||
+      !formattedAddress ||
+      !isAuthenticated ||
+      !coordinates
+    ) {
       return false;
     }
-    
+
     // If default address has coordinates, compare them
-    if (defaultAddress.coordinates?.latitude && defaultAddress.coordinates?.longitude) {
+    if (
+      defaultAddress.coordinates?.latitude &&
+      defaultAddress.coordinates?.longitude
+    ) {
       const defaultLat = parseFloat(defaultAddress.coordinates.latitude);
       const defaultLng = parseFloat(defaultAddress.coordinates.longitude);
       const currentLat = coordinates.latitude;
       const currentLng = coordinates.longitude;
-      
+
       // Check if coordinates match within a small tolerance (0.0001 degrees ≈ 11 meters)
       const tolerance = 0.0001;
       const latMatch = Math.abs(defaultLat - currentLat) < tolerance;
       const lngMatch = Math.abs(defaultLng - currentLng) < tolerance;
-      
+
       return latMatch && lngMatch;
     }
-    
+
     // If default address doesn't have coordinates, we can't verify it's the default
     // So don't show the badge
     return false;
@@ -130,7 +115,9 @@ export function WoltLocation({
         >
           <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/30">
             <CheckCircle2 size={14} className="text-green-400" />
-            <span className="text-xs font-medium text-green-400">Προεπιλεγμένη</span>
+            <span className="text-xs font-medium text-green-400">
+              Προεπιλεγμένη
+            </span>
           </div>
           {showTooltip && (
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg border border-gray-700 whitespace-nowrap z-50">

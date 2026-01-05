@@ -662,6 +662,31 @@ export function AdminOrderDetailsModal({
     return payment === "cod" ? "Μετρητά" : "Κάρτα";
   };
 
+  const getOrderTypeDisplayName = (orderType?: string, orderTypeName?: string) => {
+    if (orderTypeName) {
+      // If we have a display name, use it but map to our standard terms
+      const typeName = orderTypeName.toLowerCase();
+      if (typeName.includes("delivery") || typeName.includes("διανομή") || typeName.includes("παράδοση")) {
+        return "Delivery";
+      }
+      if (typeName.includes("collection") || typeName.includes("pickup") || typeName.includes("παραλαβή") || typeName.includes("takeaway")) {
+        return "Takeaway";
+      }
+      return orderTypeName;
+    }
+    
+    // Fallback to order_type
+    if (!orderType) return "N/A";
+    const type = orderType.toLowerCase();
+    if (type === "delivery" || type.includes("delivery")) {
+      return "Delivery";
+    }
+    if (type === "collection" || type.includes("collection") || type.includes("pickup")) {
+      return "Takeaway";
+    }
+    return orderType;
+  };
+
   const translateTotalTitle = (title: string, code: string) => {
     // Translate based on code first, then fallback to title
     if (code === "subtotal") return "Υποσύνολο";
@@ -1076,10 +1101,22 @@ export function AdminOrderDetailsModal({
                       {getPaymentMethodName(order.payment)}
                     </p>
                     <p className="invoice-date-section">
+                      <strong>Τύπος παραγγελίας</strong>
+                      <br />
+                      {getOrderTypeDisplayName(order.order_type, order.order_type_name)}
+                    </p>
+                    <p className="invoice-date-section">
                       <strong>Ημερομηνία Παραγγελίας</strong>
                       <br />
                       {formatDateTime(order.order_date, order.order_time)}
                     </p>
+                    {order.comment && (
+                      <p className="invoice-date-section mt-2">
+                        <strong>Σχόλιο Παραγγελίας</strong>
+                        <br />
+                        {order.comment}
+                      </p>
+                    )}
                   </div>
                 </div>
 

@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: { locationId: string } }
 ) {
   try {
     const locationId = params.locationId;
-    const { searchParams } = new URL(request.url);
-    const latitude = searchParams.get("latitude");
-    const longitude = searchParams.get("longitude");
+    const body = await request.json();
+    const { latitude, longitude } = body;
 
     if (!locationId) {
       return NextResponse.json(
@@ -34,17 +33,28 @@ export async function GET(
       );
     }
 
-    // Call external API
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/customer-api/locations/${locationId}/delivery-availability`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      }
-    );
+    // Call external API with POST and coordinates in body
+    const requestBody = {
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+    };
+
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/customer-api/locations/${locationId}/delivery-availability`;
+
+    console.log("📤 [DELIVERY-AVAILABILITY] Calling external API:", {
+      url: apiUrl,
+      method: "POST",
+      body: requestBody,
+    });
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -59,6 +69,14 @@ export async function GET(
     }
 
     const data = await response.json();
+
+    console.log("📦 [DELIVERY-AVAILABILITY] API Response:", {
+      status: response.status,
+      locationId,
+      requestBody: { latitude, longitude },
+      responseData: data,
+      fullResponse: JSON.stringify(data, null, 2),
+    });
 
     return NextResponse.json(data);
   } catch (error) {

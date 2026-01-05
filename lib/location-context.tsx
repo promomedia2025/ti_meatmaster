@@ -284,46 +284,26 @@ export function LocationProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // If we have coordinates (either from address or geocoding), set them and reverse geocode
+            // If we have coordinates (either from address or geocoding), set them
             if (coords) {
               setCoordinates(coords);
 
-              // Use reverse geocoding to get properly formatted address
-              const formatted = await reverseGeocode(
-                coords.latitude,
-                coords.longitude,
-                "el"
+              // Set formatted address from address data
+              const formatted: FormattedAddress = {
+                street: address.address_1 || "",
+                area: address.city || "",
+                postcode: address.postcode || "",
+                fullAddress:
+                  address.formatted_address ||
+                  `${address.address_1}, ${address.city} ${address.postcode}`,
+                bell_name: address.bell_name || null,
+                floor: address.floor || null,
+              };
+              console.log(
+                "📍 [ADDRESS FETCH] Setting formatted address from address data:",
+                formatted
               );
-              if (formatted) {
-                // Preserve bell_name and floor from the original address
-                const formattedWithExtras: FormattedAddress = {
-                  ...formatted,
-                  bell_name: address.bell_name || null,
-                  floor: address.floor || null,
-                };
-                console.log(
-                  "📍 [ADDRESS FETCH] Setting formatted address from reverse geocoding (with bell_name & floor):",
-                  formattedWithExtras
-                );
-                setFormattedAddress(formattedWithExtras);
-              } else {
-                // Fallback to address data if reverse geocoding fails
-                const formatted: FormattedAddress = {
-                  street: address.address_1 || "",
-                  area: address.city || "",
-                  postcode: address.postcode || "",
-                  fullAddress:
-                    address.formatted_address ||
-                    `${address.address_1}, ${address.city} ${address.postcode}`,
-                  bell_name: address.bell_name || null,
-                  floor: address.floor || null,
-                };
-                console.log(
-                  "📍 [ADDRESS FETCH] Setting formatted address from address data (fallback):",
-                  formatted
-                );
-                setFormattedAddress(formatted);
-              }
+              setFormattedAddress(formatted);
             } else {
               // No coordinates available at all, just set formatted address from address data
               const formatted: FormattedAddress = {
@@ -360,7 +340,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [forwardGeocode, reverseGeocode]
+    [forwardGeocode]
   );
 
   const startLocationTracking = (lang: string = "el") => {
@@ -386,22 +366,6 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         };
         setCoordinates(coords);
         setIsTrackingLocation(false);
-
-        // Automatically reverse geocode the coordinates
-        const address = await reverseGeocode(
-          coords.latitude,
-          coords.longitude,
-          lang
-        );
-        if (address) {
-          // Preserve bell_name and floor from defaultAddress if it exists
-          const addressWithExtras: FormattedAddress = {
-            ...address,
-            bell_name: defaultAddress?.bell_name || null,
-            floor: defaultAddress?.floor || null,
-          };
-          setFormattedAddress(addressWithExtras);
-        }
       },
       (error) => {
         setIsTrackingLocation(false);
@@ -430,27 +394,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     setLocationError(null);
   };
 
-  const refreshAddress = useCallback(
-    async (lang: string) => {
-      if (coordinates) {
-        const address = await reverseGeocode(
-          coordinates.latitude,
-          coordinates.longitude,
-          lang
-        );
-        if (address) {
-          // Preserve bell_name and floor from defaultAddress if it exists
-          const addressWithExtras: FormattedAddress = {
-            ...address,
-            bell_name: defaultAddress?.bell_name || null,
-            floor: defaultAddress?.floor || null,
-          };
-          setFormattedAddress(addressWithExtras);
-        }
-      }
-    },
-    [coordinates, reverseGeocode, defaultAddress]
-  );
+  const refreshAddress = useCallback(async (lang: string) => {
+    // refreshAddress is no longer needed without reverseGeocode
+  }, []);
 
   // Fetch default address when user logs in
   useEffect(() => {
@@ -491,7 +437,6 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         defaultAddress,
         setDefaultAddress,
         fetchDefaultAddress,
-        refreshDefaultAddress,
         isTrackingLocation,
         locationError,
         startLocationTracking,

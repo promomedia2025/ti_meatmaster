@@ -11,8 +11,8 @@ import React, {
 export interface DeliveryAvailabilityData {
   is_delivery_available: boolean;
   is_within_delivery_area: boolean;
-  delivery_enabled: boolean;
-  distance: {
+  delivery_enabled?: boolean;
+  distance?: {
     kilometers: number;
     miles: number;
   };
@@ -62,8 +62,8 @@ export function DeliveryAvailabilityProvider({
       if (!data) {
         return false; // If no data, don't block (assume available)
       }
-      // Block if delivery is enabled but user is outside delivery area
-      return data.delivery_enabled && !data.is_within_delivery_area;
+      // Block if is_delivery_available is false OR is_within_delivery_area is false
+      return !data.is_delivery_available || !data.is_within_delivery_area;
     },
     [deliveryData]
   );

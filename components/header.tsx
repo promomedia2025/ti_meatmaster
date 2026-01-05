@@ -334,11 +334,38 @@ export function Header() {
     }
   };
 
-  const handleLocationSet = (coordinates: {
-    latitude: number;
-    longitude: number;
+  const handleLocationSet = (data: {
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    address?: {
+      fullAddress: string;
+      city: string;
+      street?: string;
+      houseNumber?: string;
+      postalCode?: string;
+    };
   }) => {
-    console.log("📍 Location set from modal:", coordinates);
+    console.log("📍 Location set from modal:", data);
+    
+    // Update coordinates in context
+    setCoordinates(data.coordinates);
+
+    // If address data is provided, update userLocation
+    if (data.address) {
+      const locationData: UserLocation = {
+        city: data.address.city || "Unknown Location",
+        fullAddress: data.address.fullAddress,
+        coordinates: data.coordinates,
+        addressDetails: {
+          street: data.address.street,
+          houseNumber: data.address.houseNumber,
+          postalCode: data.address.postalCode,
+        },
+      };
+      setUserLocation(locationData);
+    }
     // No need to reload - coordinates are in context and RestaurantGrid will auto-update
   };
 

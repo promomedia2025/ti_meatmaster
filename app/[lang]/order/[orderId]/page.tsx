@@ -14,6 +14,7 @@ import {
   Truck,
   ChefHat,
 } from "lucide-react";
+import { OrderDetails } from "@/lib/types";
 
 interface OrderStatus {
   status: string;
@@ -29,7 +30,12 @@ export default function OrderStatusPage() {
   const { user, isAuthenticated } = useAuth();
 
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [estimatedDeliveryTime, setEstimatedDeliveryTime] =
+    useState<number>(30); // Default 30 minutes
+  const [baseEstimatedTime, setBaseEstimatedTime] = useState<number>(30);
 
   // Fetch initial order status from API
   useEffect(() => {
@@ -54,11 +60,33 @@ export default function OrderStatusPage() {
         console.log(`✅ Order ${orderId} fetched:`, data);
 
         if (data.success && data.data) {
+          const orderData = data.data;
           setOrderStatus({
-            status: data.data.status_id?.toString() || "",
-            statusName: data.data.status_name || "Unknown",
-            updatedAt: data.data.order_date || new Date().toISOString(),
+            status: orderData.status_id?.toString() || "",
+            statusName: orderData.status_name || "Unknown",
+            updatedAt: orderData.order_date || new Date().toISOString(),
           });
+
+          // Store full order details
+          setOrderDetails({
+            order_id: orderData.order_id,
+            order_date: orderData.order_date,
+            order_time: orderData.order_time,
+            order_total: orderData.order_total,
+            currency: orderData.currency || "EUR",
+            status_id: orderData.status_id,
+            created_at: orderData.created_at,
+            location_name: orderData.location_name,
+            status_name: orderData.status_name,
+            menu_items: orderData.menu_items || [],
+            order_totals: orderData.order_totals || [],
+          });
+
+          // Set estimated delivery time if available in response (in minutes)
+          const estimatedTime =
+            orderData.estimated_delivery_time || orderData.estimated_time || 30;
+          setBaseEstimatedTime(estimatedTime);
+          setEstimatedDeliveryTime(estimatedTime);
         }
       } catch (error) {
         console.error(`❌ Error fetching order ${orderId}:`, error);
@@ -106,6 +134,42 @@ export default function OrderStatusPage() {
           statusName: data.status_name || data.statusName || "Updated",
           updatedAt: data.updated_at || new Date().toISOString(),
         });
+      });
+
+      // Listen for delivery time updates
+      channel.bind("client-delivery-time-updated", (data: any) => {
+        console.log(`📥 [ORDER PAGE] Delivery time update event received:`, {
+          orderId,
+          channelName,
+          eventData: data,
+          timestamp: new Date().toISOString(),
+        });
+        console.log(`📥 [ORDER PAGE] Event data structure:`, {
+          hasOrderId: !!data.order_id,
+          orderId: data.order_id,
+          hasEstimatedDeliveryTime: data.estimated_delivery_time !== undefined,
+          estimatedDeliveryTime: data.estimated_delivery_time,
+          fullData: JSON.stringify(data, null, 2),
+        });
+
+        if (data.estimated_delivery_time !== undefined) {
+          const newEstimatedTime = data.estimated_delivery_time;
+          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time:`, {
+            oldBaseEstimatedTime: baseEstimatedTime,
+            newBaseEstimatedTime: newEstimatedTime,
+            oldEstimatedDeliveryTime: estimatedDeliveryTime,
+            newEstimatedDeliveryTime: newEstimatedTime,
+          });
+          setBaseEstimatedTime(newEstimatedTime);
+          setEstimatedDeliveryTime(newEstimatedTime);
+          console.log(
+            `✅ [ORDER PAGE] Estimated delivery time updated successfully`
+          );
+        } else {
+          console.warn(
+            `⚠️ [ORDER PAGE] Event received but estimated_delivery_time is undefined`
+          );
+        }
       });
 
       console.log(`🔗 Channel ${channelName} binding complete`);
@@ -214,6 +278,102 @@ export default function OrderStatusPage() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("el-GR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString;
+  };
+
+  const formatCurrency = (value: string | number) => {
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    return numValue.toFixed(2);
+  };
+
+  // Timer effect to calculate remaining time based on order_date and order_time
+  useEffect(() => {
+    if (!orderDetails?.order_date || !orderDetails?.order_time) {
+      return;
+    }
+
+    // Stop timer if order is completed
+    const statusLower = orderStatus?.statusName?.toLowerCase() || "";
+    const isCompleted =
+      statusLower.includes("complete") ||
+      statusLower.includes("delivered") ||
+      statusLower === "completed";
+
+    if (isCompleted) {
+      setTimeRemaining(0);
+      return;
+    }
+
+    const calculateTimeRemaining = () => {
+      try {
+        const now = new Date();
+
+        // Form timestamp from order_date and order_time
+        const datePart = orderDetails.order_date.split("T")[0];
+        const timePart = orderDetails.order_time.split(".")[0];
+        const timeParts = timePart.split(":");
+        const hours = parseInt(timeParts[0] || "0", 10);
+        const minutes = parseInt(timeParts[1] || "0", 10);
+        const seconds = parseInt(timeParts[2] || "0", 10);
+        
+        const orderTimestamp = new Date(datePart);
+        orderTimestamp.setHours(hours, minutes, seconds, 0);
+
+        // Calculate estimated delivery datetime (order time + estimated delivery time in minutes)
+        const estimatedDeliveryTimestamp = new Date(
+          orderTimestamp.getTime() + baseEstimatedTime * 60 * 1000
+        );
+
+        // Compare estimated delivery timestamp with now() to get remaining time
+        const remainingMs = estimatedDeliveryTimestamp.getTime() - now.getTime();
+        const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+
+        setTimeRemaining(remainingSeconds);
+      } catch (error) {
+        console.error("Error calculating time remaining:", error);
+        setTimeRemaining(null);
+      }
+    };
+
+    // Calculate immediately
+    calculateTimeRemaining();
+
+    // Update every second
+    const interval = setInterval(calculateTimeRemaining, 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    orderDetails?.order_date,
+    orderDetails?.order_time,
+    baseEstimatedTime,
+    orderStatus?.statusName,
+  ]);
+
+  const formatTimeRemaining = (seconds: number) => {
+    if (seconds <= 0) return "Έτοιμο";
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -259,27 +419,169 @@ export default function OrderStatusPage() {
             </div>
           </Card>
         ) : orderStatus ? (
-          <Card className="bg-gray-900 border-gray-800 p-6">
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                {getStatusIcon(orderStatus.statusName)}
+          <>
+            <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
+              <div className="text-center">
+                <div className="flex justify-center mb-4">
+                  {getStatusIcon(orderStatus.statusName)}
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {getStatusText(orderStatus.statusName)}
+                </h2>
+                <p className="text-gray-400 text-sm mb-6">
+                  Τελευταία ενημέρωση:{" "}
+                  {new Date(orderStatus.updatedAt).toLocaleString("el-GR")}
+                </p>
+                <div
+                  className={`inline-block px-4 py-2 rounded-full border ${getStatusColor(
+                    orderStatus.statusName
+                  )}`}
+                >
+                  Παραγγελία #{orderId}
+                </div>
+
+                {/* Timer Display */}
+                {timeRemaining !== null && orderDetails && (
+                  <div className="mt-6 pt-6 border-t border-gray-700">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-gray-400 text-sm">
+                        {timeRemaining > 0
+                          ? "Εκτιμώμενος χρόνος:"
+                          : "Η παραγγελία σας είναι έτοιμη!"}
+                      </span>
+                      {timeRemaining > 0 && (
+                        <div className="text-4xl font-bold text-[#ff9328ff] font-mono">
+                          {formatTimeRemaining(timeRemaining)}
+                        </div>
+                      )}
+                      {timeRemaining <= 0 && (
+                        <div className="text-2xl font-bold text-green-500">
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {getStatusText(orderStatus.statusName)}
-              </h2>
-              <p className="text-gray-400 text-sm mb-6">
-                Τελευταία ενημέρωση:{" "}
-                {new Date(orderStatus.updatedAt).toLocaleString("el-GR")}
-              </p>
-              <div
-                className={`inline-block px-4 py-2 rounded-full border ${getStatusColor(
-                  orderStatus.statusName
-                )}`}
-              >
-                Παραγγελία #{orderId}
-              </div>
-            </div>
-          </Card>
+            </Card>
+
+            {/* Order Details */}
+            {orderDetails && (
+              <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Λεπτομέρειες Παραγγελίας
+                </h3>
+
+                {/* Order Info */}
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                  <div>
+                    <span className="text-gray-400">Ημερομηνία:</span>
+                    <p className="text-white">
+                      {formatDate(orderDetails.order_date)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Ώρα:</span>
+                    <p className="text-white">
+                      {formatTime(orderDetails.order_time)}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-400">Εστιατόριο:</span>
+                    <p className="text-white">{orderDetails.location_name}</p>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                {orderDetails.menu_items &&
+                  orderDetails.menu_items.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-semibold text-white mb-3">
+                        Προϊόντα ({orderDetails.menu_items.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {orderDetails.menu_items.map((item, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <h5 className="text-white font-medium">
+                                  {item.menu_name}
+                                </h5>
+                                {item.menu_comment && (
+                                  <p className="text-gray-400 text-sm mt-1">
+                                    Σχόλιο: {item.menu_comment}
+                                  </p>
+                                )}
+                                {item.menu_options && (
+                                  <p className="text-gray-400 text-sm mt-1">
+                                    {item.menu_options}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right ml-4">
+                                <p className="text-white font-medium">
+                                  {item.menu_quantity}x
+                                </p>
+                                <p className="text-gray-400 text-sm">
+                                  {formatCurrency(item.menu_subtotal)}{" "}
+                                  {orderDetails.currency}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Order Totals */}
+                {orderDetails.order_totals &&
+                  orderDetails.order_totals.length > 0 && (
+                    <div className="border-t border-gray-700 pt-4">
+                      <div className="space-y-2">
+                        {orderDetails.order_totals
+                          .sort((a, b) => a.priority - b.priority)
+                          .map((total, index) => (
+                            <div
+                              key={index}
+                              className="flex justify-between items-center"
+                            >
+                              <span
+                                className={
+                                  total.title.toLowerCase().includes("total") &&
+                                  !total.title
+                                    .toLowerCase()
+                                    .includes("subtotal")
+                                    ? "text-white font-semibold"
+                                    : "text-gray-300"
+                                }
+                              >
+                                {total.title}
+                              </span>
+                              <span
+                                className={
+                                  total.title.toLowerCase().includes("total") &&
+                                  !total.title
+                                    .toLowerCase()
+                                    .includes("subtotal")
+                                    ? "text-white font-semibold text-lg"
+                                    : "text-gray-300"
+                                }
+                              >
+                                {formatCurrency(total.value)}{" "}
+                                {orderDetails.currency}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+              </Card>
+            )}
+          </>
         ) : (
           <Card className="bg-gray-900 border-gray-800 p-8">
             <div className="text-center">

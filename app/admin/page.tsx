@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AdminOrderDetailsModal } from "@/components/admin-order-details-modal";
+import { AdminDeliveryTimeModal } from "@/components/admin-delivery-time-modal";
 import { usePusher } from "@/lib/pusher-context";
 import { toast } from "sonner";
 import { Menu, X } from "lucide-react";
@@ -171,6 +172,11 @@ export default function AdminDashboardPage() {
   const [locationStatusLoading, setLocationStatusLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [autoPrintOrderId, setAutoPrintOrderId] = useState<number | null>(null);
+  const [isDeliveryTimeModalOpen, setIsDeliveryTimeModalOpen] = useState(false);
+  const [deliveryTimeModalOrderId, setDeliveryTimeModalOrderId] = useState<
+    number | null
+  >(null);
+  const orderChannelsRef = useRef<Map<number, any>>(new Map());
 
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
@@ -785,6 +791,10 @@ export default function AdminDashboardPage() {
           description: `Παραγγελία #${orderId} αποδέχθηκε`,
         });
 
+        // Open delivery time modal
+        setDeliveryTimeModalOrderId(orderId);
+        setIsDeliveryTimeModalOpen(true);
+
         // Find the order and open modal with auto-print
         const acceptedOrder = orders.find((o) => o.order_id === orderId);
         if (acceptedOrder) {
@@ -804,6 +814,83 @@ export default function AdminDashboardPage() {
       console.error("❌ [CLIENT] Error accepting order:", error);
       toast.error("Σφάλμα", {
         description: "Αποτυχία αποδοχής παραγγελίας",
+      });
+    }
+  };
+
+  const handleUpdateDeliveryTime = async (
+    orderId: number,
+    estimatedTime: number
+  ) => {
+    try {
+      console.log("🕐 [ADMIN] handleUpdateDeliveryTime called:", {
+        orderId,
+        estimatedTime,
+        pusherConnected: !!pusher && isConnected,
+      });
+
+      if (!pusher || !isConnected) {
+        console.error("❌ [ADMIN] Pusher not connected");
+        toast.error("Σφάλμα", {
+          description: "Δεν είστε συνδεδεμένοι. Παρακαλώ δοκιμάστε ξανά.",
+        });
+        return;
+      }
+
+      // Get or create subscription to the order channel
+      const channelName = `order.${orderId}`;
+      console.log(`📡 [ADMIN] Getting channel: ${channelName}`);
+
+      let channel = orderChannelsRef.current.get(orderId);
+      console.log(`📡 [ADMIN] Cached channel exists: ${!!channel}`);
+
+      if (!channel) {
+        console.log(`📡 [ADMIN] Subscribing to new channel: ${channelName}`);
+        channel = subscribe(channelName);
+        if (channel) {
+          orderChannelsRef.current.set(orderId, channel);
+          console.log(
+            `✅ [ADMIN] Channel subscribed and cached: ${channelName}`
+          );
+        } else {
+          console.error(
+            `❌ [ADMIN] Failed to subscribe to channel: ${channelName}`
+          );
+        }
+      }
+
+      if (!channel) {
+        toast.error("Σφάλμα", {
+          description: "Αποτυχία συνδέσης με το κανάλι παραγγελίας",
+        });
+        return;
+      }
+
+      const eventData = {
+        order_id: orderId,
+        estimated_delivery_time: estimatedTime,
+      };
+
+      console.log(`📤 [ADMIN] Triggering client event on ${channelName}:`, {
+        eventName: "client-delivery-time-updated",
+        data: eventData,
+        channelSubscribed: channel.subscribed,
+      });
+
+      // Trigger client event to broadcast delivery time update
+      channel.trigger("client-delivery-time-updated", eventData);
+
+      console.log(
+        `✅ [ADMIN] Client event triggered successfully on ${channelName}`
+      );
+
+      toast.success("Ενημέρωση Χρόνου", {
+        description: `Ο χρόνος παραγγελίας #${orderId} ενημερώθηκε σε ${estimatedTime} λεπτά`,
+      });
+    } catch (error) {
+      console.error("❌ [ADMIN] Error updating delivery time:", error);
+      toast.error("Σφάλμα", {
+        description: "Αποτυχία ενημέρωσης χρόνου",
       });
     }
   };
@@ -1161,7 +1248,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Live Orders Section */}
-          <div className="mb-8">
+          <div className="mb-8 overflow-hidden">
             <h2 className="text-2xl font-bold text-white mb-6">
               Ζωντανές Παραγγελίες
             </h2>
@@ -1175,10 +1262,10 @@ export default function AdminDashboardPage() {
                 <p className="text-red-400">{ordersError}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
                 {/* Pending Orders Column */}
                 <div>
-                  <div className="bg-[#2a2a2a] rounded-lg p-6">
+                  <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh]">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-semibold text-white">
                         Εκκρεμείς Παραγγελίες
@@ -1219,6 +1306,17 @@ export default function AdminDashboardPage() {
                                 >
                                   Απόρριψη
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  className="border-gray-700 bg-green-700 hover:bg-green-700 text-white"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setDeliveryTimeModalOrderId(order.order_id);
+                                    setIsDeliveryTimeModalOpen(true);
+                                  }}
+                                >
+                                  Χρόνος παραγγελίας
+                                </Button>
                               </>
                             }
                           />
@@ -1230,7 +1328,7 @@ export default function AdminDashboardPage() {
 
                 {/* Other Orders Column */}
                 <div>
-                  <div className="bg-[#2a2a2a] rounded-lg p-6">
+                  <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh]">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-semibold text-white">
                         Άλλες Παραγγελίες
@@ -1250,6 +1348,20 @@ export default function AdminDashboardPage() {
                             key={order.order_id}
                             order={order}
                             isRemoving={removingOrders.has(order.order_id)}
+                            actions={
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setDeliveryTimeModalOrderId(order.order_id);
+                                  setIsDeliveryTimeModalOpen(true);
+                                }}
+                              >
+                                Χρόνος παραγγελίας
+                              </Button>
+                            }
                             statusControl={
                               <div className="flex flex-col gap-2">
                                 <label className="text-xs font-medium text-gray-400">
@@ -1361,6 +1473,19 @@ export default function AdminDashboardPage() {
         order={selectedOrder}
         autoPrintOnAccept={autoPrintOrderId === selectedOrder?.order_id}
       />
+
+      {/* Delivery Time Modal */}
+      {deliveryTimeModalOrderId && (
+        <AdminDeliveryTimeModal
+          isOpen={isDeliveryTimeModalOpen}
+          onClose={() => {
+            setIsDeliveryTimeModalOpen(false);
+            setDeliveryTimeModalOrderId(null);
+          }}
+          orderId={deliveryTimeModalOrderId}
+          onUpdate={handleUpdateDeliveryTime}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, MapPin, CreditCard, Package, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  CreditCard,
+  Package,
+  Loader2,
+  X,
+} from "lucide-react";
 import GooglePlacesCustom from "@/components/google-places-custom";
 import { AddressBookModal } from "@/components/address-book-modal";
 import { Location } from "@/lib/types";
@@ -128,13 +135,6 @@ function CheckoutPageContent() {
   useEffect(() => {
     if (!locationCart || !locationData) return;
 
-    const deliveryData = locationCart
-      ? getDeliveryData(locationCart.locationId)
-      : null;
-    const isDeliveryDisabledByAvailability = !!(
-      deliveryData && !deliveryData.delivery_enabled
-    );
-
     const deliveryMinOrder = locationData.options?.delivery_min_order_amount
       ? parseFloat(locationData.options.delivery_min_order_amount)
       : 0;
@@ -143,21 +143,22 @@ function CheckoutPageContent() {
       : 0;
     const cartTotal = locationCart.summary.total || 0;
 
-    const deliveryMeetsMin = deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
+    const deliveryMeetsMin =
+      deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
     const pickupMeetsMin = pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
 
     // If current order type doesn't meet minimum, switch to the one that does
+    // Don't switch based on delivery availability - let user choose delivery option
     if (orderType === "delivery") {
-      const deliveryMeetsAll = deliveryMeetsMin && !isDeliveryDisabledByAvailability;
-      if (!deliveryMeetsAll && pickupMeetsMin) {
+      if (!deliveryMeetsMin && pickupMeetsMin) {
         setOrderType("pickup");
       }
     } else if (orderType === "pickup") {
-      if (!pickupMeetsMin && deliveryMeetsMin && !isDeliveryDisabledByAvailability) {
+      if (!pickupMeetsMin && deliveryMeetsMin) {
         setOrderType("delivery");
       }
     }
-  }, [locationCart, locationData, orderType, getDeliveryData]);
+  }, [locationCart, locationData, orderType]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
   const [orderComments, setOrderComments] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -170,6 +171,17 @@ function CheckoutPageContent() {
   const [floor, setFloor] = useState("");
   const [saveAddress, setSaveAddress] = useState(false);
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
+
+  // Function to reset address form
+  const handleResetAddress = () => {
+    setUserLocation(null);
+    setBellName("");
+    setFloor("");
+    setAddressInput("");
+    setSaveAddress(false);
+    // Delivery availability data will be cleared/updated when a new address is selected
+    toast.success("Η διεύθυνση διαγράφηκε");
+  };
 
   // Function to autocomplete location from navbar
   const handleAutocompleteFromNavbar = async () => {
@@ -246,6 +258,52 @@ function CheckoutPageContent() {
 
   // Handle address selection from address book
   const handleAddressBookSelect = async (address: any) => {
+    // Extract coordinates - handle both direct properties and nested coordinates object
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+
+    if (address.latitude !== undefined && address.longitude !== undefined) {
+      // Direct properties (from API response)
+      latitude =
+        typeof address.latitude === "string"
+          ? parseFloat(address.latitude)
+          : address.latitude;
+      longitude =
+        typeof address.longitude === "string"
+          ? parseFloat(address.longitude)
+          : address.longitude;
+    } else if (address.coordinates) {
+      // Nested in coordinates object (legacy format)
+      latitude =
+        typeof address.coordinates.latitude === "string"
+          ? parseFloat(address.coordinates.latitude)
+          : address.coordinates.latitude;
+      longitude =
+        typeof address.coordinates.longitude === "string"
+          ? parseFloat(address.coordinates.longitude)
+          : address.coordinates.longitude;
+    }
+
+    // Log longitude and latitude specifically
+    console.log("📍 [CHECKOUT] Address selected from address book:", {
+      address,
+      hasCoordinates: latitude !== undefined && longitude !== undefined,
+      latitude,
+      longitude,
+    });
+
+    if (latitude !== undefined && longitude !== undefined) {
+      console.log("📍 [CHECKOUT] Address coordinates (latitude, longitude):", {
+        latitude,
+        longitude,
+      });
+      console.log(
+        `📍 [CHECKOUT] Latitude: ${latitude}, Longitude: ${longitude}`
+      );
+    } else {
+      console.log("📍 [CHECKOUT] No coordinates found in address");
+    }
+
     setIsLoadingLocation(true);
     try {
       let location: UserLocation;
@@ -255,12 +313,12 @@ function CheckoutPageContent() {
         address.address_1 && address.city && address.postcode;
 
       // If address has coordinates, use them
-      if (address.coordinates) {
-        const geocoded = await reverseGeocode(
-          address.coordinates.latitude,
-          address.coordinates.longitude,
-          currentLang
-        );
+      if (latitude !== undefined && longitude !== undefined) {
+        console.log("📍 [CHECKOUT] Using address coordinates:", {
+          latitude,
+          longitude,
+        });
+        const geocoded = await reverseGeocode(latitude, longitude, currentLang);
 
         if (geocoded && !hasApiFields) {
           // Use geocoded data only if we don't have API fields
@@ -272,8 +330,8 @@ function CheckoutPageContent() {
               "Unknown Location",
             fullAddress: geocoded.fullAddress || address.address,
             coordinates: {
-              latitude: address.coordinates.latitude,
-              longitude: address.coordinates.longitude,
+              latitude,
+              longitude,
             },
             addressDetails: {
               street:
@@ -305,8 +363,8 @@ function CheckoutPageContent() {
               "Unknown Location",
             fullAddress: address.address || geocoded?.fullAddress || "",
             coordinates: {
-              latitude: address.coordinates.latitude,
-              longitude: address.coordinates.longitude,
+              latitude,
+              longitude,
             },
             addressDetails: {
               street:
@@ -365,6 +423,84 @@ function CheckoutPageContent() {
         setFloor(address.floor);
       }
 
+      // Check delivery availability when address is selected with coordinates
+      if (
+        latitude !== undefined &&
+        longitude !== undefined &&
+        locationCart?.locationId
+      ) {
+        console.log(
+          "🛒 [CHECKOUT] Checking delivery availability for selected address:",
+          {
+            locationId: locationCart.locationId,
+            latitude,
+            longitude,
+          }
+        );
+
+        try {
+          const deliveryResponse = await fetch(
+            `/api/locations/${locationCart.locationId}/delivery-availability`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                latitude,
+                longitude,
+              }),
+            }
+          );
+
+          const deliveryData = await deliveryResponse.json();
+
+          console.log(
+            "🛒 [CHECKOUT] Delivery availability response for selected address:",
+            {
+              success: deliveryData.success,
+              data: deliveryData.data,
+              isDeliveryAvailable: deliveryData.data?.is_delivery_available,
+              isWithinDeliveryArea: deliveryData.data?.is_within_delivery_area,
+              deliveryEnabled: deliveryData.data?.delivery_enabled,
+            }
+          );
+
+          if (deliveryData.success && deliveryData.data) {
+            // Store delivery data in context
+            const deliveryAvailabilityData = {
+              is_delivery_available: deliveryData.data.is_delivery_available,
+              is_within_delivery_area:
+                deliveryData.data.is_within_delivery_area,
+              delivery_enabled: deliveryData.data.delivery_enabled,
+              distance: deliveryData.data.distance,
+            };
+
+            setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
+            console.log(
+              "🛒 [CHECKOUT] Delivery data stored in context for selected address",
+              {
+                locationId: locationCart.locationId,
+                isDeliveryAvailable: deliveryData.data.is_delivery_available,
+                isWithinDeliveryArea: deliveryData.data.is_within_delivery_area,
+                isDeliveryBlocked:
+                  !deliveryData.data.is_delivery_available ||
+                  !deliveryData.data.is_within_delivery_area,
+              }
+            );
+
+            // Don't show toast or switch to pickup automatically - button will be disabled and message shown
+            // User can manually switch to pickup if they want
+          }
+        } catch (deliveryError) {
+          console.error(
+            "Error checking delivery availability for selected address:",
+            deliveryError
+          );
+          // Don't show error toast, just log it
+        }
+      }
+
       toast.success("Η διεύθυνση συμπληρώθηκε");
     } catch (error) {
       console.error("Error setting address from address book:", error);
@@ -416,6 +552,86 @@ function CheckoutPageContent() {
           setFloor(geocoded.floor);
         }
         setAddressInput(""); // Clear the input after selection
+
+        // Check delivery availability when address is selected with coordinates
+        if (locationCart?.locationId) {
+          console.log(
+            "🛒 [CHECKOUT] Checking delivery availability for Google Places address:",
+            {
+              locationId: locationCart.locationId,
+              latitude: lat,
+              longitude: lng,
+            }
+          );
+
+          try {
+            const deliveryResponse = await fetch(
+              `/api/locations/${locationCart.locationId}/delivery-availability`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  latitude: lat,
+                  longitude: lng,
+                }),
+              }
+            );
+
+            const deliveryData = await deliveryResponse.json();
+
+            console.log(
+              "🛒 [CHECKOUT] Delivery availability response for Google Places address:",
+              {
+                success: deliveryData.success,
+                data: deliveryData.data,
+                isDeliveryAvailable: deliveryData.data?.is_delivery_available,
+                isWithinDeliveryArea:
+                  deliveryData.data?.is_within_delivery_area,
+                deliveryEnabled: deliveryData.data?.delivery_enabled,
+              }
+            );
+
+            if (deliveryData.success && deliveryData.data) {
+              // Store delivery data in context
+              const deliveryAvailabilityData = {
+                is_delivery_available: deliveryData.data.is_delivery_available,
+                is_within_delivery_area:
+                  deliveryData.data.is_within_delivery_area,
+                delivery_enabled: deliveryData.data.delivery_enabled,
+                distance: deliveryData.data.distance,
+              };
+
+              setDeliveryData(
+                locationCart.locationId,
+                deliveryAvailabilityData
+              );
+              console.log(
+                "🛒 [CHECKOUT] Delivery data stored in context for Google Places address",
+                {
+                  locationId: locationCart.locationId,
+                  isDeliveryAvailable: deliveryData.data.is_delivery_available,
+                  isWithinDeliveryArea:
+                    deliveryData.data.is_within_delivery_area,
+                  isDeliveryBlocked:
+                    !deliveryData.data.is_delivery_available ||
+                    !deliveryData.data.is_within_delivery_area,
+                }
+              );
+
+              // Don't show toast or switch to pickup automatically - button will be disabled and message shown
+              // User can manually switch to pickup if they want
+            }
+          } catch (deliveryError) {
+            console.error(
+              "Error checking delivery availability for Google Places address:",
+              deliveryError
+            );
+            // Don't show error toast, just log it
+          }
+        }
+
         toast.success("Η διεύθυνση ορίστηκε");
       } else {
         // Fallback to basic address if reverse geocoding fails
@@ -432,6 +648,60 @@ function CheckoutPageContent() {
         };
         setUserLocation(location);
         setAddressInput(""); // Clear the input after selection
+
+        // Check delivery availability for fallback address too
+        if (locationCart?.locationId) {
+          console.log(
+            "🛒 [CHECKOUT] Checking delivery availability for Google Places fallback address:",
+            {
+              locationId: locationCart.locationId,
+              latitude: lat,
+              longitude: lng,
+            }
+          );
+
+          try {
+            const deliveryResponse = await fetch(
+              `/api/locations/${locationCart.locationId}/delivery-availability`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  latitude: lat,
+                  longitude: lng,
+                }),
+              }
+            );
+
+            const deliveryData = await deliveryResponse.json();
+
+            if (deliveryData.success && deliveryData.data) {
+              const deliveryAvailabilityData = {
+                is_delivery_available: deliveryData.data.is_delivery_available,
+                is_within_delivery_area:
+                  deliveryData.data.is_within_delivery_area,
+                delivery_enabled: deliveryData.data.delivery_enabled,
+                distance: deliveryData.data.distance,
+              };
+
+              setDeliveryData(
+                locationCart.locationId,
+                deliveryAvailabilityData
+              );
+
+              // Don't show toast or switch to pickup automatically - button will be disabled and message shown
+              // User can manually switch to pickup if they want
+            }
+          } catch (deliveryError) {
+            console.error(
+              "Error checking delivery availability for Google Places fallback address:",
+              deliveryError
+            );
+          }
+        }
+
         toast.success("Η διεύθυνση ορίστηκε");
       }
     } catch (error) {
@@ -492,7 +762,17 @@ function CheckoutPageContent() {
 
       try {
         const response = await fetch(
-          `/api/locations/${locationCart.locationId}/delivery-availability?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}`
+          `/api/locations/${locationCart.locationId}/delivery-availability`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              latitude: coordinates.latitude,
+              longitude: coordinates.longitude,
+            }),
+          }
         );
 
         const data = await response.json();
@@ -500,24 +780,34 @@ function CheckoutPageContent() {
         console.log("🛒 [CHECKOUT] Delivery availability response:", {
           success: data.success,
           data: data.data,
+          fullResponse: JSON.stringify(data, null, 2),
+          isDeliveryAvailable: data.data?.is_delivery_available,
+          isWithinDeliveryArea: data.data?.is_within_delivery_area,
+          deliveryEnabled: data.data?.delivery_enabled,
         });
 
         if (data.success && data.data) {
-          // Store delivery data in context
-          setDeliveryData(locationCart.locationId, data.data);
+          // Store delivery data in context - map the response structure
+          const deliveryAvailabilityData = {
+            is_delivery_available: data.data.is_delivery_available,
+            is_within_delivery_area: data.data.is_within_delivery_area,
+            delivery_enabled: data.data.delivery_enabled,
+            distance: data.data.distance,
+          };
+
+          setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
           console.log("🛒 [CHECKOUT] Delivery data stored in context", {
             locationId: locationCart.locationId,
-            isDeliveryBlocked:
-              data.data.delivery_enabled && !data.data.is_within_delivery_area,
-            deliveryEnabled: data.data.delivery_enabled,
+            isDeliveryAvailable: data.data.is_delivery_available,
             isWithinDeliveryArea: data.data.is_within_delivery_area,
+            deliveryEnabled: data.data.delivery_enabled,
+            isDeliveryBlocked:
+              !data.data.is_delivery_available ||
+              !data.data.is_within_delivery_area,
           });
 
-          // If delivery is disabled and user has delivery selected, switch to pickup
-          if (!data.data.delivery_enabled && orderType === "delivery") {
-            console.log("🛒 [CHECKOUT] Delivery disabled, switching to pickup");
-            setOrderType("pickup");
-          }
+          // Don't switch to pickup automatically - let user choose delivery option
+          // Submit button will be disabled with message if address is outside delivery area
         }
       } catch (error) {
         console.error(
@@ -668,8 +958,8 @@ function CheckoutPageContent() {
       const deliveryData = getDeliveryData(locationCart.locationId);
       if (
         deliveryData &&
-        deliveryData.delivery_enabled &&
-        !deliveryData.is_within_delivery_area
+        (!deliveryData.is_delivery_available ||
+          !deliveryData.is_within_delivery_area)
       ) {
         toast.error(
           "Η διεύθυνσή σας είναι εκτός περιοχής παράδοσης. Παρακαλώ επιλέξτε παραλαβή ή αλλάξτε διεύθυνση."
@@ -695,7 +985,9 @@ function CheckoutPageContent() {
 
       if (!statusResponse.ok) {
         setIsSubmitting(false);
-        toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+        toast.error(
+          "Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά."
+        );
         return;
       }
 
@@ -703,7 +995,9 @@ function CheckoutPageContent() {
 
       if (!statusData.success || !statusData.data?.locations) {
         setIsSubmitting(false);
-        toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+        toast.error(
+          "Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά."
+        );
         return;
       }
 
@@ -728,7 +1022,9 @@ function CheckoutPageContent() {
     } catch (error) {
       console.error("Error checking restaurant status:", error);
       setIsSubmitting(false);
-      toast.error("Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά.");
+      toast.error(
+        "Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά."
+      );
       return;
     }
 
@@ -1008,22 +1304,21 @@ function CheckoutPageContent() {
                 </h3>
                 <div className="space-y-2">
                   {(() => {
-                    const deliveryData = locationCart
-                      ? getDeliveryData(locationCart.locationId)
-                      : null;
-                    const isDeliveryDisabledByAvailability = !!(
-                      deliveryData && !deliveryData.delivery_enabled
-                    );
-                    
                     // Check minimum order for delivery
-                    const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
-                      ? parseFloat(locationData.options.delivery_min_order_amount)
+                    const deliveryMinOrder = locationData?.options
+                      ?.delivery_min_order_amount
+                      ? parseFloat(
+                          locationData.options.delivery_min_order_amount
+                        )
                       : 0;
                     const cartTotal = locationCart?.summary.total || 0;
-                    const isDeliveryDisabledByMinOrder = deliveryMinOrder > 0 && cartTotal < deliveryMinOrder;
-                    const isDeliveryDisabled = isDeliveryDisabledByAvailability || isDeliveryDisabledByMinOrder;
-                    
-                    const deliveryInterval = locationData?.options?.delivery_time_interval || 0;
+                    const isDeliveryDisabledByMinOrder =
+                      deliveryMinOrder > 0 && cartTotal < deliveryMinOrder;
+                    // Don't disable delivery option based on availability - only based on minimum order
+                    const isDeliveryDisabled = isDeliveryDisabledByMinOrder;
+
+                    const deliveryInterval =
+                      locationData?.options?.delivery_time_interval || 0;
 
                     return (
                       <label
@@ -1052,14 +1347,10 @@ function CheckoutPageContent() {
                               Εκτιμώμενος χρόνος: {deliveryInterval} λεπτά
                             </span>
                           )}
-                          {isDeliveryDisabledByAvailability && (
+                          {isDeliveryDisabledByMinOrder && (
                             <span className="text-red-400 text-sm ml-auto">
-                              Το delivery δεν είναι διαθεσιμο
-                            </span>
-                          )}
-                          {!isDeliveryDisabledByAvailability && isDeliveryDisabledByMinOrder && (
-                            <span className="text-red-400 text-sm ml-auto">
-                              Ελάχιστη παραγγελία: {deliveryMinOrder.toFixed(2)}€
+                              Ελάχιστη παραγγελία: {deliveryMinOrder.toFixed(2)}
+                              €
                             </span>
                           )}
                         </div>
@@ -1068,11 +1359,15 @@ function CheckoutPageContent() {
                   })()}
                   {(() => {
                     // Check minimum order for pickup
-                    const pickupMinOrder = locationData?.options?.collection_min_order_amount
-                      ? parseFloat(locationData.options.collection_min_order_amount)
+                    const pickupMinOrder = locationData?.options
+                      ?.collection_min_order_amount
+                      ? parseFloat(
+                          locationData.options.collection_min_order_amount
+                        )
                       : 0;
                     const cartTotal = locationCart?.summary.total || 0;
-                    const isPickupDisabledByMinOrder = pickupMinOrder > 0 && cartTotal < pickupMinOrder;
+                    const isPickupDisabledByMinOrder =
+                      pickupMinOrder > 0 && cartTotal < pickupMinOrder;
 
                     return (
                       <label
@@ -1087,7 +1382,9 @@ function CheckoutPageContent() {
                           name="orderType"
                           value="pickup"
                           checked={orderType === "pickup"}
-                          onChange={(e) => setOrderType(e.target.value as "pickup")}
+                          onChange={(e) =>
+                            setOrderType(e.target.value as "pickup")
+                          }
                           disabled={isPickupDisabledByMinOrder}
                           className="w-4 h-4 text-primary disabled:cursor-not-allowed"
                         />
@@ -1096,11 +1393,14 @@ function CheckoutPageContent() {
                           <span className="text-white text-sm sm:text-base">
                             Παραλαβή
                           </span>
-                          {!isPickupDisabledByMinOrder && locationData?.options?.collection_time_interval && (
-                            <span className="text-gray-400 text-xs sm:text-sm ml-auto">
-                              Εκτιμώμενος χρόνος: {locationData.options.collection_time_interval} λεπτά
-                            </span>
-                          )}
+                          {!isPickupDisabledByMinOrder &&
+                            locationData?.options?.collection_time_interval && (
+                              <span className="text-gray-400 text-xs sm:text-sm ml-auto">
+                                Εκτιμώμενος χρόνος:{" "}
+                                {locationData.options.collection_time_interval}{" "}
+                                λεπτά
+                              </span>
+                            )}
                           {isPickupDisabledByMinOrder && (
                             <span className="text-red-400 text-sm ml-auto">
                               Ελάχιστη παραγγελία: {pickupMinOrder.toFixed(2)}€
@@ -1121,17 +1421,30 @@ function CheckoutPageContent() {
                   </h3>
                   {userLocation ? (
                     <div className="space-y-2 sm:space-y-3">
-                      {isAuthenticated && (
+                      <div className="flex gap-2">
+                        {isAuthenticated && (
+                          <Button
+                            onClick={() => setIsAddressBookModalOpen(true)}
+                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 h-9 sm:h-10 text-xs sm:text-sm"
+                          >
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                            <span className="truncate">
+                              Επιλεξτε αποθηκευμένες
+                            </span>
+                          </Button>
+                        )}
                         <Button
-                          onClick={() => setIsAddressBookModalOpen(true)}
-                          className="w-full bg-blue-600 text-white hover:bg-blue-700 h-9 sm:h-10 text-xs sm:text-sm"
+                          onClick={handleResetAddress}
+                          variant="outline"
+                          className={`bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white h-9 sm:h-10 ${
+                            isAuthenticated ? "px-3 sm:px-4" : "flex-1"
+                          }`}
+                          title="Επαναφορά διεύθυνσης"
                         >
-                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                          <span className="truncate">
-                            Επιλεξτε αποθηκευμένες
-                          </span>
+                          <X className="w-4 h-4 mr-2" />
+                          <span className="text-xs sm:text-sm">Επαναφορά</span>
                         </Button>
-                      )}
+                      </div>
                       <div>
                         <label className="block text-gray-300 text-xs sm:text-sm mb-1">
                           Διεύθυνση
@@ -1391,29 +1704,41 @@ function CheckoutPageContent() {
                       "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
 
                     // Check minimum order requirements
-                    const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
-                      ? parseFloat(locationData.options.delivery_min_order_amount)
+                    const deliveryMinOrder = locationData?.options
+                      ?.delivery_min_order_amount
+                      ? parseFloat(
+                          locationData.options.delivery_min_order_amount
+                        )
                       : 0;
-                    const pickupMinOrder = locationData?.options?.collection_min_order_amount
-                      ? parseFloat(locationData.options.collection_min_order_amount)
+                    const pickupMinOrder = locationData?.options
+                      ?.collection_min_order_amount
+                      ? parseFloat(
+                          locationData.options.collection_min_order_amount
+                        )
                       : 0;
                     const cartTotal = locationCart?.summary.total || 0;
-                    
-                    const deliveryMeetsMin = deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
-                    const pickupMeetsMin = pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
-                    
-                    // Check if delivery is disabled by availability
-                    const isDeliveryDisabledByAvailability = !!(
-                      deliveryData && !deliveryData.delivery_enabled
-                    );
-                    
+
+                    const deliveryMeetsMin =
+                      deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
+                    const pickupMeetsMin =
+                      pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
+
                     // Check if current order type meets minimum
-                    const currentOrderTypeMeetsMin = orderType === "delivery"
-                      ? (deliveryMeetsMin && !isDeliveryDisabledByAvailability)
-                      : pickupMeetsMin;
-                    
+                    // Don't check delivery availability here - delivery option stays enabled
+                    const currentOrderTypeMeetsMin =
+                      orderType === "delivery"
+                        ? deliveryMeetsMin
+                        : pickupMeetsMin;
+
                     // Block checkout if neither option meets minimum
-                    const isBlockedByMinOrder = !deliveryMeetsMin && !pickupMeetsMin;
+                    const isBlockedByMinOrder =
+                      !deliveryMeetsMin && !pickupMeetsMin;
+
+                    // Check if delivery is blocked
+                    const isDeliveryBlockedForCheckout =
+                      orderType === "delivery" &&
+                      locationCart &&
+                      isDeliveryBlocked(locationCart.locationId);
 
                     return (
                       <div className="space-y-2 mt-4">
@@ -1424,17 +1749,13 @@ function CheckoutPageContent() {
                             isLoadingRestaurantStatus ||
                             isRestaurantClosed ||
                             isBlockedByMinOrder ||
-                            (orderType === "delivery" &&
-                              locationCart &&
-                              isDeliveryBlocked(locationCart.locationId)) ||
+                            isDeliveryBlockedForCheckout ||
                             !currentOrderTypeMeetsMin
                           }
                           className={`w-full py-2.5 sm:py-3 text-sm sm:text-base font-medium transition-all duration-200 ${
                             isRestaurantClosed ||
                             isBlockedByMinOrder ||
-                            (orderType === "delivery" &&
-                              locationCart &&
-                              isDeliveryBlocked(locationCart.locationId)) ||
+                            isDeliveryBlockedForCheckout ||
                             !currentOrderTypeMeetsMin
                               ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                               : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1448,10 +1769,8 @@ function CheckoutPageContent() {
                             ? "Το εστιατόριο είναι κλειστό"
                             : isBlockedByMinOrder
                             ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
-                            : orderType === "delivery" &&
-                              locationCart &&
-                              isDeliveryBlocked(locationCart.locationId)
-                            ? "Η διεύθυνση είναι εκτός περιοχής"
+                            : isDeliveryBlockedForCheckout
+                            ? "Διεύθυνση εκτός εύρους"
                             : !currentOrderTypeMeetsMin
                             ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
                             : "Υποβολή παραγγελίας"}
@@ -1466,12 +1785,15 @@ function CheckoutPageContent() {
                             Ελάχιστη παραγγελία δεν έχει συμπληρωθεί
                           </p>
                         )}
-                        {isOutsideDeliveryArea && !isRestaurantClosed && !isBlockedByMinOrder && (
-                          <p className="text-red-400 text-xs sm:text-sm text-center">
-                            Το καταστημα δεν εξυπηρετει την συγκεκριμενη
-                            διευθυνση
-                          </p>
-                        )}
+                        {isDeliveryBlockedForCheckout &&
+                          !isRestaurantClosed &&
+                          !isBlockedByMinOrder && (
+                            <p className="text-red-400 text-xs sm:text-sm text-center">
+                              Το κατάστημα δεν εξυπηρετεί την συγκεκριμένη
+                              διεύθυνση. Παρακαλώ επιλέξτε διαφορετική διεύθυνση
+                              ή την επιλογή παραλαβή
+                            </p>
+                          )}
                       </div>
                     );
                   })()}

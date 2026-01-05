@@ -19,9 +19,18 @@ import GooglePlacesCustom from "./google-places-custom";
 interface LocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLocationSet?: (coordinates: {
-    latitude: number;
-    longitude: number;
+  onLocationSet?: (data: {
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    address?: {
+      fullAddress: string;
+      city: string;
+      street?: string;
+      houseNumber?: string;
+      postalCode?: string;
+    };
   }) => void;
   initialAddress?: string;
 }
@@ -147,20 +156,48 @@ export function LocationModal({
       const coordinates = { latitude: lat, longitude: lng };
       setCoordinates(coordinates);
 
-      // Trigger reverse geocoding to get formatted address
-      try {
-        const formattedAddress = await reverseGeocode(lat, lng, lang);
-        if (formattedAddress) {
-          setFormattedAddress(formattedAddress);
-          console.log("📍 Formatted address set:", formattedAddress);
-        }
-      } catch (error) {
-        console.error("❌ Error during reverse geocoding:", error);
-      }
+      // Parse Google Places address_components to extract address details
+      const addressComponents = place.address_components || [];
+      const street = addressComponents.find((c: any) =>
+        c.types.includes("route")
+      )?.long_name;
+      const houseNumber = addressComponents.find((c: any) =>
+        c.types.includes("street_number")
+      )?.long_name;
+      const postalCode = addressComponents.find((c: any) =>
+        c.types.includes("postal_code")
+      )?.long_name;
+      const city =
+        addressComponents.find((c: any) => c.types.includes("locality"))
+          ?.long_name ||
+        addressComponents.find((c: any) =>
+          c.types.includes("administrative_area_level_3")
+        )?.long_name ||
+        addressComponents.find((c: any) => c.types.includes("sublocality"))
+          ?.long_name ||
+        "";
 
-      // Call the callback to update parent component
+      // Create formatted address for location context (similar to reverseGeocode format)
+      const formattedAddress = {
+        street: [street, houseNumber].filter(Boolean).join(" ") || address,
+        area: city || "",
+        postcode: postalCode || "",
+        fullAddress: address,
+      };
+      setFormattedAddress(formattedAddress);
+
+      // Call the callback to update parent component with address data
       if (onLocationSet) {
-        onLocationSet(coordinates);
+        onLocationSet({
+          coordinates,
+          address: {
+            fullAddress: address,
+            city: city || "",
+            street: street || "",
+            houseNumber: houseNumber || "",
+            postalCode: postalCode || "",
+          },
+        });
       }
 
       // Close the modal automatically
@@ -219,7 +256,7 @@ export function LocationModal({
 
       // Call the callback to update parent component
       if (onLocationSet) {
-        onLocationSet(coordinates);
+        onLocationSet({ coordinates });
       }
 
       // Close the modal automatically
@@ -300,7 +337,7 @@ export function LocationModal({
 
       // Call the callback to update parent component
       if (onLocationSet) {
-        onLocationSet(coordinates);
+        onLocationSet({ coordinates });
       }
 
       // Close the modal automatically
@@ -342,7 +379,7 @@ export function LocationModal({
 
         // Call the callback to update parent component
         if (onLocationSet) {
-          onLocationSet(coordinates);
+          onLocationSet({ coordinates });
         }
 
         // Close the modal automatically
@@ -419,7 +456,7 @@ export function LocationModal({
 
       // Call the callback to update parent component
       if (onLocationSet) {
-        onLocationSet(coordinates);
+        onLocationSet({ coordinates });
       }
 
       // Close modal

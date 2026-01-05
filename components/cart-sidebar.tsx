@@ -48,6 +48,7 @@ interface MenuOptionValueData {
   quantity: number | null;
   is_default: boolean | null;
   priority: number;
+  is_enabled?: boolean;
   available?: boolean | null;
 }
 
@@ -60,6 +61,10 @@ interface MenuOptionData {
   required: boolean;
   min_selected: number;
   max_selected: number;
+  is_enabled?: boolean;
+  available?: boolean;
+  free_count: number;
+  free_order_by: "selection_order" | "lowest_price" | "priority";
   option_values: MenuOptionValueData[];
 }
 

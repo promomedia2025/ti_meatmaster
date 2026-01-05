@@ -38,6 +38,10 @@ interface MenuItem {
     required: boolean;
     min_selected: number;
     max_selected: number;
+    is_enabled?: boolean;
+    available?: boolean;
+    free_count: number;
+    free_order_by: "selection_order" | "lowest_price" | "priority";
     option_values: Array<{
       menu_option_value_id: number;
       option_value_id: number;
@@ -46,6 +50,8 @@ interface MenuItem {
       quantity: number | null;
       is_default: boolean | null;
       priority: number;
+      is_enabled?: boolean;
+      available?: boolean;
     }>;
   }>;
 }

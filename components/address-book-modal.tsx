@@ -93,28 +93,44 @@ export function AddressBookModal({
             if (data.success && data.data && data.data.addresses) {
               console.log("📚 Found addresses:", data.data.addresses);
               // Transform API addresses to our format
-              addressList = data.data.addresses.map((apiAddress: any) => ({
-                id: apiAddress.id?.toString() || `api-${Math.random()}`,
-                label: apiAddress.is_default ? "Σπίτι" : "Διεύθυνση",
-                address:
-                  apiAddress.formatted_address ||
-                  `${apiAddress.address_1}, ${apiAddress.city} ${
-                    apiAddress.postcode
-                  }, ${apiAddress.country?.name || "Greece"}`,
-                isDefault: apiAddress.is_default || false,
-                bell_name: apiAddress.bell_name || null,
-                floor: apiAddress.floor || null,
-                coordinates: apiAddress.coordinates
-                  ? {
-                      latitude: parseFloat(apiAddress.coordinates.latitude),
-                      longitude: parseFloat(apiAddress.coordinates.longitude),
-                    }
-                  : undefined,
-                // Include original API fields for checkout
-                address_1: apiAddress.address_1 || null,
-                city: apiAddress.city || null,
-                postcode: apiAddress.postcode || null,
-              }));
+              addressList = data.data.addresses.map((apiAddress: any) => {
+                // Handle coordinates - can be direct properties or nested in coordinates object
+                let coordinates: { latitude: number; longitude: number } | undefined;
+                if (apiAddress.latitude !== undefined && apiAddress.longitude !== undefined) {
+                  // Direct properties (from API response)
+                  coordinates = {
+                    latitude: parseFloat(apiAddress.latitude),
+                    longitude: parseFloat(apiAddress.longitude),
+                  };
+                } else if (apiAddress.coordinates) {
+                  // Nested in coordinates object (legacy format)
+                  coordinates = {
+                    latitude: parseFloat(apiAddress.coordinates.latitude),
+                    longitude: parseFloat(apiAddress.coordinates.longitude),
+                  };
+                }
+
+                return {
+                  id: apiAddress.id?.toString() || `api-${Math.random()}`,
+                  label: apiAddress.is_default ? "Σπίτι" : "Διεύθυνση",
+                  address:
+                    apiAddress.formatted_address ||
+                    `${apiAddress.address_1}, ${apiAddress.city} ${
+                      apiAddress.postcode
+                    }, ${apiAddress.country?.name || "Greece"}`,
+                  isDefault: apiAddress.is_default || false,
+                  bell_name: apiAddress.bell_name || null,
+                  floor: apiAddress.floor || null,
+                  coordinates,
+                  // Include original API fields for checkout
+                  address_1: apiAddress.address_1 || null,
+                  city: apiAddress.city || null,
+                  postcode: apiAddress.postcode || null,
+                  // Also include direct latitude/longitude for compatibility
+                  latitude: apiAddress.latitude,
+                  longitude: apiAddress.longitude,
+                };
+              });
               console.log("📚 Transformed address list:", addressList);
             } else {
               console.log(
@@ -167,6 +183,19 @@ export function AddressBookModal({
   };
 
   const handleAddressSelect = async (address: Address) => {
+    console.log("📍 [ADDRESS-BOOK-MODAL] Address selected:", {
+      addressId: address.id,
+      addressLabel: address.label,
+      addressText: address.address,
+      hasCoordinates: !!address.coordinates,
+      coordinates: address.coordinates
+        ? {
+            latitude: address.coordinates.latitude,
+            longitude: address.coordinates.longitude,
+          }
+        : "No coordinates",
+    });
+
     if (onAddressSelect) {
       onAddressSelect(address);
     }
@@ -176,16 +205,20 @@ export function AddressBookModal({
       const user = localStorage.getItem("user");
       if (user) {
         const userData = JSON.parse(user);
+        const finalCoordinates = address.coordinates || {
+          latitude: 37.9755,
+          longitude: 23.7348,
+        }; // Default Athens coordinates
+        
+        console.log("📍 [ADDRESS-BOOK-MODAL] Saving coordinates to localStorage:", finalCoordinates);
+        
         const locationData = {
           city:
             address.address.split(",")[1]?.trim() ||
             address.address.split(",")[0]?.trim() ||
             "Athens",
           fullAddress: address.address,
-          coordinates: address.coordinates || {
-            latitude: 37.9755,
-            longitude: 23.7348,
-          }, // Default Athens coordinates
+          coordinates: finalCoordinates,
           addressDetails: {
             street: address.address.split(",")[0]?.trim(),
             postalCode: address.address.match(/\d{5}/)?.[0] || "",
@@ -195,7 +228,7 @@ export function AddressBookModal({
         };
         localStorage.setItem("userLocation", JSON.stringify(locationData));
 
-        console.log("📍 Address selected and saved:", address);
+        console.log("📍 [ADDRESS-BOOK-MODAL] Address selected and saved:", address);
       }
     } catch (error) {
       console.error("Error saving selected address:", error);
