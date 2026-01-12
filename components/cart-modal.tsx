@@ -267,7 +267,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                             }`}
                           >
                             {removingItems.has(item.rowId) ? (
-                              <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                              <Skeleton className="w-4 h-4 rounded" />
                             ) : (
                               <Trash2 className="w-4 h-4 text-red-400" />
                             )}

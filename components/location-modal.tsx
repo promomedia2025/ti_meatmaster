@@ -1,6 +1,7 @@
 "use client";
 
 import { X, MapPin, Loader2, Navigation } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -540,8 +541,13 @@ export function LocationModal({
           {showAddressList && (
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {loadingAddresses ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <div className="space-y-2 py-2">
+                  {[...Array(2)].map((_, index) => (
+                    <div key={index} className="space-y-1">
+                      <div className="h-3 w-3/4 bg-muted animate-pulse rounded"></div>
+                      <div className="h-2 w-1/2 bg-muted animate-pulse rounded"></div>
+                    </div>
+                  ))}
                 </div>
               ) : savedAddresses.length > 0 ? (
                 savedAddresses.map((savedAddress) => (
@@ -623,7 +629,7 @@ export function LocationModal({
                 title={dict.locationModal.useCurrentLocation}
               >
                 {isGettingLocation ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded" />
                 ) : (
                   <Navigation className="w-4 h-4 text-primary" />
                 )}

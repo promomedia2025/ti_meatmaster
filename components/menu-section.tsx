@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useServerCart } from "@/lib/server-cart-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MenuSectionProps {
   title: string;
@@ -136,7 +137,7 @@ export default function MenuSection({
                 className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingItemId === 1 ? (
-                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded-full" />
                 ) : (
                   <Plus className="w-4 h-4 text-white" />
                 )}
@@ -172,7 +173,7 @@ export default function MenuSection({
                 className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingItemId === 2 ? (
-                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded-full" />
                 ) : (
                   <Plus className="w-4 h-4 text-white" />
                 )}
@@ -213,7 +214,7 @@ export default function MenuSection({
                 className="w-8 h-8 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-[#ff9328ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingItemId === 3 ? (
-                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded-full" />
                 ) : (
                   <Plus className="w-4 h-4 text-white" />
                 )}

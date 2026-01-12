@@ -4,6 +4,7 @@ import { X, Home, Plus, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Address {
   id: string;
@@ -299,8 +300,21 @@ export function AddressBookModal({
         {/* Content - Scrollable */}
         <div className="p-6 overflow-y-auto flex-1 min-h-0 address-modal-scroll">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-[#2a2a2a] rounded-lg border border-gray-700/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-4">

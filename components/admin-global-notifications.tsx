@@ -85,14 +85,30 @@ export function AdminGlobalNotifications() {
       );
     }
 
+    // Try Electron API first, fallback to browser audio
+    if (electronDetected && window.electron?.playNotificationSound) {
+      try {
+        console.log("🔔 [GlobalNotifications] playNotificationSound: Using Electron API");
+        window.electron.playNotificationSound();
+        console.log("✅ [GlobalNotifications] playNotificationSound: Electron audio playback started");
+        return;
+      } catch (error) {
+        console.warn(
+          "🔇 [GlobalNotifications] playNotificationSound: Electron API failed, falling back to browser",
+          error
+        );
+      }
+    }
+
+    // Fallback to browser audio
     try {
-      console.log("🔔 [GlobalNotifications] playNotificationSound: Playing audio");
+      console.log("🔔 [GlobalNotifications] playNotificationSound: Playing browser audio");
       const audio = new Audio("/phone-ringtone-normal-444775.mp3");
       audio.volume = 0.7; // Set volume to 70%
       audio
         .play()
         .then(() => {
-          console.log("✅ [GlobalNotifications] playNotificationSound: Audio playback started");
+          console.log("✅ [GlobalNotifications] playNotificationSound: Browser audio playback started");
         })
         .catch((error) => {
           console.warn(

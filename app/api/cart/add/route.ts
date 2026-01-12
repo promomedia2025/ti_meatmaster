@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: data.message || "Failed to add item to cart",
+          message: data.message,
           error: data.error || "EXTERNAL_API_ERROR",
         },
         { status: response.status }

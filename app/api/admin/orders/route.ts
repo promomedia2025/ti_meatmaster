@@ -44,20 +44,12 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     console.log("✅ External API response status:", response.status);
-    console.log("✅ External API response data type:", typeof data);
-    console.log("✅ External API response keys:", Object.keys(data || {}));
 
     // Log a sample order to see what's available
     if (data.data && data.data.length > 0) {
       console.log(
         "📋 Sample order attributes:",
-        JSON.stringify(data.data[0].attributes, null, 2)
-      );
-      console.log(
-        "📋 Sample order includes:",
-        data.included
-          ? JSON.stringify(data.included, null, 2)
-          : "No included data"
+        JSON.stringify(data.data.length)
       );
     }
 
@@ -105,18 +97,11 @@ export async function GET(request: NextRequest) {
       : [];
 
     console.log("✅ Transformed orders count:", transformedOrders.length);
-    console.log(
-      "✅ First order sample:",
-      transformedOrders[0]
-        ? JSON.stringify(transformedOrders[0], null, 2)
-        : "none"
-    );
 
     // Return consistent structure
     const responseData = {
       success: true,
       data: transformedOrders,
-      ...(data.meta?.pagination && { pagination: data.meta.pagination }),
     };
 
     console.log("✅ Returning response with success:", responseData.success);

@@ -22,6 +22,7 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import GooglePlacesCustom from "@/components/google-places-custom";
 import { AddressBookModal } from "@/components/address-book-modal";
 import { Location } from "@/lib/types";
@@ -1186,10 +1187,77 @@ function CheckoutPageContent() {
         clearLocationCart(locationCart.locationId);
         console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
 
-        // Show success message
+        // Handle payment based on payment method
+        if (paymentMethod === "card") {
+          // Initiate card payment
+          try {
+            console.log("💳 Initiating card payment for order:", orderId);
+            const paymentResponse = await fetch("/api/payments/piraeus/initiate", {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                orderId: orderId.toString(),
+                amount: locationCart.summary.total,
+                currency: "EUR",
+                description: `Παραγγελία #${orderId} - ${locationCart.locationName}`,
+                customerEmail: user.email,
+                customerName: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+                customerPhone: user.telephone || "",
+                lang: currentLang,
+              }),
+            });
 
-        // Redirect to order tracking page
-        router.push(`/${currentLang}/order/${orderId}`);
+            if (!paymentResponse.ok) {
+              const paymentError = await paymentResponse.json();
+              throw new Error(
+                paymentError.error || "Failed to initiate payment"
+              );
+            }
+
+            const paymentResult = await paymentResponse.json();
+            
+            if (paymentResult.success && paymentResult.formData && paymentResult.gatewayUrl) {
+              // Create and submit POST form with hidden fields
+              console.log("🔗 Submitting payment form to gateway:", paymentResult.gatewayUrl);
+              
+              // Create a form element
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = paymentResult.gatewayUrl;
+              form.style.display = 'none';
+              
+              // Add all form data as hidden input fields
+              Object.entries(paymentResult.formData).forEach(([key, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+              });
+              
+              // Append form to body and submit
+              document.body.appendChild(form);
+              form.submit();
+              
+              return; // Exit early, form submission will happen
+            } else {
+              throw new Error("Failed to get payment form data");
+            }
+          } catch (paymentError) {
+            console.error("Error initiating payment:", paymentError);
+            toast.error(
+              "Σφάλμα κατά την έναρξη της πληρωμής. Η παραγγελία δημιουργήθηκε αλλά η πληρωμή απέτυχε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
+            );
+            // Still redirect to order page even if payment initiation fails
+            router.push(`/${currentLang}/order/${orderId}`);
+          }
+        } else {
+          // Cash payment - redirect to order tracking page
+          router.push(`/${currentLang}/order/${orderId}`);
+        }
       } else {
         console.warn("⚠️ No orderId found in API response:", result);
         alert(
@@ -1546,7 +1614,7 @@ function CheckoutPageContent() {
                       >
                         {isLoadingLocation ? (
                           <>
-                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 mr-2 rounded bg-muted animate-pulse"></div>
                             Φόρτωση...
                           </>
                         ) : (
@@ -1584,7 +1652,7 @@ function CheckoutPageContent() {
                   <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
                     Τρόπος πληρωμής
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
                       <input
                         type="radio"
@@ -1592,7 +1660,7 @@ function CheckoutPageContent() {
                         value="cash"
                         checked={paymentMethod === "cash"}
                         onChange={(e) =>
-                          setPaymentMethod(e.target.value as "cash")
+                          setPaymentMethod(e.target.value as "cash" | "card")
                         }
                         className="w-4 h-4 text-primary"
                       />
@@ -1602,6 +1670,31 @@ function CheckoutPageContent() {
                         </span>
                       </div>
                     </label>
+                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="card"
+                        checked={paymentMethod === "card"}
+                        onChange={(e) =>
+                          setPaymentMethod(e.target.value as "cash" | "card")
+                        }
+                        className="w-4 h-4 text-primary"
+                      />
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        <span className="text-white text-sm sm:text-base">
+                          Πληρωμή με κάρτα
+                        </span>
+                      </div>
+                    </label>
+                    {paymentMethod === "card" && (
+                      <div className="ml-6 mt-2 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
+                        <p className="text-xs text-blue-300">
+                          Θα μεταφερθείτε στη σελίδα ασφαλούς πληρωμής της Τράπεζας Πειραιώς
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </Card>
 

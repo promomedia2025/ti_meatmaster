@@ -50,12 +50,6 @@ export async function POST(request: NextRequest) {
     // Forward cookies from the client request
     const cookieHeader = request.headers.get("cookie") || "";
 
-    // Log the body that will be sent to custom-orders/create
-    console.log(
-      "📤 [custom-orders/create] Request body:",
-      JSON.stringify(orderData, null, 2)
-    );
-
     // Submit order to external API
     let response;
     try {

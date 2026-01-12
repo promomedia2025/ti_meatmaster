@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GooglePlacesCustomProps {
   onPlaceSelect: (place: any) => void;
@@ -150,7 +151,7 @@ export default function GooglePlacesCustom({
       />
       {!isLoaded && !error && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <Skeleton className="h-4 w-4 rounded-full" />
         </div>
       )}
 

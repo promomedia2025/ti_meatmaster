@@ -147,3 +147,73 @@ export function isElectron(): boolean {
 
   return !!window.electron;
 }
+
+/**
+ * Plays notification sound and focuses Electron window if available
+ * Can be called from anywhere in the admin panel
+ */
+export function playNotificationSound(): void {
+  console.log("🔔 [playNotificationSound] Function called");
+
+  if (typeof window === "undefined") {
+    console.warn("⚠️ [playNotificationSound] window is undefined");
+    return;
+  }
+
+  // Check Electron and focus window
+  const electronDetected = isElectron();
+  const windowFocused = isWindowFocused();
+
+  console.log("🔔 [playNotificationSound] Electron check", {
+    isElectron: electronDetected,
+    isWindowFocused: windowFocused,
+    hasWindowElectron: !!(typeof window !== "undefined" && window.electron),
+  });
+
+  // Focus and restore Electron window when notification sound plays
+  if (electronDetected) {
+    console.log(
+      "🔔 [playNotificationSound] Electron detected, calling focusElectronWindow()"
+    );
+    focusElectronWindow();
+  } else {
+    console.log(
+      "ℹ️ [playNotificationSound] Electron not detected, skipping window focus"
+    );
+  }
+
+  // Try Electron API first, fallback to browser audio
+  if (electronDetected && window.electron?.playNotificationSound) {
+    try {
+      console.log("🔔 [playNotificationSound] Using Electron API");
+      window.electron.playNotificationSound();
+      console.log("✅ [playNotificationSound] Electron audio playback started");
+      return;
+    } catch (error) {
+      console.warn(
+        "🔇 [playNotificationSound] Electron API failed, falling back to browser",
+        error
+      );
+    }
+  }
+
+  // Fallback to browser audio
+  try {
+    console.log("🔔 [playNotificationSound] Playing browser audio");
+    const audio = new Audio("/phone-ringtone-normal-444775.mp3");
+    audio.volume = 0.7; // Set volume to 70%
+    audio
+      .play()
+      .then(() => {
+        console.log("✅ [playNotificationSound] Browser audio playback started");
+      })
+      .catch((error) => {
+        console.warn(
+          "🔇 [playNotificationSound] Failed to play notification sound",
+          error
+        );
+      });
+  } catch (error) {
+    console.warn("🔇 [playNotificationSound] Error creating audio", error);
+  }
+}

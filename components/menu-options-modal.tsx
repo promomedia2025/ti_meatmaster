@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LinkedOptionValue {
   menu_option_value_id: number;
@@ -727,10 +728,26 @@ export function MenuOptionsModal({
         <div className="flex-1 overflow-y-auto p-4 menu-options-scrollbar">
           {/* Loading State */}
           {!menuItem && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff9328ff] mx-auto mb-4"></div>
-                <p className="text-gray-400">Φόρτωση επιλογών...</p>
+            <div className="space-y-4">
+              <Skeleton className="h-48 w-full rounded-lg" />
+              <Skeleton className="h-4 w-full" />
+              <div className="space-y-4">
+                {[...Array(2)].map((_, index) => (
+                  <div key={index} className="border-b border-gray-800 pb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                    <div className="space-y-2">
+                      {[...Array(3)].map((_, optIndex) => (
+                        <div key={optIndex} className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-4 rounded" />
+                          <Skeleton className="h-4 flex-1" />
+                          <Skeleton className="h-4 w-12" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

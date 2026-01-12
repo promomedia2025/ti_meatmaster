@@ -1,4 +1,5 @@
 import { MapPin, ChevronDown, Loader2, CheckCircle2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "@/lib/location-context";
 import { useAuth } from "@/lib/auth-context";
 import { useState } from "react";
@@ -100,7 +101,7 @@ export function WoltLocation({
       </div>
       <div className="flex items-center gap-1">
         {showLoading ? (
-          <Loader2 className="w-4 h-4 text-[#ff9328ff] animate-spin" />
+          <Skeleton className="h-4 w-24" />
         ) : (
           <p className="text-sm text-[#ff9328ff] font-semibold">
             {displayText}

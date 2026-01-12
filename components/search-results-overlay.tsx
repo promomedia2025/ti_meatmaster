@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SearchTag {
   id: number;
@@ -166,8 +167,25 @@ export function SearchResultsOverlay({
       {/* Content */}
       <div className="overflow-y-auto max-h-[60vh] sm:max-h-[70vh]">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="p-3 sm:p-4 lg:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5 max-w-[1600px] w-full mx-auto">
+              {[...Array(6)].map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col bg-background rounded-lg overflow-hidden border border-border"
+                >
+                  <Skeleton className="w-full aspect-[4/3]" />
+                  <div className="p-2.5 sm:p-3 flex-1 flex flex-col">
+                    <Skeleton className="h-5 w-3/4 mb-1" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <div className="flex items-center justify-between mt-auto">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="p-4 text-center text-destructive">{error}</div>

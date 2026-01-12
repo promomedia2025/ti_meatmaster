@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MenuItem {
   menu_id: number;
@@ -142,7 +143,7 @@ export default function MenuCategory({
                 className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-[#915316] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
               >
                 {loadingItemId === item.menu_id ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  <Skeleton className="w-5 h-5 rounded-full" />
                 ) : (
                   <Plus className="w-5 h-5 text-white" />
                 )}

@@ -10,6 +10,7 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import {
   useServerCart,
@@ -896,9 +897,24 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           {!locationId && activeCartTab === "orders" ? (
             <div className=" ">
               {isLoadingOrders ? (
-                <div className="text-center text-gray-400 py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p>Φόρτωση παραγγελιών...</p>
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#3f3f3f] rounded-lg p-2 border border-gray-700"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-32 mb-2" />
+                          <Skeleton className="h-3 w-48 mb-2" />
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-5 w-20 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : ordersError ? (
                 <div className="text-center text-red-400 py-8">
@@ -1035,7 +1051,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                 title="Διαγραφή καλαθιού"
                               >
                                 {clearingCarts.has(locationCart.locationId) ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <Skeleton className="w-4 h-4 rounded-full" />
                                 ) : (
                                   <Trash2 className="w-4 h-4 text-white bg-[#3f3f3f] rounded-full cursor-pointer" />
                                 )}
@@ -1195,7 +1211,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                               }`}
                                             >
                                               {removingItems.has(item.rowId) ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <Skeleton className="w-4 h-4 rounded" />
                                               ) : (
                                                 <Trash2 className="w-4 h-4" />
                                               )}

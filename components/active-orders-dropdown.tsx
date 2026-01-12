@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { usePusher } from "@/lib/pusher-context";
 import { Package, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Order {
   order_id: number;
@@ -274,9 +275,14 @@ export function ActiveOrdersDropdown({
       {/* Content */}
       <div className="max-h-96 overflow-y-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-            <span className="ml-2 text-gray-400">Φόρτωση...</span>
+          <div className="space-y-3 py-4">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="bg-gray-800 rounded-lg p-4 space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="p-4 text-center">

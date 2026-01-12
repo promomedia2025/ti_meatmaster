@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocationFromUrl } from "@/lib/use-location-from-url";
 import { getRestaurantStatusDisplay } from "@/lib/restaurant-status";
 import { useCartSidebar } from "@/lib/cart-sidebar-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MenuItem {
   menu_id: number;
@@ -196,6 +197,62 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
       .map(([name, priority]) => ({ name, priority }))
       .sort((a, b) => a.priority - b.priority);
   })();
+
+  // Show loading skeleton if menuData is not available
+  if (!restaurant.menuData) {
+    return (
+      <div className="bg-black relative w-full">
+        <AutoSelect />
+
+        {/* Sticky Nav Skeleton */}
+        <div className="sticky top-[75px] w-full border-b border-gray-800 z-30 bg-[#242424]">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-2">
+            <div className="flex items-center gap-6 overflow-x-auto">
+              {[...Array(6)].map((_, index) => (
+                <Skeleton key={index} className="h-6 w-24" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Menu Content Skeleton */}
+        <div className="max-w-[1600px] mx-auto px-4 py-6 pb-24 md:pb-6">
+          {[...Array(3)].map((_, catIndex) => (
+            <div key={catIndex} className="mb-8">
+              <Skeleton className="h-7 w-48 mb-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-12">
+                {[...Array(3)].map((_, itemIndex) => (
+                  <div
+                    key={itemIndex}
+                    className="bg-transparent sm:bg-gray-900 rounded-lg overflow-hidden border-0 sm:border border-gray-800 flex pb-4 sm:pb-0"
+                  >
+                    {/* Left side - Text content */}
+                    <div className="flex-1 p-4 flex flex-col justify-between">
+                      <div>
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-full mb-1" />
+                        <Skeleton className="h-4 w-5/6" />
+                      </div>
+                      <div className="mt-3">
+                        <Skeleton className="h-6 w-24" />
+                        <Skeleton className="h-4 w-20 mt-1" />
+                      </div>
+                    </div>
+
+                    {/* Right side - Image */}
+                    <div className="relative w-32 h-32 flex-shrink-0 p-2.5">
+                      <Skeleton className="w-full h-full rounded" />
+                      <Skeleton className="absolute top-0 right-0 w-10 h-10 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black relative w-full">

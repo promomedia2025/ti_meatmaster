@@ -13,6 +13,7 @@ import {
   BookOpen,
   History,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -455,7 +456,7 @@ export function Header() {
                 }
               >
                 {isGettingLocation ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded" />
                 ) : (
                   <MapPin className="w-4 h-4 text-primary" />
                 )}
@@ -537,7 +538,7 @@ export function Header() {
                             className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isLoadingAddressBook ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Skeleton className="w-4 h-4 rounded" />
                             ) : (
                               <BookOpen className="w-4 h-4" />
                             )}
@@ -629,7 +630,7 @@ export function Header() {
                 }
               >
                 {isGettingLocation ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  <Skeleton className="w-4 h-4 rounded" />
                 ) : (
                   <MapPin className="w-4 h-4 text-primary" />
                 )}

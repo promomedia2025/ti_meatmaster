@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -310,8 +311,35 @@ export default function AdminMenuPage() {
       {/* Main Content */}
       <main className="p-8">
         {isLoading && (
-          <div className="text-center py-8">
-            <p className="text-gray-400">Loading menu items...</p>
+          <div className="bg-[#1a1a1a] rounded-lg p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <Skeleton className="h-8 w-48" />
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <Skeleton className="h-10 w-full sm:w-[200px]" />
+                <Skeleton className="h-10 w-full sm:w-80" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <Skeleton className="h-6 w-48 mb-2" />
+                      <Skeleton className="h-4 w-64" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -577,8 +605,35 @@ export default function AdminMenuPage() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {optionsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <div className="space-y-6">
+                  {[...Array(3)].map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                    >
+                      <Skeleton className="h-6 w-32 mb-4" />
+                      <div className="space-y-3">
+                        {[...Array(2)].map((_, optIndex) => (
+                          <div
+                            key={optIndex}
+                            className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <Skeleton className="h-5 w-40 mb-1" />
+                                <div className="flex items-center gap-4">
+                                  <Skeleton className="h-4 w-16" />
+                                  <Skeleton className="h-4 w-16" />
+                                  <Skeleton className="h-4 w-12" />
+                                </div>
+                              </div>
+                              <Skeleton className="h-8 w-20" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : menuOptions.length === 0 ? (
                 <div className="text-center py-8">

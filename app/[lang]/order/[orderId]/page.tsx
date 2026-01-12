@@ -14,6 +14,7 @@ import {
   Truck,
   ChefHat,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { OrderDetails } from "@/lib/types";
 
 interface OrderStatus {
@@ -412,10 +413,18 @@ export default function OrderStatusPage() {
 
         {/* Order Status */}
         {isLoading ? (
-          <Card className="bg-gray-900 border-gray-800 p-8">
-            <div className="flex flex-col items-center justify-center">
-              <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-              <p className="text-gray-300">Φόρτωση κατάστασης παραγγελίας...</p>
+          <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+              </div>
+              <Skeleton className="h-8 w-48 mx-auto mb-2" />
+              <Skeleton className="h-4 w-64 mx-auto mb-6" />
+              <Skeleton className="h-8 w-32 mx-auto rounded-full" />
+              <div className="mt-6 pt-6 border-t border-gray-700">
+                <Skeleton className="h-4 w-40 mx-auto mb-2" />
+                <Skeleton className="h-12 w-32 mx-auto" />
+              </div>
             </div>
           </Card>
         ) : orderStatus ? (

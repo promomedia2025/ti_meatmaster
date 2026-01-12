@@ -8,6 +8,7 @@ import { MapPin, Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AddAddressModal } from "@/components/add-address-modal";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Address {
   id: number;
@@ -214,9 +215,27 @@ export default function AddressBookPage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-400">Φόρτωση διευθύνσεων...</span>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-gray-900 border border-gray-800 rounded-lg p-6"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Skeleton className="h-6 w-48" />
+                    </div>
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

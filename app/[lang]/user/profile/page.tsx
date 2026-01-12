@@ -13,6 +13,7 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserProfile {
   id: number;
@@ -278,7 +279,7 @@ export default function UserProfilePage() {
           >
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Skeleton className="w-4 h-4 rounded" />
                 Αποθήκευση...
               </>
             ) : (

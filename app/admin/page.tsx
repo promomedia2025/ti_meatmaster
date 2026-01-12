@@ -7,13 +7,10 @@ import { AdminOrderDetailsModal } from "@/components/admin-order-details-modal";
 import { AdminDeliveryTimeModal } from "@/components/admin-delivery-time-modal";
 import { usePusher } from "@/lib/pusher-context";
 import { toast } from "sonner";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Play } from "lucide-react";
 import Link from "next/link";
-import {
-  focusElectronWindow,
-  isElectron,
-  isWindowFocused,
-} from "@/lib/electron-utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { playNotificationSound } from "@/lib/electron-utils";
 
 interface AdminOrder {
   order_id: number;
@@ -177,6 +174,8 @@ export default function AdminDashboardPage() {
     number | null
   >(null);
   const orderChannelsRef = useRef<Map<number, any>>(new Map());
+  // Debounce timer for order created events (batch multiple orders into one fetch)
+  const orderCreatedDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     selectedOrderRef.current = selectedOrder;
@@ -285,64 +284,101 @@ export default function AdminDashboardPage() {
     });
   }, [orders]);
 
-  const fetchOrders = useCallback(async () => {
-    if (!isAuthenticated) return;
+  const fetchOrders = useCallback(
+    async (delay = 500) => {
+      if (!isAuthenticated) return;
 
-    try {
-      setOrdersLoading(true);
-      setOrdersError(null);
-      console.log("🔍 Frontend - Fetching orders from /api/admin/orders");
-
-      const response = await fetch("/api/admin/orders", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      console.log("🔍 Frontend - Response status:", response.status);
-      console.log("🔍 Frontend - Response ok:", response.ok);
-      console.log(
-        "🔍 Frontend - Response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
-
-      const result = await response.json();
-      console.log("🔍 Frontend - Response data type:", typeof result);
-      console.log("🔍 Frontend - Response keys:", Object.keys(result || {}));
-      console.log(
-        "🔍 Frontend - Full response:",
-        JSON.stringify(result, null, 2)
-      );
-      console.log("🔍 Frontend - result.success:", result.success);
-      console.log("🔍 Frontend - result.data:", result.data);
-      console.log(
-        "🔍 Frontend - result.data is array:",
-        Array.isArray(result.data)
-      );
-
-      if (result.success && result.data) {
-        const ordersArray = Array.isArray(result.data) ? result.data : [];
-        console.log("✅ Frontend - Setting orders, count:", ordersArray.length);
-        setOrders(ordersArray);
-      } else {
-        console.error("❌ Frontend - Invalid response structure");
-        console.error("❌ result.success:", result.success);
-        console.error("❌ result.data:", result.data);
-        console.error("❌ result.error:", result.error);
-        setOrdersError(
-          result.error || "Failed to fetch orders - invalid response structure"
+      // Add delay if specified (useful when waiting for backend to process new orders)
+      if (delay > 0) {
+        console.log(
+          `⏳ Frontend - Waiting ${delay}ms before fetching orders...`
         );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
-    } catch (error) {
-      console.error("❌ Frontend - Error fetching orders:", error);
-      if (error instanceof Error) {
-        console.error("❌ Frontend - Error message:", error.message);
-        console.error("❌ Frontend - Error stack:", error.stack);
+
+      try {
+        setOrdersLoading(true);
+        setOrdersError(null);
+        console.log("🔍 Frontend - Fetching orders from /api/admin/orders");
+
+        const response = await fetch("/api/admin/orders", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        console.log("🔍 Frontend - Response status:", response.status);
+        console.log("🔍 Frontend - Response ok:", response.ok);
+        console.log(
+          "🔍 Frontend - Response headers:",
+          Object.fromEntries(response.headers.entries())
+        );
+
+        const result = await response.json();
+        console.log("🔍 Frontend - Response data type:", typeof result);
+        console.log("🔍 Frontend - Response keys:", Object.keys(result || {}));
+        console.log(
+          "🔍 Frontend - Full response:",
+          JSON.stringify(result, null, 2)
+        );
+        console.log("🔍 Frontend - result.success:", result.success);
+        console.log("🔍 Frontend - result.data:", result.data);
+        console.log(
+          "🔍 Frontend - result.data is array:",
+          Array.isArray(result.data)
+        );
+
+        if (result.success && result.data) {
+          const ordersArray = Array.isArray(result.data) ? result.data : [];
+          // Sort orders by order_id descending (newest first) to ensure latest orders appear first
+          const sortedOrders = [...ordersArray].sort((a, b) => {
+            const aId = a.order_id || 0;
+            const bId = b.order_id || 0;
+            return bId - aId; // Descending order (newest first)
+          });
+          console.log(
+            "✅ Frontend - Setting orders, count:",
+            sortedOrders.length
+          );
+          console.log(
+            "📊 Frontend - Order IDs (first 10):",
+            sortedOrders
+              .slice(0, 10)
+              .map((o) => o.order_id)
+              .join(", ")
+          );
+          console.log(
+            "📊 Frontend - Pending orders (first 5):",
+            sortedOrders
+              .filter((o) => o.status_id === 2)
+              .slice(0, 5)
+              .map((o) => o.order_id)
+              .join(", ")
+          );
+          setOrders(sortedOrders);
+        } else {
+          console.error("❌ Frontend - Invalid response structure");
+          console.error("❌ result.success:", result.success);
+          console.error("❌ result.data:", result.data);
+          console.error("❌ result.error:", result.error);
+          setOrdersError(
+            result.error ||
+              "Failed to fetch orders - invalid response structure"
+          );
+        }
+      } catch (error) {
+        console.error("❌ Frontend - Error fetching orders:", error);
+        if (error instanceof Error) {
+          console.error("❌ Frontend - Error message:", error.message);
+          console.error("❌ Frontend - Error stack:", error.stack);
+        }
+        setOrdersError("An error occurred while fetching orders");
+      } finally {
+        setOrdersLoading(false);
       }
-      setOrdersError("An error occurred while fetching orders");
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, [isAuthenticated]);
+    },
+    [isAuthenticated]
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -463,35 +499,39 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Separate orders by status
-  const pendingOrders = orders.filter((order) => order.status_id === 2);
-  const otherOrders = orders.filter((order) => {
-    // Keep orders that are animating out
-    if (removingOrders.has(order.order_id)) {
+  // Separate orders by status and sort by order_id descending (newest first)
+  const pendingOrders = orders
+    .filter((order) => order.status_id === 2)
+    .sort((a, b) => (b.order_id || 0) - (a.order_id || 0));
+  const otherOrders = orders
+    .filter((order) => {
+      // Keep orders that are animating out
+      if (removingOrders.has(order.order_id)) {
+        return true;
+      }
+      // Filter out pending orders (status_id === 2)
+      if (order.status_id === 2) return false;
+      // Filter out cancelled orders (status_id === 9 or status_name contains "Ακυρώθηκε" or "cancelled")
+      if (order.status_id === 9) return false;
+      const statusLower = order.status_name?.toLowerCase() || "";
+      if (
+        statusLower.includes("ακυρώθηκε") ||
+        statusLower.includes("cancelled") ||
+        statusLower.includes("canceled")
+      ) {
+        return false;
+      }
+      // Filter out completed orders (status_id === 5 or status_name contains "Ολοκληρώθηκε" or "completed")
+      if (order.status_id === 5) return false;
+      if (
+        statusLower.includes("ολοκληρώθηκε") ||
+        statusLower.includes("completed")
+      ) {
+        return false;
+      }
       return true;
-    }
-    // Filter out pending orders (status_id === 2)
-    if (order.status_id === 2) return false;
-    // Filter out cancelled orders (status_id === 9 or status_name contains "Ακυρώθηκε" or "cancelled")
-    if (order.status_id === 9) return false;
-    const statusLower = order.status_name?.toLowerCase() || "";
-    if (
-      statusLower.includes("ακυρώθηκε") ||
-      statusLower.includes("cancelled") ||
-      statusLower.includes("canceled")
-    ) {
-      return false;
-    }
-    // Filter out completed orders (status_id === 5 or status_name contains "Ολοκληρώθηκε" or "completed")
-    if (order.status_id === 5) return false;
-    if (
-      statusLower.includes("ολοκληρώθηκε") ||
-      statusLower.includes("completed")
-    ) {
-      return false;
-    }
-    return true;
-  });
+    })
+    .sort((a, b) => (b.order_id || 0) - (a.order_id || 0));
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -537,56 +577,6 @@ export default function AdminDashboardPage() {
     setSelectedOrder(null);
     setAutoPrintOrderId(null); // Reset auto-print flag when closing
   };
-
-  const playNotificationSound = useCallback(() => {
-    console.log("🔔 playNotificationSound: Function called");
-
-    if (typeof window === "undefined") {
-      console.warn("⚠️ playNotificationSound: window is undefined");
-      return;
-    }
-
-    // Check Electron and focus window
-    const electronDetected = isElectron();
-    const windowFocused = isWindowFocused();
-
-    console.log("🔔 playNotificationSound: Electron check", {
-      isElectron: electronDetected,
-      isWindowFocused: windowFocused,
-      hasWindowElectron: !!(typeof window !== "undefined" && window.electron),
-    });
-
-    // Focus and restore Electron window when notification sound plays
-    if (electronDetected) {
-      console.log(
-        "🔔 playNotificationSound: Electron detected, calling focusElectronWindow()"
-      );
-      focusElectronWindow();
-    } else {
-      console.log(
-        "ℹ️ playNotificationSound: Electron not detected, skipping window focus"
-      );
-    }
-
-    try {
-      console.log("🔔 playNotificationSound: Playing audio");
-      const audio = new Audio("/phone-ringtone-normal-444775.mp3");
-      audio.volume = 0.7; // Set volume to 70%
-      audio
-        .play()
-        .then(() => {
-          console.log("✅ playNotificationSound: Audio playback started");
-        })
-        .catch((error) => {
-          console.warn(
-            "🔇 playNotificationSound: Failed to play notification sound",
-            error
-          );
-        });
-    } catch (error) {
-      console.warn("🔇 playNotificationSound: Error creating audio", error);
-    }
-  }, []);
 
   const showOrderCreatedToast = useCallback(
     (order: AdminOrder) => {
@@ -993,12 +983,25 @@ export default function AdminDashboardPage() {
         location_name: order.location_name,
       });
 
-      // Refetch orders from API to get complete, up-to-date data
-      fetchOrders();
-
-      // Play sound and show toast with order info from event
-      playNotificationSound();
+      // Show toast with order info from event
+      // Note: Sound is handled by AdminGlobalNotifications component
       showOrderCreatedToast(order);
+
+      // Clear any existing debounce timer
+      if (orderCreatedDebounceTimerRef.current) {
+        clearTimeout(orderCreatedDebounceTimerRef.current);
+        console.log(`⏱️ Admin: Previous debounce timer cleared, resetting...`);
+      }
+
+      // Set a new debounce timer - wait 2 seconds after the last order notification
+      // This batches multiple orders that arrive quickly into a single fetch
+      orderCreatedDebounceTimerRef.current = setTimeout(() => {
+        console.log(`📦 Admin: Debounce period ended, fetching all new orders`);
+        orderCreatedDebounceTimerRef.current = null;
+        // Add delay to ensure backend has processed all orders
+        // This prevents race conditions where the API is called before orders are fully committed
+        fetchOrders(500);
+      }, 2000);
     };
 
     const orderCreatedEvents = ["order.created", "orderCreated"];
@@ -1115,6 +1118,11 @@ export default function AdminDashboardPage() {
       channel.unbind("order.status.changed", handleOrderStatusChanged);
       channel.unbind("order.deleted", handleOrderDeleted);
 
+      // Clear debounce timer on cleanup
+      if (orderCreatedDebounceTimerRef.current) {
+        clearTimeout(orderCreatedDebounceTimerRef.current);
+        orderCreatedDebounceTimerRef.current = null;
+      }
       unsubscribe(channelName);
     };
   }, [
@@ -1123,7 +1131,6 @@ export default function AdminDashboardPage() {
     subscribe,
     unsubscribe,
     fetchOrders,
-    playNotificationSound,
     showOrderCreatedToast,
   ]);
 
@@ -1191,8 +1198,54 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a]">
-        <div className="text-white">Loading...</div>
+      <div className="h-screen bg-[#1a1a1a] flex">
+        <div className="flex-1 px-8">
+          <div className="max-w-7xl mx-auto pt-8">
+            <div className="flex justify-between items-start mb-8">
+              <Skeleton className="h-10 w-80" />
+              <div className="flex flex-col gap-2 items-end">
+                <Skeleton className="h-10 w-24" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 w-24" />
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              </div>
+            </div>
+            <div className="mb-8">
+              <Skeleton className="h-8 w-64 mb-6" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {[...Array(4)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-700"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <Skeleton className="h-6 w-40 mb-2" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <div className="flex justify-between">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-gray-700">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1213,13 +1266,15 @@ export default function AdminDashboardPage() {
               </h1>
             </div>
             <div className="flex flex-col gap-2 items-end">
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="bg-[#2a2a2a] border-gray-600 text-white hover:bg-[#3a3a3a]"
-              >
-                Logout
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="bg-[#ff9328ff] border-gray-600 text-white hover:bg-[#ff9328ff]"
+                >
+                  Logout
+                </Button>
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={handleOpenStore}
@@ -1254,8 +1309,39 @@ export default function AdminDashboardPage() {
             </h2>
 
             {ordersLoading ? (
-              <div className="bg-[#2a2a2a] rounded-lg p-8 text-center">
-                <p className="text-gray-400">Φόρτωση παραγγελιών...</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {[...Array(4)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-700"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <Skeleton className="h-6 w-40 mb-2" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <div className="flex justify-between">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-gray-700">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : ordersError ? (
               <div className="bg-[#2a2a2a] rounded-lg p-8 text-center">
