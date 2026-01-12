@@ -1192,23 +1192,28 @@ function CheckoutPageContent() {
           // Initiate card payment
           try {
             console.log("💳 Initiating card payment for order:", orderId);
-            const paymentResponse = await fetch("/api/payments/piraeus/initiate", {
-              method: "POST",
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                orderId: orderId.toString(),
-                amount: locationCart.summary.total,
-                currency: "EUR",
-                description: `Παραγγελία #${orderId} - ${locationCart.locationName}`,
-                customerEmail: user.email,
-                customerName: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-                customerPhone: user.telephone || "",
-                lang: currentLang,
-              }),
-            });
+            const paymentResponse = await fetch(
+              "/api/payments/piraeus/initiate",
+              {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  orderId: orderId.toString(),
+                  amount: locationCart.summary.total,
+                  currency: "EUR",
+                  description: `Παραγγελία #${orderId} - ${locationCart.locationName}`,
+                  customerEmail: user.email,
+                  customerName:
+                    user.name ||
+                    `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+                  customerPhone: user.telephone || "",
+                  lang: currentLang,
+                }),
+              }
+            );
 
             if (!paymentResponse.ok) {
               const paymentError = await paymentResponse.json();
@@ -1218,30 +1223,37 @@ function CheckoutPageContent() {
             }
 
             const paymentResult = await paymentResponse.json();
-            
-            if (paymentResult.success && paymentResult.formData && paymentResult.gatewayUrl) {
+
+            if (
+              paymentResult.success &&
+              paymentResult.formData &&
+              paymentResult.gatewayUrl
+            ) {
               // Create and submit POST form with hidden fields
-              console.log("🔗 Submitting payment form to gateway:", paymentResult.gatewayUrl);
-              
+              console.log(
+                "🔗 Submitting payment form to gateway:",
+                paymentResult.gatewayUrl
+              );
+
               // Create a form element
-              const form = document.createElement('form');
-              form.method = 'POST';
+              const form = document.createElement("form");
+              form.method = "POST";
               form.action = paymentResult.gatewayUrl;
-              form.style.display = 'none';
-              
+              form.style.display = "none";
+
               // Add all form data as hidden input fields
               Object.entries(paymentResult.formData).forEach(([key, value]) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
+                const input = document.createElement("input");
+                input.type = "hidden";
                 input.name = key;
                 input.value = value;
                 form.appendChild(input);
               });
-              
+
               // Append form to body and submit
               document.body.appendChild(form);
               form.submit();
-              
+
               return; // Exit early, form submission will happen
             } else {
               throw new Error("Failed to get payment form data");
@@ -1670,31 +1682,6 @@ function CheckoutPageContent() {
                         </span>
                       </div>
                     </label>
-                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={paymentMethod === "card"}
-                        onChange={(e) =>
-                          setPaymentMethod(e.target.value as "cash" | "card")
-                        }
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                        <span className="text-white text-sm sm:text-base">
-                          Πληρωμή με κάρτα
-                        </span>
-                      </div>
-                    </label>
-                    {paymentMethod === "card" && (
-                      <div className="ml-6 mt-2 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
-                        <p className="text-xs text-blue-300">
-                          Θα μεταφερθείτε στη σελίδα ασφαλούς πληρωμής της Τράπεζας Πειραιώς
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </Card>
 
