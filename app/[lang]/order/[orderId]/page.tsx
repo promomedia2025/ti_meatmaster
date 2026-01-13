@@ -114,7 +114,7 @@ export default function OrderStatusPage() {
 
     const channelName = `order.${orderId}`;
     console.log(`📡 Attempting to subscribe to channel: ${channelName}`);
-    const channel = subscribe(channelName);
+    const channel = subscribe(`${channelName}`);
 
     if (channel) {
       // Listen for successful subscription
@@ -326,7 +326,7 @@ export default function OrderStatusPage() {
         const hours = parseInt(timeParts[0] || "0", 10);
         const minutes = parseInt(timeParts[1] || "0", 10);
         const seconds = parseInt(timeParts[2] || "0", 10);
-        
+
         const orderTimestamp = new Date(datePart);
         orderTimestamp.setHours(hours, minutes, seconds, 0);
 
@@ -336,7 +336,8 @@ export default function OrderStatusPage() {
         );
 
         // Compare estimated delivery timestamp with now() to get remaining time
-        const remainingMs = estimatedDeliveryTimestamp.getTime() - now.getTime();
+        const remainingMs =
+          estimatedDeliveryTimestamp.getTime() - now.getTime();
         const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
 
         setTimeRemaining(remainingSeconds);

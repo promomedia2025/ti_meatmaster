@@ -167,14 +167,11 @@ export function ActiveOrdersDropdown({
           const isActive =
             status !== "completed" &&
             status !== "canceled" &&
-            status !== "received" &&
-            status !== "delivered";
+            status !== "cancelled";
 
           console.log(`🔍 Order ${order.order_id} filtering check:`, {
             isCompleted: status === "completed",
-            isCancelled: status === "cancelled",
-            isReceived: status === "received",
-            isDelivered: status === "delivered",
+            isCancelled: status === "cancelled" || status === "canceled",
             finalResult: isActive ? "✅ KEEP" : "🚫 FILTER OUT",
           });
 

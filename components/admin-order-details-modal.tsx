@@ -99,7 +99,7 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     }
     
     .invoice-print-content > div.p-5 {
-      padding: 8px !important;
+      padding: 10px !important;
       font-size: 9.8325px !important;
       line-height: 1.2 !important;
     }
@@ -213,7 +213,6 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
     .invoice-print-content strong {
       word-wrap: break-word !important;
       word-break: break-word !important;
-      display: inline-block !important;
       max-width: 100% !important;
     }
     
@@ -410,25 +409,15 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
             /* Hide order details modal completely */
             .order-details-modal {
               display: none !important;
-              visibility: hidden !important;
             }
             /* Show only invoice content */
             .invoice-print-content {
-              display: block !important;
-              visibility: visible !important;
               position: fixed !important;
               left: 0 !important;
               top: 0 !important;
               width: 100% !important;
-              max-width: 100% !important;
-              max-height: none !important;
-              overflow: visible !important;
               background: white !important;
-              padding: 0 !important;
-              margin: 0 !important;
               box-shadow: none !important;
-              border: none !important;
-              z-index: 9999 !important;
             }
             /* Make all invoice content visible except no-print elements */
             .invoice-print-content,
@@ -452,10 +441,6 @@ function PrintStyles({ paperSize }: { paperSize: string }) {
             }
             table {
               page-break-inside: auto !important;
-            }
-            tr {
-              page-break-inside: avoid !important;
-              page-break-after: auto !important;
             }
             ${paperSpecificStyles}
           }
@@ -550,6 +535,11 @@ export function AdminOrderDetailsModal({
 
     // Fallback to browser print dialog if not in Electron or if Electron printing failed
     window.print();
+
+    // Reset printing flag after a delay
+    setTimeout(() => {
+      (window as any).__isPrinting = false;
+    }, 1000);
   }, [paperSize]);
 
   // Handle auto-print when accept is clicked
@@ -662,26 +652,42 @@ export function AdminOrderDetailsModal({
     return payment === "cod" ? "Μετρητά" : "Κάρτα";
   };
 
-  const getOrderTypeDisplayName = (orderType?: string, orderTypeName?: string) => {
+  const getOrderTypeDisplayName = (
+    orderType?: string,
+    orderTypeName?: string
+  ) => {
     if (orderTypeName) {
       // If we have a display name, use it but map to our standard terms
       const typeName = orderTypeName.toLowerCase();
-      if (typeName.includes("delivery") || typeName.includes("διανομή") || typeName.includes("παράδοση")) {
+      if (
+        typeName.includes("delivery") ||
+        typeName.includes("διανομή") ||
+        typeName.includes("παράδοση")
+      ) {
         return "Delivery";
       }
-      if (typeName.includes("collection") || typeName.includes("pickup") || typeName.includes("παραλαβή") || typeName.includes("takeaway")) {
+      if (
+        typeName.includes("collection") ||
+        typeName.includes("pickup") ||
+        typeName.includes("παραλαβή") ||
+        typeName.includes("takeaway")
+      ) {
         return "Takeaway";
       }
       return orderTypeName;
     }
-    
+
     // Fallback to order_type
     if (!orderType) return "N/A";
     const type = orderType.toLowerCase();
     if (type === "delivery" || type.includes("delivery")) {
       return "Delivery";
     }
-    if (type === "collection" || type.includes("collection") || type.includes("pickup")) {
+    if (
+      type === "collection" ||
+      type.includes("collection") ||
+      type.includes("pickup")
+    ) {
       return "Takeaway";
     }
     return orderType;
@@ -1103,7 +1109,10 @@ export function AdminOrderDetailsModal({
                     <p className="invoice-date-section">
                       <strong>Τύπος παραγγελίας</strong>
                       <br />
-                      {getOrderTypeDisplayName(order.order_type, order.order_type_name)}
+                      {getOrderTypeDisplayName(
+                        order.order_type,
+                        order.order_type_name
+                      )}
                     </p>
                     <p className="invoice-date-section">
                       <strong>Ημερομηνία Παραγγελίας</strong>

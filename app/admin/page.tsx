@@ -173,6 +173,7 @@ export default function AdminDashboardPage() {
   const [deliveryTimeModalOrderId, setDeliveryTimeModalOrderId] = useState<
     number | null
   >(null);
+  const [activeList, setActiveList] = useState<"pending" | "other">("pending");
   const orderChannelsRef = useRef<Map<number, any>>(new Map());
   // Debounce timer for order created events (batch multiple orders into one fetch)
   const orderCreatedDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1156,9 +1157,11 @@ export default function AdminDashboardPage() {
           <h3 className="text-white font-semibold text-lg">
             Παραγγελία #{order.order_id}
           </h3>
-          <p className="text-gray-400 text-sm">
-            {formatLocationName(order.location_name)}
-          </p>
+          {isDeliveryOrder(order) && (
+            <p className="text-gray-400 text-sm">
+              {formatLocationName(order.location_name)}
+            </p>
+          )}
         </div>
         <span className="bg-[#009DE0]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}
@@ -1304,9 +1307,38 @@ export default function AdminDashboardPage() {
 
           {/* Live Orders Section */}
           <div className="mb-8 overflow-hidden">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Ζωντανές Παραγγελίες
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                Ζωντανές Παραγγελίες
+              </h2>
+              {/* Toggle Button - Visible on mobile/tablet, hidden on desktop */}
+              <div className="md:hidden">
+                <div className="bg-[#2a2a2a] rounded-lg p-1 inline-flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveList("pending")}
+                    className={`${
+                      activeList === "pending"
+                        ? "bg-[#009DE0] text-white"
+                        : "bg-transparent text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Εκκρεμείς ({pendingOrders.length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveList("other")}
+                    className={`${
+                      activeList === "other"
+                        ? "bg-[#009DE0] text-white"
+                        : "bg-transparent text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Άλλες ({otherOrders.length})
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             {ordersLoading ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1348,53 +1380,101 @@ export default function AdminDashboardPage() {
                 <p className="text-red-400">{ordersError}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-                {/* Pending Orders Column */}
-                <div>
-                  <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh]">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold text-white">
-                        Εκκρεμείς Παραγγελίες
-                      </h3>
-                      <span className="bg-[#009DE0] text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {pendingOrders.length}
-                      </span>
+              <div className="space-y-4">
+                {/* Desktop: Show both columns side by side */}
+                <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
+                  {/* Pending Orders Column */}
+                  <div>
+                    <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh] flex flex-col">
+                      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                        <h3 className="text-xl font-semibold text-white">
+                          Εκκρεμείς Παραγγελίες
+                        </h3>
+                        <span className="bg-[#009DE0] text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {pendingOrders.length}
+                        </span>
+                      </div>
+                      <div className="space-y-4 overflow-y-auto admin-scrollbar flex-1 min-h-0 pb-2">
+                        {pendingOrders.length === 0 ? (
+                          <p className="text-gray-400 text-center py-8">
+                            Δεν υπάρχουν εκκρεμείς παραγγελίες
+                          </p>
+                        ) : (
+                          pendingOrders.map((order) => (
+                            <OrderCard
+                              key={order.order_id}
+                              order={order}
+                              actions={
+                                <>
+                                  <Button
+                                    size="sm"
+                                    className="bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleAcceptOrder(order.order_id);
+                                    }}
+                                  >
+                                    Αποδοχή
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleRejectOrder(order.order_id);
+                                    }}
+                                  >
+                                    Απόρριψη
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="border-gray-700 bg-green-700 hover:bg-green-700 text-white"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setDeliveryTimeModalOrderId(
+                                        order.order_id
+                                      );
+                                      setIsDeliveryTimeModalOpen(true);
+                                    }}
+                                  >
+                                    Χρόνος παραγγελίας
+                                  </Button>
+                                </>
+                              }
+                            />
+                          ))
+                        )}
+                      </div>
                     </div>
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto admin-scrollbar">
-                      {pendingOrders.length === 0 ? (
-                        <p className="text-gray-400 text-center py-8">
-                          Δεν υπάρχουν εκκρεμείς παραγγελίες
-                        </p>
-                      ) : (
-                        pendingOrders.map((order) => (
-                          <OrderCard
-                            key={order.order_id}
-                            order={order}
-                            actions={
-                              <>
+                  </div>
+
+                  {/* Other Orders Column */}
+                  <div>
+                    <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh] flex flex-col">
+                      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                        <h3 className="text-xl font-semibold text-white">
+                          Άλλες Παραγγελίες
+                        </h3>
+                        <span className="bg-gray-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {otherOrders.length}
+                        </span>
+                      </div>
+                      <div className="space-y-4 overflow-y-auto admin-scrollbar flex-1 min-h-0 pb-2">
+                        {otherOrders.length === 0 ? (
+                          <p className="text-gray-400 text-center py-8">
+                            Δεν υπάρχουν άλλες παραγγελίες
+                          </p>
+                        ) : (
+                          otherOrders.map((order) => (
+                            <OrderCard
+                              key={order.order_id}
+                              order={order}
+                              isRemoving={removingOrders.has(order.order_id)}
+                              actions={
                                 <Button
                                   size="sm"
-                                  className="bg-[#009DE0] hover:bg-[#0082b8] text-white"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleAcceptOrder(order.order_id);
-                                  }}
-                                >
-                                  Αποδοχή
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleRejectOrder(order.order_id);
-                                  }}
-                                >
-                                  Απόρριψη
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  className="border-gray-700 bg-green-700 hover:bg-green-700 text-white"
+                                  variant="outline"
+                                  className="border-gray-700 text-gray-300 hover:bg-gray-800"
                                   onClick={(event) => {
                                     event.stopPropagation();
                                     setDeliveryTimeModalOrderId(order.order_id);
@@ -1403,147 +1483,312 @@ export default function AdminDashboardPage() {
                                 >
                                   Χρόνος παραγγελίας
                                 </Button>
-                              </>
-                            }
-                          />
-                        ))
-                      )}
+                              }
+                              statusControl={
+                                <div className="flex flex-col gap-2">
+                                  <label className="text-xs font-medium text-gray-400">
+                                    Ενημέρωση Κατάστασης
+                                  </label>
+                                  {(() => {
+                                    // Filter and organize statuses into two rows
+                                    const availableStatuses =
+                                      ORDER_STATUS_OPTIONS.filter((option) => {
+                                        if (option.value === "DELIVERY") {
+                                          return isDeliveryOrder(order);
+                                        }
+                                        if (option.value === "PICK_UP") {
+                                          return isPickupOrder(order);
+                                        }
+                                        return true;
+                                      });
+
+                                    // First row: RECEIVED, PREPARATION, DELIVERY/PICK_UP
+                                    const firstRow = availableStatuses.filter(
+                                      (option) =>
+                                        option.value === "RECEIVED" ||
+                                        option.value === "PREPARATION" ||
+                                        option.value === "DELIVERY" ||
+                                        option.value === "PICK_UP"
+                                    );
+
+                                    // Second row: COMPLETED, CANCELLED
+                                    const secondRow = availableStatuses.filter(
+                                      (option) =>
+                                        option.value === "COMPLETED" ||
+                                        option.value === "CANCELLED"
+                                    );
+
+                                    const renderButton = (
+                                      option: (typeof ORDER_STATUS_OPTIONS)[number]
+                                    ) => {
+                                      const isActive =
+                                        (statusSelections[order.order_id] ||
+                                          normalizeStatusNameToValue(
+                                            order.status_name
+                                          )) === option.value;
+
+                                      // Special colors for completed and cancelled
+                                      let buttonClassName = "";
+                                      if (option.value === "COMPLETED") {
+                                        buttonClassName = isActive
+                                          ? "bg-green-600 hover:bg-green-700 text-white"
+                                          : "bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/50";
+                                      } else if (option.value === "CANCELLED") {
+                                        buttonClassName = isActive
+                                          ? "bg-red-600 hover:bg-red-700 text-white"
+                                          : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
+                                      } else {
+                                        buttonClassName = isActive
+                                          ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                          : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
+                                      }
+
+                                      return (
+                                        <Button
+                                          key={option.value}
+                                          size="sm"
+                                          className={buttonClassName}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleStatusChange(
+                                              order.order_id,
+                                              option.value
+                                            );
+                                          }}
+                                        >
+                                          {option.label}
+                                        </Button>
+                                      );
+                                    };
+
+                                    return (
+                                      <>
+                                        {/* First row */}
+                                        <div className="flex flex-wrap gap-2">
+                                          {firstRow.map(renderButton)}
+                                        </div>
+                                        {/* Second row */}
+                                        <div className="flex flex-wrap gap-2">
+                                          {secondRow.map(renderButton)}
+                                        </div>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              }
+                            />
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Other Orders Column */}
-                <div>
-                  <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[70vh]">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold text-white">
-                        Άλλες Παραγγελίες
-                      </h3>
-                      <span className="bg-gray-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {otherOrders.length}
-                      </span>
-                    </div>
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto admin-scrollbar">
-                      {otherOrders.length === 0 ? (
-                        <p className="text-gray-400 text-center py-8">
-                          Δεν υπάρχουν άλλες παραγγελίες
-                        </p>
-                      ) : (
-                        otherOrders.map((order) => (
-                          <OrderCard
-                            key={order.order_id}
-                            order={order}
-                            isRemoving={removingOrders.has(order.order_id)}
-                            actions={
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-gray-700 text-gray-300 hover:bg-gray-800"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setDeliveryTimeModalOrderId(order.order_id);
-                                  setIsDeliveryTimeModalOpen(true);
-                                }}
-                              >
-                                Χρόνος παραγγελίας
-                              </Button>
-                            }
-                            statusControl={
-                              <div className="flex flex-col gap-2">
-                                <label className="text-xs font-medium text-gray-400">
-                                  Ενημέρωση Κατάστασης
-                                </label>
-                                {(() => {
-                                  // Filter and organize statuses into two rows
-                                  const availableStatuses =
-                                    ORDER_STATUS_OPTIONS.filter((option) => {
-                                      if (option.value === "DELIVERY") {
-                                        return isDeliveryOrder(order);
-                                      }
-                                      if (option.value === "PICK_UP") {
-                                        return isPickupOrder(order);
-                                      }
-                                      return true;
-                                    });
+                {/* Mobile/Tablet: Show only active list */}
+                <div className="md:hidden">
+                  <div className="bg-[#2a2a2a] rounded-lg p-6 max-h-[60vh] flex flex-col">
+                    {activeList === "pending" ? (
+                      <>
+                        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                          <h3 className="text-xl font-semibold text-white">
+                            Εκκρεμείς Παραγγελίες
+                          </h3>
+                          <span className="bg-[#009DE0] text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {pendingOrders.length}
+                          </span>
+                        </div>
+                        <div className="space-y-4 overflow-y-auto admin-scrollbar flex-1 min-h-0 pb-2">
+                          {pendingOrders.length === 0 ? (
+                            <p className="text-gray-400 text-center py-8">
+                              Δεν υπάρχουν εκκρεμείς παραγγελίες
+                            </p>
+                          ) : (
+                            pendingOrders.map((order) => (
+                              <OrderCard
+                                key={order.order_id}
+                                order={order}
+                                actions={
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleAcceptOrder(order.order_id);
+                                      }}
+                                    >
+                                      Αποδοχή
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleRejectOrder(order.order_id);
+                                      }}
+                                    >
+                                      Απόρριψη
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="border-gray-700 bg-green-700 hover:bg-green-700 text-white"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setDeliveryTimeModalOrderId(
+                                          order.order_id
+                                        );
+                                        setIsDeliveryTimeModalOpen(true);
+                                      }}
+                                    >
+                                      Χρόνος παραγγελίας
+                                    </Button>
+                                  </>
+                                }
+                              />
+                            ))
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                          <h3 className="text-xl font-semibold text-white">
+                            Άλλες Παραγγελίες
+                          </h3>
+                          <span className="bg-gray-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {otherOrders.length}
+                          </span>
+                        </div>
+                        <div className="space-y-4 overflow-y-auto admin-scrollbar flex-1 min-h-0 pb-2">
+                          {otherOrders.length === 0 ? (
+                            <p className="text-gray-400 text-center py-8">
+                              Δεν υπάρχουν άλλες παραγγελίες
+                            </p>
+                          ) : (
+                            otherOrders.map((order) => (
+                              <OrderCard
+                                key={order.order_id}
+                                order={order}
+                                isRemoving={removingOrders.has(order.order_id)}
+                                actions={
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setDeliveryTimeModalOrderId(
+                                        order.order_id
+                                      );
+                                      setIsDeliveryTimeModalOpen(true);
+                                    }}
+                                  >
+                                    Χρόνος παραγγελίας
+                                  </Button>
+                                }
+                                statusControl={
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-medium text-gray-400">
+                                      Ενημέρωση Κατάστασης
+                                    </label>
+                                    {(() => {
+                                      // Filter and organize statuses into two rows
+                                      const availableStatuses =
+                                        ORDER_STATUS_OPTIONS.filter(
+                                          (option) => {
+                                            if (option.value === "DELIVERY") {
+                                              return isDeliveryOrder(order);
+                                            }
+                                            if (option.value === "PICK_UP") {
+                                              return isPickupOrder(order);
+                                            }
+                                            return true;
+                                          }
+                                        );
 
-                                  // First row: RECEIVED, PREPARATION, DELIVERY/PICK_UP
-                                  const firstRow = availableStatuses.filter(
-                                    (option) =>
-                                      option.value === "RECEIVED" ||
-                                      option.value === "PREPARATION" ||
-                                      option.value === "DELIVERY" ||
-                                      option.value === "PICK_UP"
-                                  );
+                                      // First row: RECEIVED, PREPARATION, DELIVERY/PICK_UP
+                                      const firstRow = availableStatuses.filter(
+                                        (option) =>
+                                          option.value === "RECEIVED" ||
+                                          option.value === "PREPARATION" ||
+                                          option.value === "DELIVERY" ||
+                                          option.value === "PICK_UP"
+                                      );
 
-                                  // Second row: COMPLETED, CANCELLED
-                                  const secondRow = availableStatuses.filter(
-                                    (option) =>
-                                      option.value === "COMPLETED" ||
-                                      option.value === "CANCELLED"
-                                  );
+                                      // Second row: COMPLETED, CANCELLED
+                                      const secondRow =
+                                        availableStatuses.filter(
+                                          (option) =>
+                                            option.value === "COMPLETED" ||
+                                            option.value === "CANCELLED"
+                                        );
 
-                                  const renderButton = (
-                                    option: (typeof ORDER_STATUS_OPTIONS)[number]
-                                  ) => {
-                                    const isActive =
-                                      (statusSelections[order.order_id] ||
-                                        normalizeStatusNameToValue(
-                                          order.status_name
-                                        )) === option.value;
+                                      const renderButton = (
+                                        option: (typeof ORDER_STATUS_OPTIONS)[number]
+                                      ) => {
+                                        const isActive =
+                                          (statusSelections[order.order_id] ||
+                                            normalizeStatusNameToValue(
+                                              order.status_name
+                                            )) === option.value;
 
-                                    // Special colors for completed and cancelled
-                                    let buttonClassName = "";
-                                    if (option.value === "COMPLETED") {
-                                      buttonClassName = isActive
-                                        ? "bg-green-600 hover:bg-green-700 text-white"
-                                        : "bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/50";
-                                    } else if (option.value === "CANCELLED") {
-                                      buttonClassName = isActive
-                                        ? "bg-red-600 hover:bg-red-700 text-white"
-                                        : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
-                                    } else {
-                                      buttonClassName = isActive
-                                        ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
-                                        : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
-                                    }
+                                        // Special colors for completed and cancelled
+                                        let buttonClassName = "";
+                                        if (option.value === "COMPLETED") {
+                                          buttonClassName = isActive
+                                            ? "bg-green-600 hover:bg-green-700 text-white"
+                                            : "bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/50";
+                                        } else if (
+                                          option.value === "CANCELLED"
+                                        ) {
+                                          buttonClassName = isActive
+                                            ? "bg-red-600 hover:bg-red-700 text-white"
+                                            : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
+                                        } else {
+                                          buttonClassName = isActive
+                                            ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                            : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
+                                        }
 
-                                    return (
-                                      <Button
-                                        key={option.value}
-                                        size="sm"
-                                        className={buttonClassName}
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          handleStatusChange(
-                                            order.order_id,
-                                            option.value
-                                          );
-                                        }}
-                                      >
-                                        {option.label}
-                                      </Button>
-                                    );
-                                  };
+                                        return (
+                                          <Button
+                                            key={option.value}
+                                            size="sm"
+                                            className={buttonClassName}
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              handleStatusChange(
+                                                order.order_id,
+                                                option.value
+                                              );
+                                            }}
+                                          >
+                                            {option.label}
+                                          </Button>
+                                        );
+                                      };
 
-                                  return (
-                                    <>
-                                      {/* First row */}
-                                      <div className="flex flex-wrap gap-2">
-                                        {firstRow.map(renderButton)}
-                                      </div>
-                                      {/* Second row */}
-                                      <div className="flex flex-wrap gap-2">
-                                        {secondRow.map(renderButton)}
-                                      </div>
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            }
-                          />
-                        ))
-                      )}
-                    </div>
+                                      return (
+                                        <>
+                                          {/* First row */}
+                                          <div className="flex flex-wrap gap-2">
+                                            {firstRow.map(renderButton)}
+                                          </div>
+                                          {/* Second row */}
+                                          <div className="flex flex-wrap gap-2">
+                                            {secondRow.map(renderButton)}
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                }
+                              />
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
