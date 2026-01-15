@@ -38,19 +38,23 @@ export function AddAddressModal({
 
     // Extract and log coordinates
     if (place?.geometry?.location) {
-      const lat = typeof place.geometry.location.lat === 'function' 
-        ? place.geometry.location.lat() 
-        : place.geometry.location.lat;
-      const lng = typeof place.geometry.location.lng === 'function' 
-        ? place.geometry.location.lng() 
-        : place.geometry.location.lng;
-      
+      const lat =
+        typeof place.geometry.location.lat === "function"
+          ? place.geometry.location.lat()
+          : place.geometry.location.lat;
+      const lng =
+        typeof place.geometry.location.lng === "function"
+          ? place.geometry.location.lng()
+          : place.geometry.location.lng;
+
       console.log("📍 [ADD-ADDRESS-MODAL] Selected address coordinates:", {
         latitude: lat,
         longitude: lng,
       });
     } else {
-      console.log("📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place");
+      console.log(
+        "📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place"
+      );
     }
 
     setSelectedPlace(place);
@@ -151,7 +155,10 @@ export function AddAddressModal({
           {/* Bell Name Field */}
           {selectedPlace && (
             <div className="space-y-2">
-              <label htmlFor="bellName" className="text-base font-medium text-white">
+              <label
+                htmlFor="bellName"
+                className="text-base font-medium text-white"
+              >
                 Όνομα στο Κουδούνι
               </label>
               <Input
@@ -168,7 +175,10 @@ export function AddAddressModal({
           {/* Floor Field */}
           {selectedPlace && (
             <div className="space-y-2">
-              <label htmlFor="floor" className="text-base font-medium text-white">
+              <label
+                htmlFor="floor"
+                className="text-base font-medium text-white"
+              >
                 Όροφος
               </label>
               <Input
@@ -204,21 +214,28 @@ export function AddAddressModal({
                   // Extract coordinates from selected place
                   let latitude: number | undefined;
                   let longitude: number | undefined;
-                  
+
                   if (selectedPlace?.geometry?.location) {
-                    latitude = typeof selectedPlace.geometry.location.lat === 'function' 
-                      ? selectedPlace.geometry.location.lat() 
-                      : selectedPlace.geometry.location.lat;
-                    longitude = typeof selectedPlace.geometry.location.lng === 'function' 
-                      ? selectedPlace.geometry.location.lng() 
-                      : selectedPlace.geometry.location.lng;
-                    
-                    console.log("📍 [ADD-ADDRESS-MODAL] Address coordinates before saving:", {
-                      latitude,
-                      longitude,
-                    });
+                    latitude =
+                      typeof selectedPlace.geometry.location.lat === "function"
+                        ? selectedPlace.geometry.location.lat()
+                        : selectedPlace.geometry.location.lat;
+                    longitude =
+                      typeof selectedPlace.geometry.location.lng === "function"
+                        ? selectedPlace.geometry.location.lng()
+                        : selectedPlace.geometry.location.lng;
+
+                    console.log(
+                      "📍 [ADD-ADDRESS-MODAL] Address coordinates before saving:",
+                      {
+                        latitude,
+                        longitude,
+                      }
+                    );
                   } else {
-                    console.log("📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place");
+                    console.log(
+                      "📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place"
+                    );
                   }
 
                   // Extract address components from Google Places
@@ -252,15 +269,17 @@ export function AddAddressModal({
                   });
 
                   // Construct address_1 (route + street number) - Greek format
-                  const address1 = route && streetNumber 
-                    ? `${route} ${streetNumber}`.trim()
-                    : route || streetNumber || selectedPlace.formatted_address;
+                  const address1 =
+                    route && streetNumber
+                      ? `${route} ${streetNumber}`.trim()
+                      : route ||
+                        streetNumber ||
+                        selectedPlace.formatted_address;
 
                   // API body structure
                   const apiBody: any = {
                     customer_id: user?.id || 3, // Use actual user ID from auth context
                     address_1: address1 || selectedPlace.formatted_address,
-                    address_2: "",
                     city: city || "",
                     state: state || "",
                     postcode: postcode || "",

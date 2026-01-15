@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     // Forward cookies from the client request
     const cookieHeader = request.headers.get("cookie") || "";
-
+    console.log(orderData);
     // Submit order to external API
     let response;
     try {

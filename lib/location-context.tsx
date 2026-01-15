@@ -19,7 +19,6 @@ interface DefaultAddress {
   id: number;
   customer_id: number;
   address_1: string;
-  address_2: string;
   city: string;
   state: string;
   postcode: string;
@@ -50,6 +49,7 @@ interface LocationContextType {
   defaultAddress: DefaultAddress | null;
   setDefaultAddress: (address: DefaultAddress | null) => void;
   fetchDefaultAddress: (customerId: number) => Promise<void>;
+  refreshDefaultAddress: () => Promise<void>;
   isTrackingLocation: boolean;
   locationError: string | null;
   startLocationTracking: (lang?: string) => void;
@@ -259,7 +259,6 @@ export function LocationProvider({ children }: { children: ReactNode }) {
               // Build address string for geocoding
               const addressParts = [
                 address.address_1,
-                address.address_2,
                 address.city,
                 address.postcode,
                 address.country?.name || "Greece",
@@ -437,6 +436,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         defaultAddress,
         setDefaultAddress,
         fetchDefaultAddress,
+        refreshDefaultAddress,
         isTrackingLocation,
         locationError,
         startLocationTracking,

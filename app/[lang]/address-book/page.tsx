@@ -14,7 +14,6 @@ interface Address {
   id: number;
   customer_id: number;
   address_1: string;
-  address_2: string;
   city: string;
   state: string;
   postcode: string;
@@ -151,9 +150,11 @@ export default function AddressBookPage() {
       if (result.success) {
         // Refresh the addresses list
         fetchAddresses();
-        
+
         // Refresh the default address in location context to update Wolt navbar
-        console.log("📍 [ADDRESS BOOK] Refreshing default address in location context");
+        console.log(
+          "📍 [ADDRESS BOOK] Refreshing default address in location context"
+        );
         await refreshDefaultAddress();
       } else {
         console.error("❌ Failed to set address as default:", result);

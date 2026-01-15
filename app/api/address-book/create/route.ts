@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
     const {
       customer_id,
       address_1,
-      address_2,
       city,
       state,
       postcode,
@@ -73,7 +72,6 @@ export async function POST(request: NextRequest) {
     console.log("📤 Request body:", {
       customer_id,
       address_1,
-      address_2: address_2 || "",
       city,
       state: state || "",
       postcode,
@@ -93,7 +91,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         customer_id,
         address_1,
-        address_2: address_2 || "",
         city,
         state: state || "",
         postcode,
@@ -101,10 +98,11 @@ export async function POST(request: NextRequest) {
         bell_name: bell_name || "",
         floor: floor || "",
         is_default: is_default || false,
-        ...(latitude !== undefined && longitude !== undefined && {
-          latitude,
-          longitude,
-        }),
+        ...(latitude !== undefined &&
+          longitude !== undefined && {
+            latitude,
+            longitude,
+          }),
       }),
     });
 

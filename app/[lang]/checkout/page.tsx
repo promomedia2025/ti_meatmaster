@@ -1111,7 +1111,6 @@ function CheckoutPageContent() {
                 userLocation.addressDetails.street ||
                 userLocation.fullAddress ||
                 "",
-              address_2: "",
               city: userLocation.city || "",
               state: "",
               postcode: userLocation.addressDetails.postalCode || "",
