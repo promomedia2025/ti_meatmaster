@@ -79,7 +79,7 @@ export function Footer({ lang, dict }: FooterProps) {
                 </a>
               </li>
               <li>
-                <a href="https://share.google/VoMxKQsI79hExtNRk" className="hover:text-white transition-colors">
+                <a href="https://g.page/r/CYGezXFudNWFEBE/review" className="hover:text-white transition-colors">
                   Google Reviews
                 </a>
               </li>
