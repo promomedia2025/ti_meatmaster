@@ -5,6 +5,8 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 import Pusher from "pusher-js";
@@ -55,28 +57,37 @@ export function PusherProvider({ children }: PusherProviderProps) {
     };
   }, []);
 
-  const subscribe = (channelName: string) => {
-    if (!pusher) {
-      return null;
-    }
+  const subscribe = useCallback(
+    (channelName: string) => {
+      if (!pusher) {
+        return null;
+      }
 
-    return pusher.subscribe(channelName);
-  };
+      return pusher.subscribe(channelName);
+    },
+    [pusher]
+  );
 
-  const unsubscribe = (channelName: string) => {
-    if (!pusher) {
-      return;
-    }
+  const unsubscribe = useCallback(
+    (channelName: string) => {
+      if (!pusher) {
+        return;
+      }
 
-    pusher.unsubscribe(channelName);
-  };
+      pusher.unsubscribe(channelName);
+    },
+    [pusher]
+  );
 
-  const value: PusherContextType = {
-    pusher,
-    isConnected,
-    subscribe,
-    unsubscribe,
-  };
+  const value: PusherContextType = useMemo(
+    () => ({
+      pusher,
+      isConnected,
+      subscribe,
+      unsubscribe,
+    }),
+    [pusher, isConnected, subscribe, unsubscribe]
+  );
 
   return (
     <PusherContext.Provider value={value}>{children}</PusherContext.Provider>

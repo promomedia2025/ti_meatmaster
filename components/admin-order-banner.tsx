@@ -19,19 +19,11 @@ interface AdminOrderBannerProps {
 }
 
 /**
- * Formats location name by removing duplicate commas and last 2 parts
+ * Returns the full location name
  */
 const formatLocationName = (locationName?: string) => {
-  if (!locationName) return locationName;
-  const cleaned = locationName.replace(/,+/g, ",");
-  const parts = cleaned
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part);
-  if (parts.length > 2) {
-    parts.splice(-2);
-  }
-  return parts.join(", ");
+  // Always return the full location_name
+  return locationName || "";
 };
 
 export function AdminOrderBanner({

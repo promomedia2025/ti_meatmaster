@@ -35,6 +35,7 @@ interface AdminOrder {
   total_items?: number;
   bell_name?: string | null;
   floor?: string | null;
+  address_id?: number | null;
 }
 
 const PENDING_STATUS_ID = 2;
@@ -174,7 +175,6 @@ export default function AdminDashboardPage() {
     number | null
   >(null);
   const [activeList, setActiveList] = useState<"pending" | "other">("pending");
-  const orderChannelsRef = useRef<Map<number, any>>(new Map());
   // Debounce timer for order created events (batch multiple orders into one fetch)
   const orderCreatedDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -430,10 +430,11 @@ export default function AdminDashboardPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          credentials: "include",
         },
         body: JSON.stringify({
           status: 1,
-          location_id: 13,
+          location_id: 1,
         }),
       });
 
@@ -548,20 +549,8 @@ export default function AdminDashboardPage() {
   };
 
   const formatLocationName = (locationName: string) => {
-    if (!locationName) return locationName;
-    // Remove duplicate commas (replace multiple commas with single comma)
-    const cleaned = locationName.replace(/,+/g, ",");
-    // Split into array
-    const parts = cleaned
-      .split(",")
-      .map((part) => part.trim())
-      .filter((part) => part);
-    // Remove last 2 indices
-    if (parts.length > 2) {
-      parts.splice(-2);
-    }
-    // Join back to string
-    return parts.join(", ");
+    // Always return the full location_name
+    return locationName || "";
   };
 
   const openOrderModal = useCallback((order: AdminOrder) => {
@@ -817,62 +806,32 @@ export default function AdminDashboardPage() {
       console.log("🕐 [ADMIN] handleUpdateDeliveryTime called:", {
         orderId,
         estimatedTime,
-        pusherConnected: !!pusher && isConnected,
       });
 
-      if (!pusher || !isConnected) {
-        console.error("❌ [ADMIN] Pusher not connected");
+      // Call API endpoint to update delivery time (server will broadcast via Pusher)
+      const response = await fetch("/api/admin/orders/update-delivery-time", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+          estimated_delivery_time: estimatedTime,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        console.error("❌ [ADMIN] Failed to update delivery time:", result);
         toast.error("Σφάλμα", {
-          description: "Δεν είστε συνδεδεμένοι. Παρακαλώ δοκιμάστε ξανά.",
+          description: result.error || "Αποτυχία ενημέρωσης χρόνου",
         });
         return;
       }
-
-      // Get or create subscription to the order channel
-      const channelName = `order.${orderId}`;
-      console.log(`📡 [ADMIN] Getting channel: ${channelName}`);
-
-      let channel = orderChannelsRef.current.get(orderId);
-      console.log(`📡 [ADMIN] Cached channel exists: ${!!channel}`);
-
-      if (!channel) {
-        console.log(`📡 [ADMIN] Subscribing to new channel: ${channelName}`);
-        channel = subscribe(channelName);
-        if (channel) {
-          orderChannelsRef.current.set(orderId, channel);
-          console.log(
-            `✅ [ADMIN] Channel subscribed and cached: ${channelName}`
-          );
-        } else {
-          console.error(
-            `❌ [ADMIN] Failed to subscribe to channel: ${channelName}`
-          );
-        }
-      }
-
-      if (!channel) {
-        toast.error("Σφάλμα", {
-          description: "Αποτυχία συνδέσης με το κανάλι παραγγελίας",
-        });
-        return;
-      }
-
-      const eventData = {
-        order_id: orderId,
-        estimated_delivery_time: estimatedTime,
-      };
-
-      console.log(`📤 [ADMIN] Triggering client event on ${channelName}:`, {
-        eventName: "client-delivery-time-updated",
-        data: eventData,
-        channelSubscribed: channel.subscribed,
-      });
-
-      // Trigger client event to broadcast delivery time update
-      channel.trigger("client-delivery-time-updated", eventData);
 
       console.log(
-        `✅ [ADMIN] Client event triggered successfully on ${channelName}`
+        `✅ [ADMIN] Delivery time updated successfully for order #${orderId}`
       );
 
       toast.success("Ενημέρωση Χρόνου", {

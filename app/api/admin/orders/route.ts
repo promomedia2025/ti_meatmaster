@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Make request to the external API
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/orders?sort=order_id desc&pageLimit=100`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/orders?sort=order_id desc&include=address&pageLimit=100`,
       {
         method: "GET",
         headers: {
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
           // Extract bell_name and floor - they should be directly in attrs
           const bell_name = attrs.bell_name || null;
           const floor = attrs.floor || null;
+          const address_id = attrs.address_id || null;
 
           return {
             order_id: attrs.order_id,
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
             total_items: attrs.total_items,
             bell_name: bell_name,
             floor: floor,
+            address_id: address_id,
           };
         })
       : [];

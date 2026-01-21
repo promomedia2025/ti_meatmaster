@@ -37,6 +37,9 @@ export default function OrderStatusPage() {
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] =
     useState<number>(30); // Default 30 minutes
   const [baseEstimatedTime, setBaseEstimatedTime] = useState<number>(30);
+  const [estimatedCompletionTime, setEstimatedCompletionTime] = useState<
+    string | null
+  >(null);
 
   // Fetch initial order status from API
   useEffect(() => {
@@ -137,38 +140,80 @@ export default function OrderStatusPage() {
         });
       });
 
-      // Listen for delivery time updates
-      channel.bind("client-delivery-time-updated", (data: any) => {
-        console.log(`📥 [ORDER PAGE] Delivery time update event received:`, {
+      // Listen for delivery time updates (server-broadcast event)
+      // Server broadcasts: .orderEstimatedTime
+      channel.bind("orderEstimatedTime", (event: any) => {
+        console.log(`⏱️ [ORDER PAGE] Order estimated time updated:`, {
           orderId,
           channelName,
-          eventData: data,
+          event,
           timestamp: new Date().toISOString(),
         });
-        console.log(`📥 [ORDER PAGE] Event data structure:`, {
-          hasOrderId: !!data.order_id,
-          orderId: data.order_id,
-          hasEstimatedDeliveryTime: data.estimated_delivery_time !== undefined,
-          estimatedDeliveryTime: data.estimated_delivery_time,
-          fullData: JSON.stringify(data, null, 2),
+        console.log(`⏱️ [ORDER PAGE] Event data structure:`, {
+          hasOrderId: !!event.order_id,
+          orderId: event.order_id,
+          hasEstimatedMinutes: event.estimated_minutes !== undefined,
+          estimatedMinutes: event.estimated_minutes,
+          hasNewBaseEstimatedTime: event.newBaseEstimatedTime !== undefined,
+          newBaseEstimatedTime: event.newBaseEstimatedTime,
+          hasNewEstimatedDeliveryTime:
+            event.newEstimatedDeliveryTime !== undefined,
+          newEstimatedDeliveryTime: event.newEstimatedDeliveryTime,
+          estimatedCompletionTime: event.estimated_completion_time || event.estimatedCompletionTime,
+          updatedAt: event.updated_at,
+          message: event.message,
+          fullData: JSON.stringify(event, null, 2),
         });
 
-        if (data.estimated_delivery_time !== undefined) {
-          const newEstimatedTime = data.estimated_delivery_time;
-          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time:`, {
+        // Handle new event format with oldBaseEstimatedTime, newBaseEstimatedTime, etc.
+        if (
+          event.newBaseEstimatedTime !== undefined ||
+          event.newEstimatedDeliveryTime !== undefined
+        ) {
+          const newBaseTime =
+            event.newBaseEstimatedTime ?? event.newEstimatedDeliveryTime ?? baseEstimatedTime;
+          const newDeliveryTime =
+            event.newEstimatedDeliveryTime ?? event.newBaseEstimatedTime ?? estimatedDeliveryTime;
+          const completionTime =
+            event.estimated_completion_time || event.estimatedCompletionTime || null;
+
+          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time (new format):`, {
+            oldBaseEstimatedTime: baseEstimatedTime,
+            newBaseEstimatedTime: newBaseTime,
+            oldEstimatedDeliveryTime: estimatedDeliveryTime,
+            newEstimatedDeliveryTime: newDeliveryTime,
+            estimatedCompletionTime: completionTime,
+          });
+
+          setBaseEstimatedTime(newBaseTime);
+          setEstimatedDeliveryTime(newDeliveryTime);
+          if (completionTime) {
+            setEstimatedCompletionTime(completionTime);
+          }
+          console.log(
+            `✅ [ORDER PAGE] Estimated delivery time updated successfully`
+          );
+        } else if (event.estimated_minutes !== undefined) {
+          // Fallback to old format with estimated_minutes
+          const newEstimatedTime = event.estimated_minutes;
+          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time (old format):`, {
             oldBaseEstimatedTime: baseEstimatedTime,
             newBaseEstimatedTime: newEstimatedTime,
             oldEstimatedDeliveryTime: estimatedDeliveryTime,
             newEstimatedDeliveryTime: newEstimatedTime,
+            estimatedCompletionTime: event.estimated_completion_time,
           });
           setBaseEstimatedTime(newEstimatedTime);
           setEstimatedDeliveryTime(newEstimatedTime);
+          if (event.estimated_completion_time) {
+            setEstimatedCompletionTime(event.estimated_completion_time);
+          }
           console.log(
             `✅ [ORDER PAGE] Estimated delivery time updated successfully`
           );
         } else {
           console.warn(
-            `⚠️ [ORDER PAGE] Event received but estimated_delivery_time is undefined`
+            `⚠️ [ORDER PAGE] Event received but no time information found`
           );
         }
       });
@@ -319,6 +364,16 @@ export default function OrderStatusPage() {
       try {
         const now = new Date();
 
+        // If we have estimatedCompletionTime from pusher event, use it directly
+        if (estimatedCompletionTime) {
+          const completionTimestamp = new Date(estimatedCompletionTime);
+          const remainingMs = completionTimestamp.getTime() - now.getTime();
+          const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+          setTimeRemaining(remainingSeconds);
+          return;
+        }
+
+        // Otherwise, calculate from order_date, order_time, and baseEstimatedTime
         // Form timestamp from order_date and order_time
         const datePart = orderDetails.order_date.split("T")[0];
         const timePart = orderDetails.order_time.split(".")[0];
@@ -358,6 +413,7 @@ export default function OrderStatusPage() {
     orderDetails?.order_date,
     orderDetails?.order_time,
     baseEstimatedTime,
+    estimatedCompletionTime,
     orderStatus?.statusName,
   ]);
 

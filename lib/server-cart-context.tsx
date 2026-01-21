@@ -740,6 +740,27 @@ export function ServerCartProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
+      // Transform current item options to the format required by API
+      const transformedOptions = (itemToUpdate.options || []).reduce(
+        (acc: any[], option: CartItemOption) => {
+          const valueObjs = option.values.map((val) => ({
+            id: val.menu_option_value_id,
+            name: val.option_value_name,
+            price: val.price,
+            qty: val.qty || 1,
+          }));
+
+          acc.push({
+            id: option.menu_option_id,
+            name: option.option_name,
+            values: valueObjs,
+          });
+
+          return acc;
+        },
+        []
+      );
+
       // Apply optimistic update immediately
       applyOptimisticUpdate(updateId, (carts) => {
         const updatedCarts = [...carts];
@@ -871,6 +892,8 @@ export function ServerCartProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({
             row_id: finalRowId,
             quantity,
+            options: transformedOptions,
+            comment: itemToUpdate.comment || "",
             user_id: user.id,
             location_id: actualLocationId,
           }),

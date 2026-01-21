@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Clock, ArrowLeft, Package, MapPin } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OrderDetailsModal } from "@/components/order-details-modal";
 
 interface Order {
   order_id: number;
@@ -26,6 +27,8 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -195,7 +198,11 @@ export default function OrderHistoryPage() {
               orders.map((order) => (
                 <div
                   key={order.order_id}
-                  className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors"
+                  onClick={() => {
+                    setSelectedOrderId(order.order_id);
+                    setIsModalOpen(true);
+                  }}
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -238,6 +245,17 @@ export default function OrderHistoryPage() {
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedOrderId(null);
+        }}
+        orderId={selectedOrderId}
+        userId={user?.id || null}
+      />
     </div>
   );
 }

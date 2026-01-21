@@ -24,23 +24,11 @@ interface AdminOrder {
 }
 
 /**
- * Formats location name by removing duplicate commas and last 2 parts
+ * Returns the full location name
  */
 const formatLocationName = (locationName?: string) => {
-  if (!locationName) return locationName;
-  // Remove duplicate commas (replace multiple commas with single comma)
-  const cleaned = locationName.replace(/,+/g, ",");
-  // Split into array
-  const parts = cleaned
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part);
-  // Remove last 2 indices
-  if (parts.length > 2) {
-    parts.splice(-2);
-  }
-  // Join back to string
-  return parts.join(", ");
+  // Always return the full location_name
+  return locationName || "";
 };
 
 /**

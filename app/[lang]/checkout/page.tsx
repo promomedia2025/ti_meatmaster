@@ -21,11 +21,16 @@ import {
   Package,
   Loader2,
   X,
+  Trash2,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import GooglePlacesCustom from "@/components/google-places-custom";
 import { AddressBookModal } from "@/components/address-book-modal";
+import { MenuOptionsModal } from "@/components/menu-options-modal";
 import { Location } from "@/lib/types";
+import { CartItem } from "@/lib/server-cart-context";
 
 interface UserLocation {
   city: string;
@@ -43,6 +48,7 @@ interface UserLocation {
   };
   bell_name?: string | null;
   floor?: string | null;
+  addressId?: string | null;
 }
 
 function CheckoutPageContent() {
@@ -50,7 +56,15 @@ function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
-  const { locationCarts, getLocationCart, clearLocationCart } = useServerCart();
+  const {
+    locationCarts,
+    getLocationCart,
+    clearLocationCart,
+    removeItem,
+    updateQuantity,
+    refreshCart,
+    isLoading: isCartLoading,
+  } = useServerCart();
   const { subscribe, unsubscribe, isConnected } = usePusher();
   const { isDeliveryBlocked, setDeliveryData, getDeliveryData } =
     useDeliveryAvailability();
@@ -71,6 +85,33 @@ function CheckoutPageContent() {
   const locationCart = locationId
     ? getLocationCart(parseInt(locationId))
     : null;
+
+  // Redirect to main page if there's no cart
+  useEffect(() => {
+    // If no locationId in URL, redirect immediately
+    if (!locationId) {
+      router.push(`/${currentLang}`);
+      return;
+    }
+
+    // Wait for cart to finish loading before checking
+    if (isCartLoading) {
+      return; // Don't redirect while cart is still loading
+    }
+
+    // If locationId exists but no cart after loading is complete, redirect
+    if (locationId && !locationCart) {
+      const timer = setTimeout(() => {
+        // Double-check that cart still doesn't exist after delay
+        const currentCart = getLocationCart(parseInt(locationId));
+        if (!currentCart) {
+          router.push(`/${currentLang}`);
+        }
+      }, 1000); // 1 second delay to ensure cart has been fetched
+
+      return () => clearTimeout(timer);
+    }
+  }, [locationCart, locationId, currentLang, router, isCartLoading, getLocationCart]);
 
   // State for location data (needed for minimum order checks)
   const [locationData, setLocationData] = useState<Location | null>(null);
@@ -172,6 +213,177 @@ function CheckoutPageContent() {
   const [floor, setFloor] = useState("");
   const [saveAddress, setSaveAddress] = useState(false);
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const [isMenuOptionsModalOpen, setIsMenuOptionsModalOpen] = useState(false);
+  const [menuItemForEdit, setMenuItemForEdit] = useState<any>(null);
+  const [isLoadingMenuItem, setIsLoadingMenuItem] = useState(false);
+  const [isUpdatingItem, setIsUpdatingItem] = useState(false);
+
+  // Handle remove item
+  const handleRemoveItem = async (item: CartItem) => {
+    if (!locationCart) return;
+    const success = await removeItem(locationCart.locationId, item.rowId);
+    if (success && locationCart.items.length === 1) {
+      // If this was the last item, redirect to main page
+      router.push(`/${currentLang}`);
+    }
+  };
+
+  // Handle quantity update
+  const handleQuantityChange = async (item: CartItem, newQuantity: number) => {
+    if (!locationCart || newQuantity < 1) return;
+    await updateQuantity(locationCart.locationId, item.rowId, newQuantity);
+  };
+
+  // Handle item click - open menu options modal
+  const handleItemClick = async (item: CartItem) => {
+    if (!locationCart) return;
+
+    setIsLoadingMenuItem(true);
+    setEditingItem(item);
+    setIsMenuOptionsModalOpen(true);
+    setMenuItemForEdit(null); // Clear previous data
+
+    try {
+      // Fetch menu item options using the new endpoint
+      const response = await fetch(`/api/menu-items/${item.id}/options`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch menu item options");
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.options) {
+        // Transform the response to match MenuOptionsModal's expected format
+        const menuItem = {
+          menu_id: data.data.menu_id,
+          menu_name: data.data.menu_name,
+          menu_description: "",
+          menu_price: item.price,
+          minimum_qty: 1,
+          menu_priority: 0,
+          order_restriction: null,
+          currency: "EUR",
+          categories: [],
+          menu_options: data.data.options.map((opt: any) => ({
+            menu_option_id: opt.menu_option_id,
+            option_id: opt.option_id,
+            option_name: opt.option_name,
+            display_type: opt.display_type,
+            priority: opt.priority,
+            required: opt.required,
+            min_selected: opt.min_selected,
+            max_selected: opt.max_selected,
+            is_enabled: opt.is_enabled,
+            available: opt.available,
+            free_count: opt.free_count,
+            free_order_by: opt.free_order_by,
+            option_values: opt.values.map((val: any) => ({
+              menu_option_value_id: val.menu_option_value_id,
+              option_value_id: val.option_value_id,
+              name: val.name,
+              price: val.price,
+              quantity: val.quantity,
+              is_default: val.is_default,
+              priority: val.priority,
+              is_enabled: val.is_enabled,
+              available: val.available,
+            })),
+          })),
+        };
+        
+        setMenuItemForEdit(menuItem);
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error("Error fetching menu item options:", error);
+      toast.error("Δεν ήταν δυνατή η φόρτωση των επιλογών του προϊόντος");
+      setIsMenuOptionsModalOpen(false);
+      setEditingItem(null);
+    } finally {
+      setIsLoadingMenuItem(false);
+    }
+  };
+
+  // Handle menu options submit (update item)
+  const handleMenuOptionsSubmit = async (
+    menuItem: any,
+    optionValues: any[],
+    quantity: number,
+    comment: string
+  ) => {
+    if (!editingItem || !locationCart || !user?.id) return;
+
+    setIsUpdatingItem(true);
+
+    try {
+      // Transform optionValues from flat array to grouped format required by API
+      // Same transformation as cart-sidebar
+      const transformedOptions = (optionValues || []).reduce(
+        (acc: any[], optionValue: any) => {
+          const existingOption = acc.find(
+            (opt) => opt.id === optionValue.menu_option_id
+          );
+
+          const valueObj = {
+            id: optionValue.menu_option_value_id,
+            name: optionValue.option_value_name,
+            price: optionValue.price,
+            qty: 1,
+          };
+
+          if (existingOption) {
+            existingOption.values.push(valueObj);
+          } else {
+            acc.push({
+              id: optionValue.menu_option_id,
+              name: optionValue.option_name,
+              values: [valueObj],
+            });
+          }
+
+          return acc;
+        },
+        []
+      );
+
+      // Update everything (quantity, options, comment) in a single API call
+      const response = await fetch("/api/cart/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          row_id: editingItem.rowId,
+          quantity: quantity,
+          options: transformedOptions,
+          comment: comment || "",
+          user_id: user.id,
+          location_id: locationCart.locationId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh the cart to get updated data from server
+        await refreshCart();
+        toast.success("Το προϊόν ενημερώθηκε");
+        setIsMenuOptionsModalOpen(false);
+        setEditingItem(null);
+        setMenuItemForEdit(null);
+      } else {
+        throw new Error(data.message || "Failed to update item");
+      }
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      toast.error("Αποτυχία ενημέρωσης του προϊόντος");
+    } finally {
+      setIsUpdatingItem(false);
+    }
+  };
 
   // Function to reset address form
   const handleResetAddress = () => {
@@ -236,6 +448,7 @@ function CheckoutPageContent() {
         // Include bell_name and floor from formattedAddress if available
         bell_name: formattedAddress?.bell_name || null,
         floor: formattedAddress?.floor || null,
+        addressId: null, // Not a saved address
       };
 
       setUserLocation(location);
@@ -353,6 +566,7 @@ function CheckoutPageContent() {
             },
             bell_name: address.bell_name || null,
             floor: address.floor || null,
+            addressId: address.id || null,
           };
         } else {
           // Use API fields directly
@@ -386,6 +600,7 @@ function CheckoutPageContent() {
             },
             bell_name: address.bell_name || null,
             floor: address.floor || null,
+            addressId: address.id || null,
           };
         }
       } else {
@@ -411,6 +626,7 @@ function CheckoutPageContent() {
           },
           bell_name: address.bell_name || null,
           floor: address.floor || null,
+          addressId: address.id || null,
         };
       }
 
@@ -542,6 +758,7 @@ function CheckoutPageContent() {
           // Include bell_name and floor from formattedAddress if available
           bell_name: geocoded.bell_name || null,
           floor: geocoded.floor || null,
+          addressId: null, // Not a saved address
         };
 
         setUserLocation(location);
@@ -646,6 +863,7 @@ function CheckoutPageContent() {
           addressDetails: {},
           bell_name: null,
           floor: null,
+          addressId: null, // Not a saved address
         };
         setUserLocation(location);
         setAddressInput(""); // Clear the input after selection
@@ -917,8 +1135,8 @@ function CheckoutPageContent() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="text-white text-lg mb-2">Φόρτωση καλαθιού...</div>
-          <div className="text-gray-400 text-sm">Παρακαλώ περιμένετε</div>
+          <div className="text-white text-lg mb-2">Ανακατεύθυνση...</div>
+          <div className="text-gray-400 text-sm">Δεν βρέθηκε καλάθι</div>
         </div>
       </div>
     );
@@ -1075,17 +1293,64 @@ function CheckoutPageContent() {
         },
       };
 
+      // Add address_id as top-level property if a saved address is selected
+      // Only set it once to avoid any potential duplicates
+      if (orderType === "delivery" && userLocation?.addressId && !orderData.address_id) {
+        orderData.address_id = userLocation.addressId;
+      }
+
       // Add deliveryAddress for delivery orders
       if (orderType === "delivery" && userLocation) {
+        // Parse fullAddress to extract address_1 and postalCode
+        // Example: 'Σχολείου 3, Αγ. Παρασκευή 153 42'
+        // address_1: 'Σχολειου 3', postalCode: '15342'
+        let address_1 = userLocation.addressDetails?.street || "";
+        let postalCode = userLocation.addressDetails?.postalCode || "";
+
+        // If addressDetails are not available, parse from fullAddress
+        if (!address_1 || !postalCode) {
+          const fullAddr = userLocation.fullAddress || "";
+          
+          // Extract postal code (numbers at the end, remove spaces)
+          // Pattern: find numbers at the end like "153 42" or "15342"
+          const postalCodeMatch = fullAddr.match(/(\d+\s+\d+|\d{5,})(?=\s*$)/);
+          if (postalCodeMatch) {
+            postalCode = postalCodeMatch[0].replace(/\s+/g, ""); // Remove spaces
+          }
+
+          // Extract address_1 (everything before the comma)
+          // Remove the postal code and city from the end
+          let addressPart = fullAddr;
+          if (postalCodeMatch && postalCodeMatch.index !== undefined) {
+            // Remove postal code and everything after it
+            addressPart = fullAddr.substring(0, postalCodeMatch.index).trim();
+          }
+          
+          // Remove city name if it appears at the end (after comma)
+          const commaIndex = addressPart.lastIndexOf(",");
+          if (commaIndex !== -1) {
+            address_1 = addressPart.substring(0, commaIndex).trim();
+          } else {
+            address_1 = addressPart.trim();
+          }
+
+          // Fallback: if we still don't have address_1, use the full address without postal code
+          if (!address_1) {
+            address_1 = addressPart || fullAddr;
+          }
+        }
+
         orderData.deliveryAddress = {
           city: userLocation.city,
-          fullAddress: userLocation.fullAddress,
+          address_1: address_1 || userLocation.fullAddress,
+          postalCode: postalCode,
           coordinates: {
             latitude: userLocation.coordinates.latitude,
             longitude: userLocation.coordinates.longitude,
           },
           bell_name: bellName || "",
           floor: floor || "",
+          ...(userLocation.addressId && { addressId: userLocation.addressId }),
         };
       }
 
@@ -1245,7 +1510,7 @@ function CheckoutPageContent() {
                 const input = document.createElement("input");
                 input.type = "hidden";
                 input.name = key;
-                input.value = value;
+                input.value = String(value);
                 form.appendChild(input);
               });
 
@@ -1706,12 +1971,56 @@ function CheckoutPageContent() {
                     {locationCart.items.map((item) => (
                       <div
                         key={item.rowId}
-                        className="border-b border-gray-700 pb-2 last:border-b-0"
+                        onClick={() => handleItemClick(item)}
+                        className="border-b border-gray-700 pb-3 last:border-b-0 cursor-pointer hover:bg-gray-800/50 rounded-lg p-2 transition-colors"
                       >
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="text-gray-300 text-sm flex-1">
-                            {item.name} x{item.qty}
-                          </span>
+                        {/* Title Row with Controls */}
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-gray-300 text-sm font-medium">
+                              {item.name}
+                            </span>
+                            
+                            {/* Quantity Controls */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(item, item.qty - 1);
+                                }}
+                                disabled={item.qty <= 1}
+                                className="p-2 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                title="Μείωση ποσότητας"
+                              >
+                                <Minus className="w-4 h-4 text-white" />
+                              </button>
+                              <span className="text-white text-sm font-medium min-w-[1.5rem] text-center">
+                                {item.qty}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(item, item.qty + 1);
+                                }}
+                                className="p-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+                                title="Αύξηση ποσότητας"
+                              >
+                                <Plus className="w-4 h-4 text-white" />
+                              </button>
+                            </div>
+
+                            {/* Remove Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveItem(item);
+                              }}
+                              className="p-2 rounded bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 transition-colors"
+                              title="Αφαίρεση"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                           <span className="text-white font-medium text-sm whitespace-nowrap">
                             €{item.subtotal.toFixed(2)}
                           </span>
@@ -1719,7 +2028,7 @@ function CheckoutPageContent() {
 
                         {/* Display menu options if any */}
                         {item.options && item.options.length > 0 && (
-                          <div className="ml-2 sm:ml-4 mt-1 space-y-0.5 sm:space-y-1">
+                          <div className="ml-2 sm:ml-4 mt-1 space-y-0.5 sm:space-y-1 mb-2">
                             {item.options.flatMap((opt) =>
                               opt.values.map((val, index) => (
                                 <div
@@ -1739,7 +2048,7 @@ function CheckoutPageContent() {
 
                         {/* Display item comment if any */}
                         {item.comment && (
-                          <div className="ml-2 sm:ml-4 mt-1">
+                          <div className="ml-2 sm:ml-4 mt-1 mb-2">
                             <span className="text-gray-400 text-xs sm:text-sm italic">
                               "{item.comment}"
                             </span>
@@ -1889,6 +2198,37 @@ function CheckoutPageContent() {
         onClose={() => setIsAddressBookModalOpen(false)}
         onAddressSelect={handleAddressBookSelect}
       />
+
+      {/* Menu Options Modal for Editing */}
+      {menuItemForEdit && (
+        <MenuOptionsModal
+          isOpen={isMenuOptionsModalOpen}
+          onClose={() => {
+            setIsMenuOptionsModalOpen(false);
+            setEditingItem(null);
+            setMenuItemForEdit(null);
+          }}
+          menuItem={menuItemForEdit}
+          onAddToCart={handleMenuOptionsSubmit}
+          initialSelectedOptions={
+            editingItem?.options
+              ? editingItem.options.map((opt) => ({
+                  menu_option_id: opt.menu_option_id,
+                  option_name: opt.option_name,
+                  selected_values: opt.values.map((val) => ({
+                    menu_option_value_id: val.menu_option_value_id,
+                    name: val.option_value_name,
+                    price: val.price,
+                  })),
+                }))
+              : undefined
+          }
+          initialQuantity={editingItem?.qty}
+          initialComment={editingItem?.comment || ""}
+          confirmLabel="Ενημέρωση"
+          isSubmitting={isUpdatingItem}
+        />
+      )}
     </div>
   );
 }

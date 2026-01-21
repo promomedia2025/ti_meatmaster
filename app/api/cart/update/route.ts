@@ -10,8 +10,8 @@ export async function PUT(request: NextRequest) {
       body;
 
     // Support both 'quantity' and 'qty' for backward compatibility
-
-    const finalQuantity = quantity || qty;
+    // Use nullish coalescing to handle 0 as a valid value
+    const finalQuantity = quantity !== undefined && quantity !== null ? quantity : qty;
 
     // Validate row_id is in the URL path, not body
 

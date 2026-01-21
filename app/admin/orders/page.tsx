@@ -28,6 +28,7 @@ interface AdminOrder {
   order_type_name?: string;
   comment?: string;
   total_items?: number;
+  address_id?: number | null;
 }
 
 export default function AdminOrdersPage() {
