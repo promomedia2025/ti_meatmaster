@@ -436,11 +436,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
                           {dict.navigation.language}
                         </p>
                       </div>
-                      <div className="px-4 py-3">
-                        <p className="text-foreground text-sm">
-                          {dict.navigation.contactSupport}
-                        </p>
-                      </div>
                     </div>
                   ) : (
                     <div className="py-2">
@@ -458,11 +453,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-foreground text-sm">
                           {dict.navigation.language}
-                        </p>
-                      </div>
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-foreground text-sm">
-                          {dict.navigation.contactSupport}
                         </p>
                       </div>
                       <div className="px-4 py-3">

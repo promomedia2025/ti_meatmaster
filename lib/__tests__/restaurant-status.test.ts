@@ -13,7 +13,7 @@ describe("Restaurant Status Utilities", () => {
         pickup_available: false,
         delivery_available: false,
         next_opening_time: "2024-01-01T09:00:00Z",
-        status_message: "We are CLOSED",
+        status_message: "Είμαστε Κλειστά",
       };
 
       const result = getRestaurantStatusDisplay(restaurantStatus);
@@ -22,7 +22,7 @@ describe("Restaurant Status Utilities", () => {
         isOpen: false,
         deliveryAvailable: false,
         pickupAvailable: false,
-        statusMessage: "We are CLOSED",
+        statusMessage: "Είμαστε Κλειστά",
         nextOpeningTime: "2024-01-01T09:00:00Z",
       });
     });

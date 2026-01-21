@@ -318,9 +318,6 @@ export default function AddressBookPage() {
                           Ορισμός ως προεπιλογή
                         </button>
                       )}
-                      <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-                        <Edit className="w-4 h-4 text-gray-400 hover:text-white" />
-                      </button>
                       <button
                         onClick={() => handleDeleteAddress(address.id)}
                         className="p-2 hover:bg-gray-700 rounded-lg transition-colors"

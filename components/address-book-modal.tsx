@@ -358,17 +358,7 @@ export function AddressBookModal({
                             )}
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditAddress(address);
-                          }}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
+
                       </div>
 
                       {/* Separator line */}
@@ -380,18 +370,6 @@ export function AddressBookModal({
                 </div>
               )}
 
-              {/* Add New Address */}
-              <div
-                className="flex items-center gap-3 p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors border border-gray-700/50"
-                onClick={handleAddNewAddress}
-              >
-                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                  <Plus className="w-4 h-4 text-white" />
-                </div>
-                <div className="text-white font-medium">
-                  Προσθήκη νέας διεύθυνσης
-                </div>
-              </div>
 
               {/* Empty State */}
               {addresses.length === 0 && (

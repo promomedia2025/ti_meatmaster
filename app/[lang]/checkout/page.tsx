@@ -1136,7 +1136,6 @@ function CheckoutPageContent() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="text-white text-lg mb-2">Ανακατεύθυνση...</div>
-          <div className="text-gray-400 text-sm">Δεν βρέθηκε καλάθι</div>
         </div>
       </div>
     );
@@ -1849,19 +1848,7 @@ function CheckoutPageContent() {
                       </div>
                       {isAuthenticated && (
                         <div className="flex items-center space-x-2 pt-1">
-                          <Checkbox
-                            id="save-address"
-                            checked={saveAddress}
-                            onCheckedChange={(checked) =>
-                              setSaveAddress(checked === true)
-                            }
-                          />
-                          <label
-                            htmlFor="save-address"
-                            className="text-xs sm:text-sm text-gray-300 cursor-pointer"
-                          >
-                            Αποθήκευση διεύθυνσης
-                          </label>
+                          
                         </div>
                       )}
                     </div>
@@ -1977,7 +1964,7 @@ function CheckoutPageContent() {
                         {/* Title Row with Controls */}
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2 flex-1">
-                            <span className="text-gray-300 text-sm font-medium">
+                            <span className="text-gray-300 text-[15px] font-medium">
                               {item.name}
                             </span>
                             
