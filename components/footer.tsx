@@ -100,7 +100,7 @@ export function Footer({ lang, dict }: FooterProps) {
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
             </div>
-            <div className="text-sm text-gray-400">© Cocofino 2025</div>
+            <div className="text-sm text-gray-400">© Cocofino 2026</div>
           </div>
         </div>
       </div>

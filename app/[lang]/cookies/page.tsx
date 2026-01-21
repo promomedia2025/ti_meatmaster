@@ -3,19 +3,19 @@ import Link from "next/link";
 
 export default function CookiesPolicyPage() {
   return (
-    <main className="min-h-screen bg-gray-950">
+    <main className="min-h-screen bg-gray-950 overflow-x-hidden">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 py-6 flex items-center gap-4">
           <Link
             href="/"
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white"
           >
             ←
           </Link>
 
           <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shrink-0">
-           <Cookie className="w-6 h-6 text-white" />
+            <Cookie className="w-6 h-6 text-white" />
           </div>
 
           <div>
@@ -78,9 +78,10 @@ export default function CookiesPolicyPage() {
             Μπορείτε να αποτρέψετε τη συλλογή δεδομένων εγκαθιστώντας το πρόσθετο
             περιηγητή της Google:
             <br />
+            {/* Added break-all here */}
             <a
               href="http://tools.google.com/dlpage/gaoptout?hl=en"
-              className="text-indigo-400 underline"
+              className="text-amber-500 underline break-all"
               target="_blank"
             >
               tools.google.com/dlpage/gaoptout
@@ -132,9 +133,10 @@ export default function CookiesPolicyPage() {
             Μπορείτε να εξαιρεθείτε από τη χρήση αυτής της υπηρεσίας στον
             ακόλουθο σύνδεσμο:
             <br />
+            {/* Added break-all here */}
             <a
               href="https://www.facebook.com/ads/website_custom_audiences"
-              className="text-indigo-400 underline"
+              className="text-amber-500 underline break-all"
               target="_blank"
             >
               facebook.com/ads/website_custom_audiences
@@ -154,9 +156,10 @@ export default function CookiesPolicyPage() {
             Οι διευθύνσεις IP ανωνυμοποιούνται πλήρως. Μπορείτε να απενεργοποιήσετε
             την καταγραφή εδώ:
             <br />
+            {/* Added break-all here */}
             <a
               href="https://www.hotjar.com/opt-out"
-              className="text-indigo-400 underline"
+              className="text-amber-500 underline break-all"
               target="_blank"
             >
               hotjar.com/opt-out
@@ -175,9 +178,10 @@ export default function CookiesPolicyPage() {
             Τα δεδομένα αποθηκεύονται με ψευδώνυμο και δεν επιτρέπουν προσωπική
             ταυτοποίηση. Μπορείτε να εξαιρεθείτε από την επεξεργασία:
             <br />
+            {/* Added break-all here */}
             <a
               href="http://de.theadex.com/company/consumer-opt-out"
-              className="text-indigo-400 underline"
+              className="text-amber-500 underline break-all"
               target="_blank"
             >
               theadex.com/consumer-opt-out

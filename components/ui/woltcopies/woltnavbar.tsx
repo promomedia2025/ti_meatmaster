@@ -355,14 +355,7 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
 
           {/* Right section: Mobile search, Active Orders, Profile, Cart */}
           <div className="flex-1 h-[50px] flex items-center justify-end gap-2 sm:flex-none sm:flex-shrink-0">
-            <div className="sm:hidden">
-              <WoltSearchBar
-                onToggle={handleSearchToggle}
-                isExpanded={isSearchExpanded}
-                onSearchQueryChange={setSearchQuery}
-                placeholder={dict.navigation.search}
-              />
-            </div>
+          
             {/* Active Orders Button */}
             {isAuthenticated && (
               <div
