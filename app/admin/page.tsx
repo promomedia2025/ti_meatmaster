@@ -434,7 +434,7 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({
           status: 1,
-          location_id: 1,
+          location_id: 13,
         }),
       });
 
