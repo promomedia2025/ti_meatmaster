@@ -1,3 +1,5 @@
+"use client"; // 👈 Αυτό είναι το κλειδί
+
 import { Apple, Play } from "lucide-react";
 import { type Locale } from "@/lib/i18n/config";
 
@@ -21,17 +23,6 @@ export function Footer({ lang, dict }: FooterProps) {
             </div>
           </div>
 
-          {/* Partnership Column */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Συνεργασία</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Γίνε συνεργάτης μας
-                </a>
-              </li>
-            </ul>
-          </div>
 
           {/* Company Column */}
           <div>
@@ -45,21 +36,31 @@ export function Footer({ lang, dict }: FooterProps) {
             </ul>
           </div>
 
+
           {/* Column */}
           <div>
             <h3 className="text-white font-semibold mb-4">Πολιτικές</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <a href="/privacy-policy" className="hover:text-white transition-colors">
-                  Πολιτική Απορρήτου
-                </a>
-     
-              </li>
                  <li>
                   <a href="/refund-policy" className="hover:text-white transition-colors">
-                  Πολιτική Επιστροφών
-                 </a>
+                   Πολιτική επιστροφής χρημάτων
+                  </a>
                 </li>
+                <li>
+                <a href="/gpdr" className="hover:text-white transition-colors">
+                   Πολιτική προστασίας προσωπικών δεδομένων - GDPR
+                </a>
+                </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-white font-semibold mb-4">Επικοινωνία</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="/contact-us" className="hover:text-white transition-colors">
+                  Επικοινωνήστε μαζί μας
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -90,20 +91,14 @@ export function Footer({ lang, dict }: FooterProps) {
         <div className="border-t border-gray-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-6 text-sm">
-              <button className="hover:text-white transition-colors">
+              <a href="/cookies" className="hover:text-white transition-colors">
                 🍪 Cookies
-              </button>
+                </a>
+                <a href="/terms-of-use" className="hover:text-white transition-colors">
+                Οροι Χρησης
+               </a>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
-              <a href="#" className="hover:text-white transition-colors">
-                Δήλωση προσβασιμότητας
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Όροι Χρήσης Υπηρεσίας
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Δήλωση προστασίας προσωπικών δεδομένων
-              </a>
             </div>
             <div className="text-sm text-gray-400">© Cocofino 2025</div>
           </div>
