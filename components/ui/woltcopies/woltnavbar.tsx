@@ -356,14 +356,16 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
           {/* Right section: Mobile search, Active Orders, Profile, Cart */}
           <div className="flex-1 h-[50px] flex items-center justify-end gap-2 sm:flex-none sm:flex-shrink-0">
             <div className="sm:hidden">
-              <WoltSearchBar
-                onToggle={handleSearchToggle}
-                isExpanded={isSearchExpanded}
-                onSearchQueryChange={setSearchQuery}
-                placeholder={dict.navigation.search}
-              />
+             <LanguageSwitcher currentLang={lang} />
             </div>
             {/* Active Orders Button */}
+            <div
+              className={`hidden sm:block ${
+                isSearchExpanded ? "hidden sm:hidden" : ""
+              }`}
+            >
+              <LanguageSwitcher currentLang={lang} />
+            </div>
             {isAuthenticated && (
               <div
                 className={`relative ${
@@ -389,13 +391,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
               </div>
             )}
             {/* Language Switcher */}
-            <div
-              className={`hidden sm:block ${
-                isSearchExpanded ? "hidden sm:hidden" : ""
-              }`}
-            >
-              <LanguageSwitcher currentLang={lang} />
-            </div>
             <div className="relative">
               <button
                 data-profile-button
