@@ -1946,6 +1946,24 @@ function CheckoutPageContent() {
                         </span>
                       </div>
                     </label>
+                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="card"
+                        checked={paymentMethod === "card"}
+                        onChange={(e) =>
+                          setPaymentMethod(e.target.value as "cash" | "card")
+                        }
+                        className="w-4 h-4 text-primary"
+                      />
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-blue-400" />
+                        <span className="text-white text-sm sm:text-base">
+                          Πληρωμή με κάρτα
+                        </span>
+                      </div>
+                    </label>
                   </div>
                 </Card>
 
