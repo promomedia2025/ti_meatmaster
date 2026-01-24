@@ -791,14 +791,14 @@ export function MenuOptionsModal({
                         <h3 className="text-white font-medium">
                           {option.option_name}
                         </h3>
-                        {option.free_count && option.free_count > 0 && (
-                          <span className="text-green-400 text-sm font-medium">
-                            {option.free_count} είναι δωρεάν
-                          </span>
-                        )}
+                        {option.free_count && option.free_count > 0 ? (
+                         <span className="text-green-400 text-sm font-medium">
+                          {option.free_count} είναι δωρεάν
+                         </span>
+                        ) : null}
                       </div>
                       {option.required && (
-                        <span className="text-red-400 text-sm">Required</span>
+                        <span className="text-red-400 text-sm">Απαιτείται</span>
                       )}
                     </div>
 
@@ -925,7 +925,7 @@ export function MenuOptionsModal({
           <div className="flex items-center gap-4">
             {/* Quantity Controls - Left */}
             <div className="flex items-center gap-3">
-              <span className="text-white font-medium">Qty:</span>
+              <span className="text-white font-medium">Ποσότητα:</span>
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors"
