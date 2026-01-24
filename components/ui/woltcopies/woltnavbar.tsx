@@ -355,13 +355,9 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
 
           {/* Right section: Mobile search, Active Orders, Profile, Cart */}
           <div className="flex-1 h-[50px] flex items-center justify-end gap-2 sm:flex-none sm:flex-shrink-0">
-<<<<<<< HEAD
             <div className="sm:hidden">
-             <LanguageSwitcher currentLang={lang} />
+              <LanguageSwitcher currentLang={lang} />
             </div>
-=======
-          
->>>>>>> b3c16e16b4fb84118ca4f684cfeac83b0f26a506
             {/* Active Orders Button */}
             <div
               className={`hidden sm:block ${
