@@ -76,12 +76,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check content type to handle both HTML and JSON responses
+    const contentType = response.headers.get("content-type") || "";
+    const responseText = await response.text();
+    
+    if (!responseText) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empty response from server",
+        },
+        { status: 500 }
+      );
+    }
+
+    // If response is HTML (card payment), return it as HTML
+    if (contentType.includes("text/html")) {
+      if (!response.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Server returned error: ${response.status}`,
+          },
+          { status: response.status }
+        );
+      }
+      
+      // Return HTML response directly
+      return new NextResponse(responseText, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    }
+
+    // Otherwise, parse as JSON
     let result;
     try {
-      const responseText = await response.text();
-      if (!responseText) {
-        throw new Error("Empty response from server");
-      }
       result = JSON.parse(responseText);
     } catch (parseError) {
       console.error("Error parsing response:", parseError);

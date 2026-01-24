@@ -1427,18 +1427,108 @@ function CheckoutPageContent() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error ||
-            `API request failed with status: ${response.status}`
-        );
+        const contentType = response.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error ||
+              `API request failed with status: ${response.status}`
+          );
+        } else {
+          const errorText = await response.text();
+          throw new Error(
+            `API request failed with status: ${response.status}: ${errorText}`
+          );
+        }
       }
 
+      // Check content type to handle both HTML (card payment) and JSON responses
+      const contentType = response.headers.get("content-type") || "";
+      let orderId: number | null = null;
+
+      if (contentType.includes("text/html")) {
+        // Card payment - backend returns HTML form directly
+        try {
+          console.log("💳 Card payment - received HTML form");
+          const paymentFormHtml = await response.text();
+          
+          // Log the HTML response
+          console.log("📄 HTML Response:", paymentFormHtml);
+          
+          // Extract order ID from the form (MerchantReference field)
+          const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
+          if (orderIdMatch) {
+            orderId = parseInt(orderIdMatch[1]);
+            console.log(`🆔 Extracted order ID from payment form: ${orderId}`);
+            setOrderId(orderId);
+            addActiveOrder(orderId, locationCart.locationName);
+          }
+
+          // Clear the cart
+          clearLocationCart(locationCart.locationId);
+          console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
+
+          // Open payment form in new window
+          const paymentWindow = window.open("", "_blank", "width=800,height=600");
+          
+          if (!paymentWindow) {
+            throw new Error("Popup blocked. Please allow popups for this site.");
+          }
+
+          // Write the HTML form to the new window
+          paymentWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Πληρωμή</title>
+                <meta charset="UTF-8">
+              </head>
+              <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                <div style="text-align: center;">
+                  <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                  ${paymentFormHtml}
+                </div>
+                <script>
+                  // Auto-submit the form when the page loads
+                  window.onload = function() {
+                    var form = document.querySelector('form');
+                    if (form) {
+                      form.submit();
+                    }
+                  };
+                </script>
+              </body>
+            </html>
+          `);
+          paymentWindow.document.close();
+
+          // TEMPORARILY REMOVED: Redirect to order tracking page
+          // if (orderId) {
+          //   router.push(`/${currentLang}/order/${orderId}`);
+          // } else {
+          //   router.push(`/${currentLang}`);
+          // }
+        } catch (paymentError) {
+          console.error("Error handling card payment:", paymentError);
+          toast.error(
+            "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
+          );
+          // TEMPORARILY REMOVED: Redirect to order tracking page
+          // if (orderId) {
+          //   router.push(`/${currentLang}/order/${orderId}`);
+          // } else {
+          //   router.push(`/${currentLang}`);
+          // }
+        }
+        return; // Exit early for card payments
+      }
+
+      // Non-card payment - handle JSON response
       const result = await response.json();
       console.log("✅ Order created successfully:", result);
 
       // Set the order ID and save to active orders
-      const orderId =
+      orderId =
         result.data?.order_id || result.data?.id || result.order_id;
       if (orderId) {
         console.log(`🆔 Setting order ID: ${orderId}`);
@@ -1451,89 +1541,54 @@ function CheckoutPageContent() {
         clearLocationCart(locationCart.locationId);
         console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
 
-        // Handle payment based on payment method
-        if (paymentMethod === "card") {
-          // Initiate card payment
+        // Handle payment form if present in JSON response (fallback)
+        if (paymentMethod === "card" && result.data?.payment_form) {
           try {
-            console.log("💳 Initiating card payment for order:", orderId);
-            const paymentResponse = await fetch(
-              "/api/payments/piraeus/initiate",
-              {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  orderId: orderId.toString(),
-                  amount: locationCart.summary.total,
-                  currency: "EUR",
-                  description: `Παραγγελία #${orderId} - ${locationCart.locationName}`,
-                  customerEmail: user.email,
-                  customerName:
-                    user.name ||
-                    `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-                  customerPhone: user.telephone || "",
-                  lang: currentLang,
-                }),
-              }
-            );
-
-            if (!paymentResponse.ok) {
-              const paymentError = await paymentResponse.json();
-              throw new Error(
-                paymentError.error || "Failed to initiate payment"
-              );
+            console.log("💳 Opening payment form in new window (from JSON)");
+            
+            // Open a new window for the payment form
+            const paymentWindow = window.open("", "_blank", "width=800,height=600");
+            
+            if (!paymentWindow) {
+              throw new Error("Popup blocked. Please allow popups for this site.");
             }
 
-            const paymentResult = await paymentResponse.json();
-
-            if (
-              paymentResult.success &&
-              paymentResult.formData &&
-              paymentResult.gatewayUrl
-            ) {
-              // Create and submit POST form with hidden fields
-              console.log(
-                "🔗 Submitting payment form to gateway:",
-                paymentResult.gatewayUrl
-              );
-
-              // Create a form element
-              const form = document.createElement("form");
-              form.method = "POST";
-              form.action = paymentResult.gatewayUrl;
-              form.style.display = "none";
-
-              // Add all form data as hidden input fields
-              Object.entries(paymentResult.formData).forEach(([key, value]) => {
-                const input = document.createElement("input");
-                input.type = "hidden";
-                input.name = key;
-                input.value = String(value);
-                form.appendChild(input);
-              });
-
-              // Append form to body and submit
-              document.body.appendChild(form);
-              form.submit();
-
-              return; // Exit early, form submission will happen
-            } else {
-              throw new Error("Failed to get payment form data");
-            }
+            // Write a complete HTML document with the payment form
+            paymentWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Πληρωμή</title>
+                  <meta charset="UTF-8">
+                </head>
+                <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                  <div style="text-align: center;">
+                    <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                    ${result.data.payment_form}
+                  </div>
+                  <script>
+                    // Auto-submit the form when the page loads
+                    window.onload = function() {
+                      var form = document.querySelector('form');
+                      if (form) {
+                        form.submit();
+                      }
+                    };
+                  </script>
+                </body>
+              </html>
+            `);
+            paymentWindow.document.close();
           } catch (paymentError) {
-            console.error("Error initiating payment:", paymentError);
+            console.error("Error opening payment form:", paymentError);
             toast.error(
-              "Σφάλμα κατά την έναρξη της πληρωμής. Η παραγγελία δημιουργήθηκε αλλά η πληρωμή απέτυχε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
+              "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
-            // Still redirect to order page even if payment initiation fails
-            router.push(`/${currentLang}/order/${orderId}`);
           }
-        } else {
-          // Cash payment - redirect to order tracking page
-          router.push(`/${currentLang}/order/${orderId}`);
         }
+
+        // TEMPORARILY REMOVED: Redirect to order tracking page
+        // router.push(`/${currentLang}/order/${orderId}`);
       } else {
         console.warn("⚠️ No orderId found in API response:", result);
         alert(
