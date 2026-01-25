@@ -13,12 +13,21 @@ export async function POST(request: NextRequest) {
     // Get the raw request body
     const requestBody = await request.text();
 
+    // Parse JSON for better logging
+    let parsedData;
+    try {
+      parsedData = JSON.parse(requestBody);
+    } catch (e) {
+      parsedData = requestBody;
+    }
+
     console.log("💳 [PIRAEUS AUTHORIZE] Forwarding request to backend API");
-    console.log("💳 [PIRAEUS AUTHORIZE] Request body:", requestBody);
+    console.log("💳 [PIRAEUS AUTHORIZE] Raw request body:", requestBody);
+    console.log("💳 [PIRAEUS AUTHORIZE] Parsed request data:", JSON.stringify(parsedData, null, 2));
 
     // Forward the request to the backend API exactly as received
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/piraeusbank/authorize`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/piraeusbank/authorize`,
       {
         method: "POST",
         headers: {
