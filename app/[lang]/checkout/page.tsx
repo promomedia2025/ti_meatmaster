@@ -24,8 +24,6 @@ import {
   Trash2,
   Plus,
   Minus,
-  CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import GooglePlacesCustom from "@/components/google-places-custom";
@@ -33,7 +31,6 @@ import { AddressBookModal } from "@/components/address-book-modal";
 import { MenuOptionsModal } from "@/components/menu-options-modal";
 import { Location } from "@/lib/types";
 import { CartItem } from "@/lib/server-cart-context";
-import Link from "next/link";
 
 interface UserLocation {
   city: string;
@@ -209,9 +206,6 @@ function CheckoutPageContent() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [isWaitingForPayment, setIsWaitingForPayment] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<"success" | "failure" | null>(null);
-  const [authorizeResponse, setAuthorizeResponse] = useState<{ payment_verified: boolean } | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
@@ -1137,86 +1131,6 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
-  // Poll authorize endpoint when waiting for payment
-  useEffect(() => {
-    if (!isWaitingForPayment || !orderId) return;
-
-    let intervalId: NodeJS.Timeout | null = null;
-
-    const checkAuthorize = async () => {
-      try {
-        const params: Record<string, string> = {
-          orderId: orderId.toString(),
-        };
-
-        const response = await fetch("/api/piraeusbank/authorize", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(params),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log("💳 [CHECKOUT] Authorize response:", result);
-
-          // Extract payment_verified from nested response structure
-          const paymentVerified = result?.data?.data?.payment_verified;
-          
-          if (paymentVerified === true || paymentVerified === false) {
-            // We got a definitive response - stop polling and set state
-            if (intervalId) {
-              clearInterval(intervalId);
-            }
-            setAuthorizeResponse({ payment_verified: paymentVerified });
-          }
-        }
-      } catch (error) {
-        console.error("💳 [CHECKOUT] Error checking authorize:", error);
-      }
-    };
-
-    // Start polling every 3 seconds
-    intervalId = setInterval(checkAuthorize, 3000);
-    // Also check immediately
-    checkAuthorize();
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [isWaitingForPayment, orderId]);
-
-  // Handle authorize response when it arrives
-  useEffect(() => {
-    if (authorizeResponse === null) return;
-
-    console.log("💳 [CHECKOUT] Authorize response received:", authorizeResponse);
-
-    if (authorizeResponse.payment_verified === true) {
-      // Payment verified! Clear cart and redirect to order page
-      if (locationCart) {
-        clearLocationCart(locationCart.locationId);
-        console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
-      }
-      
-      setIsWaitingForPayment(false);
-      setPaymentStatus("success");
-      toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
-      
-      if (orderId) {
-        router.push(`/${currentLang}/order/${orderId}`);
-      }
-    } else if (authorizeResponse.payment_verified === false) {
-      // Payment failed
-      setIsWaitingForPayment(false);
-      setPaymentStatus("failure");
-      toast.error("Η πληρωμή απέτυχε.");
-    }
-  }, [authorizeResponse, orderId, locationCart, currentLang, router]);
-
   if (!locationCart) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -1549,7 +1463,9 @@ function CheckoutPageContent() {
             addActiveOrder(orderId, locationCart.locationName);
           }
 
-          // Don't clear cart yet - wait for payment verification
+          // Clear the cart
+          clearLocationCart(locationCart.locationId);
+          console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
 
           // Open payment form in new window
           const paymentWindow = window.open("", "_blank", "width=800,height=600");
@@ -1585,12 +1501,12 @@ function CheckoutPageContent() {
           `);
           paymentWindow.document.close();
 
-          // Start waiting for payment authorization
-          setIsWaitingForPayment(true);
-          setIsSubmitting(false);
-          
-          // The authorize endpoint will be called by the authorize page after payment
-          // We'll check it when needed (e.g., when user returns or via polling)
+          // TEMPORARILY REMOVED: Redirect to order tracking page
+          // if (orderId) {
+          //   router.push(`/${currentLang}/order/${orderId}`);
+          // } else {
+          //   router.push(`/${currentLang}`);
+          // }
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
@@ -1719,72 +1635,6 @@ function CheckoutPageContent() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
-      {/* Payment Waiting Overlay */}
-      {isWaitingForPayment && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-gray-800">
-            <Loader2 className="w-16 h-16 text-blue-500 mx-auto mb-6 animate-spin" />
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Αναμονή επιβεβαίωσης πληρωμής
-            </h2>
-            <p className="text-gray-400 mb-6">
-              Παρακαλώ περιμένετε ενώ επεξεργαζόμαστε την πληρωμή σας. Μην κλείσετε αυτή τη σελίδα.
-            </p>
-            {orderId && (
-              <p className="text-sm text-gray-500">
-                Αριθμός Παραγγελίας: #{orderId}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Payment Status Messages */}
-      {paymentStatus === "success" && !isWaitingForPayment && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-green-800">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Η πληρωμή ολοκληρώθηκε επιτυχώς!
-            </h2>
-            <p className="text-gray-400 mb-6">
-              Η πληρωμή σας έχει επιβεβαιωθεί. Ανακατευθύνεστε στη σελίδα παραγγελίας...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {paymentStatus === "failure" && !isWaitingForPayment && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-red-800">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Η πληρωμή απέτυχε
-            </h2>
-            <p className="text-gray-400 mb-6">
-              Δυστυχώς, η πληρωμή δεν μπόρεσε να ολοκληρωθεί.
-            </p>
-            {orderId && (
-              <Link href={`/${currentLang}/order/${orderId}`}>
-                <Button className="w-full bg-primary hover:bg-primary/90 mb-3">
-                  Προβολή Παραγγελίας
-                </Button>
-              </Link>
-            )}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setPaymentStatus(null);
-                setIsWaitingForPayment(false);
-              }}
-            >
-              Κλείσιμο
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 flex-shrink-0">
         <div className="container mx-auto px-3 sm:px-4 py-3">
