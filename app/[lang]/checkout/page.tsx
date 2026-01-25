@@ -205,6 +205,7 @@ function CheckoutPageContent() {
   const [orderComments, setOrderComments] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaymentPending, setIsPaymentPending] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -1425,6 +1426,133 @@ function CheckoutPageContent() {
         body: JSON.stringify(orderData),
       });
 
+      // Handle 202 (Payment Pending) - poll until we get 200 (Payment Successful)
+      if (response.status === 202) {
+        console.log("⏳ [CHECKOUT] Payment pending (202), starting polling...");
+        setIsPaymentPending(true);
+        toast.info("Η πληρωμή είναι σε εξέλιξη. Παρακαλώ περιμένετε...");
+        
+        // Get order ID from response
+        const pendingResult = await response.json();
+        const pendingOrderId =
+          pendingResult.data?.order_id || pendingResult.data?.id || pendingResult.order_id;
+        
+        if (!pendingOrderId) {
+          setIsPaymentPending(false);
+          throw new Error("Order ID not found in pending response");
+        }
+
+        console.log(`🔄 [CHECKOUT] Polling order ${pendingOrderId} for payment status...`);
+        
+        // Poll for payment status
+        let paymentCompleted = false;
+        let pollAttempts = 0;
+        const maxPollAttempts = 60; // 5 minutes max (60 * 5 seconds)
+        const pollInterval = 5000; // 5 seconds
+
+        while (!paymentCompleted && pollAttempts < maxPollAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, pollInterval));
+          pollAttempts++;
+
+          try {
+            const statusResponse = await fetch(`/api/orders/submit`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(orderData),
+            });
+
+            if (statusResponse.status === 200) {
+              console.log("✅ [CHECKOUT] Payment completed (200)");
+              paymentCompleted = true;
+              
+              // Process the successful response
+              const contentType = statusResponse.headers.get("content-type") || "";
+              let orderId: number | null = null;
+
+              if (contentType.includes("text/html")) {
+                // Handle HTML response (card payment)
+                const paymentFormHtml = await statusResponse.text();
+                console.log("📄 HTML Response:", paymentFormHtml);
+                
+                const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
+                if (orderIdMatch) {
+                  orderId = parseInt(orderIdMatch[1]);
+                  setOrderId(orderId);
+                  addActiveOrder(orderId, locationCart.locationName);
+                }
+                clearLocationCart(locationCart.locationId);
+                
+                const paymentWindow = window.open("", "_blank", "width=800,height=600");
+                if (paymentWindow) {
+                  paymentWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                      <head>
+                        <title>Πληρωμή</title>
+                        <meta charset="UTF-8">
+                      </head>
+                      <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                        <div style="text-align: center;">
+                          <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                          ${paymentFormHtml}
+                        </div>
+                        <script>
+                          window.onload = function() {
+                            var form = document.querySelector('form');
+                            if (form) {
+                              form.submit();
+                            }
+                          };
+                        </script>
+                      </body>
+                    </html>
+                  `);
+                  paymentWindow.document.close();
+                }
+                return; // Exit early for card payments
+              } else {
+                // Handle JSON response
+                const result = await statusResponse.json();
+                orderId = result.data?.order_id || result.data?.id || result.order_id;
+                
+                if (orderId) {
+                  setOrderId(orderId);
+                  addActiveOrder(orderId, locationCart.locationName);
+                  clearLocationCart(locationCart.locationId);
+                  
+                  // Redirect to order page
+                  router.push(`/${currentLang}/order/${orderId}`);
+                }
+                return;
+              }
+            } else if (statusResponse.status !== 202) {
+              // Error occurred
+              const errorData = await statusResponse.json().catch(() => ({}));
+              throw new Error(
+                errorData.error || `Payment check failed with status: ${statusResponse.status}`
+              );
+            }
+            
+            console.log(`🔄 [CHECKOUT] Still pending... (attempt ${pollAttempts}/${maxPollAttempts})`);
+          } catch (pollError) {
+            console.error("Error polling payment status:", pollError);
+            // Continue polling unless it's a critical error
+          }
+        }
+
+        setIsPaymentPending(false);
+        
+        if (!paymentCompleted) {
+          throw new Error("Payment verification timed out. Please check your order status.");
+        }
+        
+        return; // Exit after handling 202
+      }
+
+      // Handle errors (non-202, non-200)
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType?.includes("application/json")) {
@@ -1596,6 +1724,7 @@ function CheckoutPageContent() {
       }
     } catch (error) {
       console.error("Error submitting order:", error);
+      setIsPaymentPending(false);
 
       // Safari-specific error handling
       let errorMessage =
@@ -2194,6 +2323,7 @@ function CheckoutPageContent() {
                           onClick={handleSubmitOrder}
                           disabled={
                             isSubmitting ||
+                            isPaymentPending ||
                             isLoadingRestaurantStatus ||
                             isRestaurantClosed ||
                             isBlockedByMinOrder ||
@@ -2209,7 +2339,9 @@ function CheckoutPageContent() {
                               : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                           }`}
                         >
-                          {isSubmitting
+                          {isPaymentPending
+                            ? "Αναμονή επιβεβαίωσης πληρωμής..."
+                            : isSubmitting
                             ? "Υποβολή..."
                             : isLoadingRestaurantStatus
                             ? "Ελέγχοντας..."
