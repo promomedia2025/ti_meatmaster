@@ -211,6 +211,7 @@ function CheckoutPageContent() {
   const [orderId, setOrderId] = useState<number | null>(null);
   const [isWaitingForPayment, setIsWaitingForPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"success" | "failure" | null>(null);
+  const [authorizeResponse, setAuthorizeResponse] = useState<{ payment_verified: boolean } | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
@@ -1136,6 +1137,34 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
+  // Handle authorize response when it arrives
+  useEffect(() => {
+    if (authorizeResponse === null) return;
+
+    console.log("💳 [CHECKOUT] Authorize response received:", authorizeResponse);
+
+    if (authorizeResponse.payment_verified === true) {
+      // Payment verified! Clear cart and redirect to order page
+      if (locationCart) {
+        clearLocationCart(locationCart.locationId);
+        console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
+      }
+      
+      setIsWaitingForPayment(false);
+      setPaymentStatus("success");
+      toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
+      
+      if (orderId) {
+        router.push(`/${currentLang}/order/${orderId}`);
+      }
+    } else if (authorizeResponse.payment_verified === false) {
+      // Payment failed
+      setIsWaitingForPayment(false);
+      setPaymentStatus("failure");
+      toast.error("Η πληρωμή απέτυχε.");
+    }
+  }, [authorizeResponse, orderId, locationCart, currentLang, router]);
+
   if (!locationCart) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -1507,17 +1536,16 @@ function CheckoutPageContent() {
           // Start waiting for payment authorization
           setIsWaitingForPayment(true);
           setIsSubmitting(false);
-
-          // Check authorize endpoint - when payment_verified arrives, redirect
+          
+          // Trigger authorize check - response will be set in state
           const checkAuthorize = async () => {
             try {
-              // Collect query params that might be needed (orderId, etc.)
               const params: Record<string, string> = {};
               if (orderId) {
                 params.orderId = orderId.toString();
               }
 
-              const authorizeResponse = await fetch("/api/piraeusbank/authorize", {
+              const response = await fetch("/api/piraeusbank/authorize", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -1525,38 +1553,19 @@ function CheckoutPageContent() {
                 body: JSON.stringify(params),
               });
 
-              if (authorizeResponse.ok) {
-                const authorizeResult = await authorizeResponse.json();
-                console.log("💳 [CHECKOUT] Authorize response:", authorizeResult);
-
-                if (authorizeResult.payment_verified === true) {
-                  // Payment verified! Clear cart and redirect to order page
-                  clearLocationCart(locationCart.locationId);
-                  console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
-                  
-                  setIsWaitingForPayment(false);
-                  setPaymentStatus("success");
-                  toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
-                  
-                  if (orderId) {
-                    router.push(`/${currentLang}/order/${orderId}`);
-                  }
-                  return;
-                } else if (authorizeResult.payment_verified === false) {
-                  // Payment failed
-                  setIsWaitingForPayment(false);
-                  setPaymentStatus("failure");
-                  toast.error("Η πληρωμή απέτυχε.");
-                  return;
-                }
+              if (response.ok) {
+                const result = await response.json();
+                console.log("💳 [CHECKOUT] Authorize response:", result);
+                // Set state - useEffect will handle the flow
+                setAuthorizeResponse(result);
               }
             } catch (error) {
               console.error("💳 [CHECKOUT] Error checking authorize:", error);
             }
           };
 
-          // Check authorize endpoint after a delay to allow payment gateway to process
-          setTimeout(checkAuthorize, 10000); // Wait 10 seconds before checking
+          // Check authorize endpoint
+          checkAuthorize();
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
