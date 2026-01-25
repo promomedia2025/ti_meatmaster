@@ -1468,9 +1468,7 @@ function CheckoutPageContent() {
             addActiveOrder(orderId, locationCart.locationName);
           }
 
-          // Clear the cart
-          clearLocationCart(locationCart.locationId);
-          console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
+          // Don't clear cart yet - wait for payment verification
 
           // Open payment form in new window
           const paymentWindow = window.open("", "_blank", "width=800,height=600");
@@ -1532,7 +1530,10 @@ function CheckoutPageContent() {
                 console.log("💳 [CHECKOUT] Authorize response:", authorizeResult);
 
                 if (authorizeResult.payment_verified === true) {
-                  // Payment verified! Redirect to order page
+                  // Payment verified! Clear cart and redirect to order page
+                  clearLocationCart(locationCart.locationId);
+                  console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
+                  
                   setIsWaitingForPayment(false);
                   setPaymentStatus("success");
                   toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
