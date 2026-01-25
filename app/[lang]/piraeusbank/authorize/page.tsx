@@ -39,16 +39,11 @@ export default function PiraeusBankAuthorizePage() {
         const result = await response.json();
         console.log("💳 [AUTHORIZE PAGE] Authorize API response:", result);
 
-        // Check successflag from response or query params
-        const successFlag = result.successflag || params.successflag || "";
-        const flag = successFlag.toLowerCase();
-
-        if (flag === "success") {
+        // Check payment_verified from response
+        if (result.payment_verified === true) {
           setIsSuccess(true);
-        } else if (flag === "failure") {
-          setIsFailure(true);
         } else {
-          setIsFailure(true); // Default to failure if unknown
+          setIsFailure(true);
         }
       } catch (error) {
         console.error("💳 [AUTHORIZE PAGE] Error calling authorize API:", error);
