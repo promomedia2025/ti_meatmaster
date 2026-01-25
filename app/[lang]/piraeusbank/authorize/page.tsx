@@ -1,25 +1,80 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function PiraeusBankAuthorizePage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const successFlag = searchParams.get("successflag");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isFailure, setIsFailure] = useState(false);
   
   // Extract language from pathname
   const lang = pathname.split("/")[1] || "el";
-  
-  const isSuccess = successFlag?.toLowerCase() === "success";
-  const isFailure = successFlag?.toLowerCase() === "failure";
+
+  useEffect(() => {
+    const callAuthorizeAPI = async () => {
+      try {
+        // Collect all query parameters
+        const params: Record<string, string> = {};
+        searchParams.forEach((value, key) => {
+          params[key] = value;
+        });
+
+        console.log("💳 [AUTHORIZE PAGE] Calling authorize API with params:", params);
+
+        // Call the authorize API endpoint
+        const response = await fetch("/api/piraeusbank/authorize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(params),
+        });
+
+        const result = await response.json();
+        console.log("💳 [AUTHORIZE PAGE] Authorize API response:", result);
+
+        // Check successflag from response or query params
+        const successFlag = result.successflag || params.successflag || "";
+        const flag = successFlag.toLowerCase();
+
+        if (flag === "success") {
+          setIsSuccess(true);
+        } else if (flag === "failure") {
+          setIsFailure(true);
+        } else {
+          setIsFailure(true); // Default to failure if unknown
+        }
+      } catch (error) {
+        console.error("💳 [AUTHORIZE PAGE] Error calling authorize API:", error);
+        setIsFailure(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    callAuthorizeAPI();
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-gray-900 rounded-lg p-8 text-center">
-        {isSuccess ? (
+        {isLoading ? (
+          <>
+            <Loader2 className="w-20 h-20 text-blue-500 mx-auto mb-6 animate-spin" />
+            <h1 className="text-2xl font-bold text-white mb-4">
+              Επεξεργασία πληρωμής...
+            </h1>
+            <p className="text-gray-400 mb-6">
+              Παρακαλώ περιμένετε ενώ επεξεργαζόμαστε την πληρωμή σας.
+            </p>
+          </>
+        ) : isSuccess ? (
           <>
             <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
             <h1 className="text-2xl font-bold text-white mb-4">
@@ -39,17 +94,7 @@ export default function PiraeusBankAuthorizePage() {
               Δυστυχώς, η πληρωμή δεν μπόρεσε να ολοκληρωθεί.
             </p>
           </>
-        ) : (
-          <>
-            <XCircle className="w-20 h-20 text-yellow-500 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-white mb-4">
-              Άγνωστη κατάσταση
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Δεν ήταν δυνατή η επεξεργασία της κατάστασης πληρωμής.
-            </p>
-          </>
-        )}
+        ) : null}
 
         <div className="space-y-3">
           <Link href={`/${lang}`}>
