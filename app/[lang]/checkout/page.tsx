@@ -24,6 +24,8 @@ import {
   Trash2,
   Plus,
   Minus,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import GooglePlacesCustom from "@/components/google-places-custom";
@@ -31,6 +33,7 @@ import { AddressBookModal } from "@/components/address-book-modal";
 import { MenuOptionsModal } from "@/components/menu-options-modal";
 import { Location } from "@/lib/types";
 import { CartItem } from "@/lib/server-cart-context";
+import Link from "next/link";
 
 interface UserLocation {
   city: string;
@@ -205,8 +208,9 @@ function CheckoutPageContent() {
   const [orderComments, setOrderComments] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPaymentPending, setIsPaymentPending] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [isWaitingForPayment, setIsWaitingForPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"success" | "failure" | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
@@ -1426,133 +1430,6 @@ function CheckoutPageContent() {
         body: JSON.stringify(orderData),
       });
 
-      // Handle 202 (Payment Pending) - poll until we get 200 (Payment Successful)
-      if (response.status === 202) {
-        console.log("⏳ [CHECKOUT] Payment pending (202), starting polling...");
-        setIsPaymentPending(true);
-        toast.info("Η πληρωμή είναι σε εξέλιξη. Παρακαλώ περιμένετε...");
-        
-        // Get order ID from response
-        const pendingResult = await response.json();
-        const pendingOrderId =
-          pendingResult.data?.order_id || pendingResult.data?.id || pendingResult.order_id;
-        
-        if (!pendingOrderId) {
-          setIsPaymentPending(false);
-          throw new Error("Order ID not found in pending response");
-        }
-
-        console.log(`🔄 [CHECKOUT] Polling order ${pendingOrderId} for payment status...`);
-        
-        // Poll for payment status
-        let paymentCompleted = false;
-        let pollAttempts = 0;
-        const maxPollAttempts = 60; // 5 minutes max (60 * 5 seconds)
-        const pollInterval = 5000; // 5 seconds
-
-        while (!paymentCompleted && pollAttempts < maxPollAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, pollInterval));
-          pollAttempts++;
-
-          try {
-            const statusResponse = await fetch(`/api/orders/submit`, {
-              method: "POST",
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(orderData),
-            });
-
-            if (statusResponse.status === 200) {
-              console.log("✅ [CHECKOUT] Payment completed (200)");
-              paymentCompleted = true;
-              
-              // Process the successful response
-              const contentType = statusResponse.headers.get("content-type") || "";
-              let orderId: number | null = null;
-
-              if (contentType.includes("text/html")) {
-                // Handle HTML response (card payment)
-                const paymentFormHtml = await statusResponse.text();
-                console.log("📄 HTML Response:", paymentFormHtml);
-                
-                const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
-                if (orderIdMatch) {
-                  orderId = parseInt(orderIdMatch[1]);
-                  setOrderId(orderId);
-                  addActiveOrder(orderId, locationCart.locationName);
-                }
-                clearLocationCart(locationCart.locationId);
-                
-                const paymentWindow = window.open("", "_blank", "width=800,height=600");
-                if (paymentWindow) {
-                  paymentWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                      <head>
-                        <title>Πληρωμή</title>
-                        <meta charset="UTF-8">
-                      </head>
-                      <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                        <div style="text-align: center;">
-                          <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                          ${paymentFormHtml}
-                        </div>
-                        <script>
-                          window.onload = function() {
-                            var form = document.querySelector('form');
-                            if (form) {
-                              form.submit();
-                            }
-                          };
-                        </script>
-                      </body>
-                    </html>
-                  `);
-                  paymentWindow.document.close();
-                }
-                return; // Exit early for card payments
-              } else {
-                // Handle JSON response
-                const result = await statusResponse.json();
-                orderId = result.data?.order_id || result.data?.id || result.order_id;
-                
-                if (orderId) {
-                  setOrderId(orderId);
-                  addActiveOrder(orderId, locationCart.locationName);
-                  clearLocationCart(locationCart.locationId);
-                  
-                  // Redirect to order page
-                  router.push(`/${currentLang}/order/${orderId}`);
-                }
-                return;
-              }
-            } else if (statusResponse.status !== 202) {
-              // Error occurred
-              const errorData = await statusResponse.json().catch(() => ({}));
-              throw new Error(
-                errorData.error || `Payment check failed with status: ${statusResponse.status}`
-              );
-            }
-            
-            console.log(`🔄 [CHECKOUT] Still pending... (attempt ${pollAttempts}/${maxPollAttempts})`);
-          } catch (pollError) {
-            console.error("Error polling payment status:", pollError);
-            // Continue polling unless it's a critical error
-          }
-        }
-
-        setIsPaymentPending(false);
-        
-        if (!paymentCompleted) {
-          throw new Error("Payment verification timed out. Please check your order status.");
-        }
-        
-        return; // Exit after handling 202
-      }
-
-      // Handle errors (non-202, non-200)
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType?.includes("application/json")) {
@@ -1629,12 +1506,56 @@ function CheckoutPageContent() {
           `);
           paymentWindow.document.close();
 
-          // TEMPORARILY REMOVED: Redirect to order tracking page
-          // if (orderId) {
-          //   router.push(`/${currentLang}/order/${orderId}`);
-          // } else {
-          //   router.push(`/${currentLang}`);
-          // }
+          // Start waiting for payment authorization
+          setIsWaitingForPayment(true);
+          setIsSubmitting(false);
+
+          // Check authorize endpoint - when payment_verified arrives, redirect
+          const checkAuthorize = async () => {
+            try {
+              // Collect query params that might be needed (orderId, etc.)
+              const params: Record<string, string> = {};
+              if (orderId) {
+                params.orderId = orderId.toString();
+              }
+
+              const authorizeResponse = await fetch("/api/piraeusbank/authorize", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(params),
+              });
+
+              if (authorizeResponse.ok) {
+                const authorizeResult = await authorizeResponse.json();
+                console.log("💳 [CHECKOUT] Authorize response:", authorizeResult);
+
+                if (authorizeResult.payment_verified === true) {
+                  // Payment verified! Redirect to order page
+                  setIsWaitingForPayment(false);
+                  setPaymentStatus("success");
+                  toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
+                  
+                  if (orderId) {
+                    router.push(`/${currentLang}/order/${orderId}`);
+                  }
+                  return;
+                } else if (authorizeResult.payment_verified === false) {
+                  // Payment failed
+                  setIsWaitingForPayment(false);
+                  setPaymentStatus("failure");
+                  toast.error("Η πληρωμή απέτυχε.");
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error("💳 [CHECKOUT] Error checking authorize:", error);
+            }
+          };
+
+          // Check authorize endpoint after a delay to allow payment gateway to process
+          setTimeout(checkAuthorize, 10000); // Wait 10 seconds before checking
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
@@ -1724,7 +1645,6 @@ function CheckoutPageContent() {
       }
     } catch (error) {
       console.error("Error submitting order:", error);
-      setIsPaymentPending(false);
 
       // Safari-specific error handling
       let errorMessage =
@@ -1764,6 +1684,72 @@ function CheckoutPageContent() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
+      {/* Payment Waiting Overlay */}
+      {isWaitingForPayment && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-gray-800">
+            <Loader2 className="w-16 h-16 text-blue-500 mx-auto mb-6 animate-spin" />
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Αναμονή επιβεβαίωσης πληρωμής
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Παρακαλώ περιμένετε ενώ επεξεργαζόμαστε την πληρωμή σας. Μην κλείσετε αυτή τη σελίδα.
+            </p>
+            {orderId && (
+              <p className="text-sm text-gray-500">
+                Αριθμός Παραγγελίας: #{orderId}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Status Messages */}
+      {paymentStatus === "success" && !isWaitingForPayment && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-green-800">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Η πληρωμή ολοκληρώθηκε επιτυχώς!
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Η πληρωμή σας έχει επιβεβαιωθεί. Ανακατευθύνεστε στη σελίδα παραγγελίας...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {paymentStatus === "failure" && !isWaitingForPayment && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center border border-red-800">
+            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Η πληρωμή απέτυχε
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Δυστυχώς, η πληρωμή δεν μπόρεσε να ολοκληρωθεί.
+            </p>
+            {orderId && (
+              <Link href={`/${currentLang}/order/${orderId}`}>
+                <Button className="w-full bg-primary hover:bg-primary/90 mb-3">
+                  Προβολή Παραγγελίας
+                </Button>
+              </Link>
+            )}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setPaymentStatus(null);
+                setIsWaitingForPayment(false);
+              }}
+            >
+              Κλείσιμο
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 flex-shrink-0">
         <div className="container mx-auto px-3 sm:px-4 py-3">
@@ -2323,7 +2309,6 @@ function CheckoutPageContent() {
                           onClick={handleSubmitOrder}
                           disabled={
                             isSubmitting ||
-                            isPaymentPending ||
                             isLoadingRestaurantStatus ||
                             isRestaurantClosed ||
                             isBlockedByMinOrder ||
@@ -2339,9 +2324,7 @@ function CheckoutPageContent() {
                               : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                           }`}
                         >
-                          {isPaymentPending
-                            ? "Αναμονή επιβεβαίωσης πληρωμής..."
-                            : isSubmitting
+                          {isSubmitting
                             ? "Υποβολή..."
                             : isLoadingRestaurantStatus
                             ? "Ελέγχοντας..."
