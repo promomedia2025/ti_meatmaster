@@ -1137,6 +1137,58 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
+  // Poll authorize endpoint when waiting for payment
+  useEffect(() => {
+    if (!isWaitingForPayment || !orderId) return;
+
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const checkAuthorize = async () => {
+      try {
+        const params: Record<string, string> = {
+          orderId: orderId.toString(),
+        };
+
+        const response = await fetch("/api/piraeusbank/authorize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(params),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("💳 [CHECKOUT] Authorize response:", result);
+
+          // Extract payment_verified from nested response structure
+          const paymentVerified = result?.data?.data?.payment_verified;
+          
+          if (paymentVerified === true || paymentVerified === false) {
+            // We got a definitive response - stop polling and set state
+            if (intervalId) {
+              clearInterval(intervalId);
+            }
+            setAuthorizeResponse({ payment_verified: paymentVerified });
+          }
+        }
+      } catch (error) {
+        console.error("💳 [CHECKOUT] Error checking authorize:", error);
+      }
+    };
+
+    // Start polling every 3 seconds
+    intervalId = setInterval(checkAuthorize, 3000);
+    // Also check immediately
+    checkAuthorize();
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isWaitingForPayment, orderId]);
+
   // Handle authorize response when it arrives
   useEffect(() => {
     if (authorizeResponse === null) return;
@@ -1537,35 +1589,8 @@ function CheckoutPageContent() {
           setIsWaitingForPayment(true);
           setIsSubmitting(false);
           
-          // Trigger authorize check - response will be set in state
-          const checkAuthorize = async () => {
-            try {
-              const params: Record<string, string> = {};
-              if (orderId) {
-                params.orderId = orderId.toString();
-              }
-
-              const response = await fetch("/api/piraeusbank/authorize", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(params),
-              });
-
-              if (response.ok) {
-                const result = await response.json();
-                console.log("💳 [CHECKOUT] Authorize response:", result);
-                // Set state - useEffect will handle the flow
-                setAuthorizeResponse(result);
-              }
-            } catch (error) {
-              console.error("💳 [CHECKOUT] Error checking authorize:", error);
-            }
-          };
-
-          // Check authorize endpoint
-          checkAuthorize();
+          // The authorize endpoint will be called by the authorize page after payment
+          // We'll check it when needed (e.g., when user returns or via polling)
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
