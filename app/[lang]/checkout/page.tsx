@@ -206,6 +206,7 @@ function CheckoutPageContent() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [paymentWindow, setPaymentWindow] = useState<Window | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
@@ -1131,6 +1132,39 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
+  // Listen for payment status messages from authorize page
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify message is from authorize page (check origin for security)
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === "PAYMENT_STATUS") {
+        console.log("💳 [CHECKOUT] Received payment status:", event.data);
+        
+        if (event.data.paymentVerified === true) {
+          // Payment successful - clear cart and redirect
+          if (locationCart) {
+            clearLocationCart(locationCart.locationId);
+            console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
+          }
+          
+          toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
+          
+          if (orderId) {
+            router.push(`/${currentLang}/order/${orderId}`);
+          }
+        } else {
+          // Payment failed - stay on checkout page
+          toast.error("Η πληρωμή απέτυχε. Μπορείτε να δοκιμάσετε ξανά.");
+          setIsSubmitting(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [locationCart, orderId, currentLang, router]);
+
   if (!locationCart) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -1463,19 +1497,20 @@ function CheckoutPageContent() {
             addActiveOrder(orderId, locationCart.locationName);
           }
 
-          // Clear the cart
-          clearLocationCart(locationCart.locationId);
-          console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
+          // Don't clear cart yet - wait for payment verification
 
           // Open payment form in new window
-          const paymentWindow = window.open("", "_blank", "width=800,height=600");
+          const paymentWin = window.open("", "_blank", "width=800,height=600");
           
-          if (!paymentWindow) {
+          if (!paymentWin) {
             throw new Error("Popup blocked. Please allow popups for this site.");
           }
 
+          // Store payment window reference
+          setPaymentWindow(paymentWin);
+
           // Write the HTML form to the new window
-          paymentWindow.document.write(`
+          paymentWin.document.write(`
             <!DOCTYPE html>
             <html>
               <head>
@@ -1499,7 +1534,7 @@ function CheckoutPageContent() {
               </body>
             </html>
           `);
-          paymentWindow.document.close();
+          paymentWin.document.close();
 
           // TEMPORARILY REMOVED: Redirect to order tracking page
           // if (orderId) {
