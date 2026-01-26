@@ -42,9 +42,9 @@ export default function PiraeusBankAuthorizePage() {
         const result = await response.json();
         console.log("💳 [AUTHORIZE PAGE] Authorize API response:", result);
 
-        // Extract payment_verified from nested response structure
-        // Response structure: { data: { data: { payment_verified: boolean } } }
-        const paymentVerified = result?.data?.data?.payment_verified;
+        // Extract payment_verified from response structure
+        // Response structure: { success: boolean, data: { payment_verified: boolean, ... } }
+        const paymentVerified = result?.data?.payment_verified;
         
         console.log("💳 [AUTHORIZE PAGE] Payment verified:", paymentVerified);
 
