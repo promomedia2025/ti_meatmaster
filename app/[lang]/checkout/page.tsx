@@ -1528,43 +1528,29 @@ function CheckoutPageContent() {
 
           // Don't clear cart yet - wait for payment verification
 
-          // Use the pre-opened window if available (Safari-compatible), otherwise create form
+          // Use the pre-opened window if available (Safari-compatible)
+          // Redirect to payment redirect page which will handle form submission reliably on mobile
           if (paymentWindow && !paymentWindow.closed) {
-            // Write the payment form to the pre-opened window
             try {
-              paymentWindow.document.open();
-              paymentWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                  <head>
-                    <title>Πληρωμή</title>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  </head>
-                  <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                    <div style="text-align: center;">
-                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                      ${paymentFormHtml}
-                    </div>
-                    <script>
-                      // Auto-submit the form when the page loads
-                      (function() {
-                        var form = document.querySelector('form');
-                        if (form) {
-                          // Small delay to ensure form is ready
-                          setTimeout(function() {
-                            form.submit();
-                          }, 100);
-                        }
-                      })();
-                    </script>
-                  </body>
-                </html>
-              `);
-              paymentWindow.document.close();
-            } catch (writeError) {
-              console.error("Error writing to payment window:", writeError);
-              // Fallback: use form submission method
+              // Check if form HTML is too large for URL (URLs have ~2000 char limit on some browsers)
+              // Use sessionStorage for large forms, URL parameter for smaller ones
+              const formSize = paymentFormHtml.length;
+              if (formSize > 1500) {
+                // Store in sessionStorage and redirect with a key
+                const storageKey = `payment_form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                sessionStorage.setItem(storageKey, paymentFormHtml);
+                const redirectUrl = `/${currentLang}/payment/redirect?key=${storageKey}`;
+                paymentWindow.location.href = redirectUrl;
+              } else {
+                // Use URL parameter for smaller forms
+                const encodedFormHtml = encodeURIComponent(paymentFormHtml);
+                const redirectUrl = `/${currentLang}/payment/redirect?form=${encodedFormHtml}`;
+                paymentWindow.location.href = redirectUrl;
+              }
+            } catch (redirectError) {
+              console.error("Error redirecting payment window:", redirectError);
+              // Fallback: close window and use form submission
+              paymentWindow.close();
               const tempDiv = document.createElement('div');
               tempDiv.innerHTML = paymentFormHtml;
               const form = tempDiv.querySelector('form');
@@ -1688,39 +1674,27 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Use the pre-opened window if available, otherwise create form
+            // Use the pre-opened window if available
             if (paymentWindow && !paymentWindow.closed) {
               try {
-                paymentWindow.document.open();
-                paymentWindow.document.write(`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <title>Πληρωμή</title>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    </head>
-                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                      <div style="text-align: center;">
-                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                        ${result.data.payment_form}
-                      </div>
-                      <script>
-                        (function() {
-                          var form = document.querySelector('form');
-                          if (form) {
-                            setTimeout(function() {
-                              form.submit();
-                            }, 100);
-                          }
-                        })();
-                      </script>
-                    </body>
-                  </html>
-                `);
-                paymentWindow.document.close();
-              } catch (writeError) {
-                // Fallback to form submission
+                // Check if form HTML is too large for URL
+                const formSize = result.data.payment_form.length;
+                if (formSize > 1500) {
+                  // Store in sessionStorage and redirect with a key
+                  const storageKey = `payment_form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  sessionStorage.setItem(storageKey, result.data.payment_form);
+                  const redirectUrl = `/${currentLang}/payment/redirect?key=${storageKey}`;
+                  paymentWindow.location.href = redirectUrl;
+                } else {
+                  // Use URL parameter for smaller forms
+                  const encodedFormHtml = encodeURIComponent(result.data.payment_form);
+                  const redirectUrl = `/${currentLang}/payment/redirect?form=${encodedFormHtml}`;
+                  paymentWindow.location.href = redirectUrl;
+                }
+              } catch (redirectError) {
+                console.error("Error redirecting payment window:", redirectError);
+                // Fallback: close window and use form submission
+                paymentWindow.close();
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = result.data.payment_form;
                 const form = tempDiv.querySelector('form');
