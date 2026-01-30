@@ -1499,55 +1499,26 @@ function CheckoutPageContent() {
 
           // Don't clear cart yet - wait for payment verification
 
-          // Parse the payment form HTML to extract form data
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = paymentFormHtml;
-          const form = tempDiv.querySelector('form');
-          
-          if (!form) {
-            throw new Error("Could not find payment form in response");
-          }
-
-          // Extract form action and method
-          const formAction = form.getAttribute('action') || '';
-          const formMethod = form.getAttribute('method') || 'POST';
-          
-          // Create a hidden form element
-          const hiddenForm = document.createElement('form');
-          hiddenForm.method = formMethod;
-          hiddenForm.action = formAction;
-          hiddenForm.target = '_blank';
-          hiddenForm.style.display = 'none';
-          
-          // Copy all input fields from the payment form
-          form.querySelectorAll('input').forEach((input) => {
-            const htmlInput = input as HTMLInputElement;
-            const newInput = document.createElement('input');
-            newInput.type = htmlInput.type || 'hidden';
-            newInput.name = htmlInput.name;
-            newInput.value = htmlInput.value;
-            hiddenForm.appendChild(newInput);
-          });
-          
-          // Append to body and submit (this works reliably on all browsers including iPhone Safari)
-          document.body.appendChild(hiddenForm);
-          
-          // Submit the form - this will open the payment gateway in a new tab/window
-          hiddenForm.submit();
-          
-          // Store a reference to indicate payment window is open
-          setPaymentWindow(window);
-          
-          // Clean up the form after a short delay
-          setTimeout(() => {
-            try {
-              if (document.body.contains(hiddenForm)) {
-                document.body.removeChild(hiddenForm);
-              }
-            } catch (e) {
-              // Ignore cleanup errors
+          // Encode the payment form HTML as base64 and pass it to the redirect page
+          // This approach works better on Safari iPhone which blocks programmatic form submissions
+          try {
+            const encodedForm = btoa(encodeURIComponent(paymentFormHtml));
+            const redirectUrl = `/${currentLang}/payment/redirect?form=${encodedForm}`;
+            
+            // Open the redirect page in a new tab - Safari allows this when triggered by user action
+            const paymentWin = window.open(redirectUrl, '_blank');
+            
+            if (!paymentWin) {
+              // If popup is blocked, try opening in same window as fallback
+              window.location.href = redirectUrl;
+            } else {
+              // Store payment window reference
+              setPaymentWindow(paymentWin);
             }
-          }, 1000);
+          } catch (encodeError) {
+            console.error("Error encoding payment form:", encodeError);
+            throw new Error("Failed to prepare payment form");
+          }
 
           // TEMPORARILY REMOVED: Redirect to order tracking page
           // if (orderId) {
@@ -1593,55 +1564,21 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Parse the payment form HTML to extract form data
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = result.data.payment_form;
-            const form = tempDiv.querySelector('form');
+            // Encode the payment form HTML as base64 and pass it to the redirect page
+            // This approach works better on Safari iPhone which blocks programmatic form submissions
+            const encodedForm = btoa(encodeURIComponent(result.data.payment_form));
+            const redirectUrl = `/${currentLang}/payment/redirect?form=${encodedForm}`;
             
-            if (!form) {
-              throw new Error("Could not find payment form in response");
+            // Open the redirect page in a new tab - Safari allows this when triggered by user action
+            const paymentWin = window.open(redirectUrl, '_blank');
+            
+            if (!paymentWin) {
+              // If popup is blocked, try opening in same window as fallback
+              window.location.href = redirectUrl;
+            } else {
+              // Store payment window reference
+              setPaymentWindow(paymentWin);
             }
-
-            // Extract form action and method
-            const formAction = form.getAttribute('action') || '';
-            const formMethod = form.getAttribute('method') || 'POST';
-            
-            // Create a hidden form element
-            const hiddenForm = document.createElement('form');
-            hiddenForm.method = formMethod;
-            hiddenForm.action = formAction;
-            hiddenForm.target = '_blank';
-            hiddenForm.style.display = 'none';
-            
-            // Copy all input fields from the payment form
-            form.querySelectorAll('input').forEach((input) => {
-              const htmlInput = input as HTMLInputElement;
-              const newInput = document.createElement('input');
-              newInput.type = htmlInput.type || 'hidden';
-              newInput.name = htmlInput.name;
-              newInput.value = htmlInput.value;
-              hiddenForm.appendChild(newInput);
-            });
-            
-            // Append to body and submit (this works reliably on all browsers including iPhone Safari)
-            document.body.appendChild(hiddenForm);
-            
-            // Submit the form - this will open the payment gateway in a new tab/window
-            hiddenForm.submit();
-            
-            // Store a reference to indicate payment window is open
-            setPaymentWindow(window);
-            
-            // Clean up the form after a short delay
-            setTimeout(() => {
-              try {
-                if (document.body.contains(hiddenForm)) {
-                  document.body.removeChild(hiddenForm);
-                }
-              } catch (e) {
-                // Ignore cleanup errors
-              }
-            }, 1000);
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
             toast.error(
