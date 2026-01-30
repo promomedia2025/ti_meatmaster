@@ -1226,6 +1226,35 @@ function CheckoutPageContent() {
       return;
     }
 
+    // IMPORTANT: For Safari compatibility, open payment window IMMEDIATELY 
+    // in the user-initiated event handler (before any async operations)
+    // This window will be populated after the fetch completes
+    let paymentWindow: Window | null = null;
+    if (paymentMethod === "card") {
+      paymentWindow = window.open("", "_blank");
+      if (paymentWindow) {
+        // Write a loading page immediately
+        paymentWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Πληρωμή</title>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+              <div style="text-align: center;">
+                <p style="font-size: 18px; color: #333;">Παρακαλώ περιμένετε...</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+              </div>
+            </body>
+          </html>
+        `);
+        paymentWindow.document.close();
+        setPaymentWindow(paymentWindow);
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1499,55 +1528,121 @@ function CheckoutPageContent() {
 
           // Don't clear cart yet - wait for payment verification
 
-          // Parse the payment form HTML to extract form data
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = paymentFormHtml;
-          const form = tempDiv.querySelector('form');
-          
-          if (!form) {
-            throw new Error("Could not find payment form in response");
-          }
-
-          // Extract form action and method
-          const formAction = form.getAttribute('action') || '';
-          const formMethod = form.getAttribute('method') || 'POST';
-          
-          // Create a hidden form element
-          const hiddenForm = document.createElement('form');
-          hiddenForm.method = formMethod;
-          hiddenForm.action = formAction;
-          hiddenForm.target = '_blank';
-          hiddenForm.style.display = 'none';
-          
-          // Copy all input fields from the payment form
-          form.querySelectorAll('input').forEach((input) => {
-            const htmlInput = input as HTMLInputElement;
-            const newInput = document.createElement('input');
-            newInput.type = htmlInput.type || 'hidden';
-            newInput.name = htmlInput.name;
-            newInput.value = htmlInput.value;
-            hiddenForm.appendChild(newInput);
-          });
-          
-          // Append to body and submit (this works reliably on all browsers including iPhone Safari)
-          document.body.appendChild(hiddenForm);
-          
-          // Submit the form - this will open the payment gateway in a new tab/window
-          hiddenForm.submit();
-          
-          // Store a reference to indicate payment window is open
-          setPaymentWindow(window);
-          
-          // Clean up the form after a short delay
-          setTimeout(() => {
+          // Use the pre-opened window if available (Safari-compatible), otherwise create form
+          if (paymentWindow && !paymentWindow.closed) {
+            // Write the payment form to the pre-opened window
             try {
-              if (document.body.contains(hiddenForm)) {
-                document.body.removeChild(hiddenForm);
+              paymentWindow.document.open();
+              paymentWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Πληρωμή</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                    <div style="text-align: center;">
+                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                      ${paymentFormHtml}
+                    </div>
+                    <script>
+                      // Auto-submit the form when the page loads
+                      (function() {
+                        var form = document.querySelector('form');
+                        if (form) {
+                          // Small delay to ensure form is ready
+                          setTimeout(function() {
+                            form.submit();
+                          }, 100);
+                        }
+                      })();
+                    </script>
+                  </body>
+                </html>
+              `);
+              paymentWindow.document.close();
+            } catch (writeError) {
+              console.error("Error writing to payment window:", writeError);
+              // Fallback: use form submission method
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = paymentFormHtml;
+              const form = tempDiv.querySelector('form');
+              
+              if (form) {
+                const formAction = form.getAttribute('action') || '';
+                const formMethod = form.getAttribute('method') || 'POST';
+                
+                const hiddenForm = document.createElement('form');
+                hiddenForm.method = formMethod;
+                hiddenForm.action = formAction;
+                hiddenForm.target = '_blank';
+                hiddenForm.style.display = 'none';
+                
+                form.querySelectorAll('input').forEach((input) => {
+                  const htmlInput = input as HTMLInputElement;
+                  const newInput = document.createElement('input');
+                  newInput.type = htmlInput.type || 'hidden';
+                  newInput.name = htmlInput.name;
+                  newInput.value = htmlInput.value;
+                  hiddenForm.appendChild(newInput);
+                });
+                
+                document.body.appendChild(hiddenForm);
+                hiddenForm.submit();
+                
+                setTimeout(() => {
+                  try {
+                    if (document.body.contains(hiddenForm)) {
+                      document.body.removeChild(hiddenForm);
+                    }
+                  } catch (e) {
+                    // Ignore cleanup errors
+                  }
+                }, 1000);
               }
-            } catch (e) {
-              // Ignore cleanup errors
             }
-          }, 1000);
+          } else {
+            // Fallback: window was blocked or closed, use form submission
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = paymentFormHtml;
+            const form = tempDiv.querySelector('form');
+            
+            if (!form) {
+              throw new Error("Could not find payment form in response");
+            }
+
+            const formAction = form.getAttribute('action') || '';
+            const formMethod = form.getAttribute('method') || 'POST';
+            
+            const hiddenForm = document.createElement('form');
+            hiddenForm.method = formMethod;
+            hiddenForm.action = formAction;
+            hiddenForm.target = '_blank';
+            hiddenForm.style.display = 'none';
+            
+            form.querySelectorAll('input').forEach((input) => {
+              const htmlInput = input as HTMLInputElement;
+              const newInput = document.createElement('input');
+              newInput.type = htmlInput.type || 'hidden';
+              newInput.name = htmlInput.name;
+              newInput.value = htmlInput.value;
+              hiddenForm.appendChild(newInput);
+            });
+            
+            document.body.appendChild(hiddenForm);
+            hiddenForm.submit();
+            
+            setTimeout(() => {
+              try {
+                if (document.body.contains(hiddenForm)) {
+                  document.body.removeChild(hiddenForm);
+                }
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }, 1000);
+          }
 
           // TEMPORARILY REMOVED: Redirect to order tracking page
           // if (orderId) {
@@ -1593,55 +1688,113 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Parse the payment form HTML to extract form data
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = result.data.payment_form;
-            const form = tempDiv.querySelector('form');
-            
-            if (!form) {
-              throw new Error("Could not find payment form in response");
-            }
-
-            // Extract form action and method
-            const formAction = form.getAttribute('action') || '';
-            const formMethod = form.getAttribute('method') || 'POST';
-            
-            // Create a hidden form element
-            const hiddenForm = document.createElement('form');
-            hiddenForm.method = formMethod;
-            hiddenForm.action = formAction;
-            hiddenForm.target = '_blank';
-            hiddenForm.style.display = 'none';
-            
-            // Copy all input fields from the payment form
-            form.querySelectorAll('input').forEach((input) => {
-              const htmlInput = input as HTMLInputElement;
-              const newInput = document.createElement('input');
-              newInput.type = htmlInput.type || 'hidden';
-              newInput.name = htmlInput.name;
-              newInput.value = htmlInput.value;
-              hiddenForm.appendChild(newInput);
-            });
-            
-            // Append to body and submit (this works reliably on all browsers including iPhone Safari)
-            document.body.appendChild(hiddenForm);
-            
-            // Submit the form - this will open the payment gateway in a new tab/window
-            hiddenForm.submit();
-            
-            // Store a reference to indicate payment window is open
-            setPaymentWindow(window);
-            
-            // Clean up the form after a short delay
-            setTimeout(() => {
+            // Use the pre-opened window if available, otherwise create form
+            if (paymentWindow && !paymentWindow.closed) {
               try {
-                if (document.body.contains(hiddenForm)) {
-                  document.body.removeChild(hiddenForm);
+                paymentWindow.document.open();
+                paymentWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Πληρωμή</title>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                      <div style="text-align: center;">
+                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                        ${result.data.payment_form}
+                      </div>
+                      <script>
+                        (function() {
+                          var form = document.querySelector('form');
+                          if (form) {
+                            setTimeout(function() {
+                              form.submit();
+                            }, 100);
+                          }
+                        })();
+                      </script>
+                    </body>
+                  </html>
+                `);
+                paymentWindow.document.close();
+              } catch (writeError) {
+                // Fallback to form submission
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = result.data.payment_form;
+                const form = tempDiv.querySelector('form');
+                
+                if (form) {
+                  const formAction = form.getAttribute('action') || '';
+                  const formMethod = form.getAttribute('method') || 'POST';
+                  
+                  const hiddenForm = document.createElement('form');
+                  hiddenForm.method = formMethod;
+                  hiddenForm.action = formAction;
+                  hiddenForm.target = '_blank';
+                  hiddenForm.style.display = 'none';
+                  
+                  form.querySelectorAll('input').forEach((input) => {
+                    const htmlInput = input as HTMLInputElement;
+                    const newInput = document.createElement('input');
+                    newInput.type = htmlInput.type || 'hidden';
+                    newInput.name = htmlInput.name;
+                    newInput.value = htmlInput.value;
+                    hiddenForm.appendChild(newInput);
+                  });
+                  
+                  document.body.appendChild(hiddenForm);
+                  hiddenForm.submit();
+                  
+                  setTimeout(() => {
+                    try {
+                      if (document.body.contains(hiddenForm)) {
+                        document.body.removeChild(hiddenForm);
+                      }
+                    } catch (e) {}
+                  }, 1000);
                 }
-              } catch (e) {
-                // Ignore cleanup errors
               }
-            }, 1000);
+            } else {
+              // Fallback: use form submission
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = result.data.payment_form;
+              const form = tempDiv.querySelector('form');
+              
+              if (!form) {
+                throw new Error("Could not find payment form in response");
+              }
+
+              const formAction = form.getAttribute('action') || '';
+              const formMethod = form.getAttribute('method') || 'POST';
+              
+              const hiddenForm = document.createElement('form');
+              hiddenForm.method = formMethod;
+              hiddenForm.action = formAction;
+              hiddenForm.target = '_blank';
+              hiddenForm.style.display = 'none';
+              
+              form.querySelectorAll('input').forEach((input) => {
+                const htmlInput = input as HTMLInputElement;
+                const newInput = document.createElement('input');
+                newInput.type = htmlInput.type || 'hidden';
+                newInput.name = htmlInput.name;
+                newInput.value = htmlInput.value;
+                hiddenForm.appendChild(newInput);
+              });
+              
+              document.body.appendChild(hiddenForm);
+              hiddenForm.submit();
+              
+              setTimeout(() => {
+                try {
+                  if (document.body.contains(hiddenForm)) {
+                    document.body.removeChild(hiddenForm);
+                  }
+                } catch (e) {}
+              }, 1000);
+            }
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
             toast.error(
