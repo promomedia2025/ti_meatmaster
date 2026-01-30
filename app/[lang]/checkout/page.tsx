@@ -1499,42 +1499,55 @@ function CheckoutPageContent() {
 
           // Don't clear cart yet - wait for payment verification
 
-          // Open payment form in new window
-          const paymentWin = window.open("", "_blank", "width=800,height=600");
+          // Parse the payment form HTML to extract form data
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = paymentFormHtml;
+          const form = tempDiv.querySelector('form');
           
-          if (!paymentWin) {
-            throw new Error("Popup blocked. Please allow popups for this site.");
+          if (!form) {
+            throw new Error("Could not find payment form in response");
           }
 
-          // Store payment window reference
-          setPaymentWindow(paymentWin);
-
-          // Write the HTML form to the new window
-          paymentWin.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Πληρωμή</title>
-                <meta charset="UTF-8">
-              </head>
-              <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                <div style="text-align: center;">
-                  <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                  ${paymentFormHtml}
-                </div>
-                <script>
-                  // Auto-submit the form when the page loads
-                  window.onload = function() {
-                    var form = document.querySelector('form');
-                    if (form) {
-                      form.submit();
-                    }
-                  };
-                </script>
-              </body>
-            </html>
-          `);
-          paymentWin.document.close();
+          // Extract form action and method
+          const formAction = form.getAttribute('action') || '';
+          const formMethod = form.getAttribute('method') || 'POST';
+          
+          // Create a hidden form element
+          const hiddenForm = document.createElement('form');
+          hiddenForm.method = formMethod;
+          hiddenForm.action = formAction;
+          hiddenForm.target = '_blank';
+          hiddenForm.style.display = 'none';
+          
+          // Copy all input fields from the payment form
+          form.querySelectorAll('input').forEach((input) => {
+            const htmlInput = input as HTMLInputElement;
+            const newInput = document.createElement('input');
+            newInput.type = htmlInput.type || 'hidden';
+            newInput.name = htmlInput.name;
+            newInput.value = htmlInput.value;
+            hiddenForm.appendChild(newInput);
+          });
+          
+          // Append to body and submit (this works reliably on all browsers including iPhone Safari)
+          document.body.appendChild(hiddenForm);
+          
+          // Submit the form - this will open the payment gateway in a new tab/window
+          hiddenForm.submit();
+          
+          // Store a reference to indicate payment window is open
+          setPaymentWindow(window);
+          
+          // Clean up the form after a short delay
+          setTimeout(() => {
+            try {
+              if (document.body.contains(hiddenForm)) {
+                document.body.removeChild(hiddenForm);
+              }
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }, 1000);
 
           // TEMPORARILY REMOVED: Redirect to order tracking page
           // if (orderId) {
@@ -1580,39 +1593,55 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Open a new window for the payment form
-            const paymentWindow = window.open("", "_blank", "width=800,height=600");
+            // Parse the payment form HTML to extract form data
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = result.data.payment_form;
+            const form = tempDiv.querySelector('form');
             
-            if (!paymentWindow) {
-              throw new Error("Popup blocked. Please allow popups for this site.");
+            if (!form) {
+              throw new Error("Could not find payment form in response");
             }
 
-            // Write a complete HTML document with the payment form
-            paymentWindow.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <title>Πληρωμή</title>
-                  <meta charset="UTF-8">
-                </head>
-                <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                  <div style="text-align: center;">
-                    <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                    ${result.data.payment_form}
-                  </div>
-                  <script>
-                    // Auto-submit the form when the page loads
-                    window.onload = function() {
-                      var form = document.querySelector('form');
-                      if (form) {
-                        form.submit();
-                      }
-                    };
-                  </script>
-                </body>
-              </html>
-            `);
-            paymentWindow.document.close();
+            // Extract form action and method
+            const formAction = form.getAttribute('action') || '';
+            const formMethod = form.getAttribute('method') || 'POST';
+            
+            // Create a hidden form element
+            const hiddenForm = document.createElement('form');
+            hiddenForm.method = formMethod;
+            hiddenForm.action = formAction;
+            hiddenForm.target = '_blank';
+            hiddenForm.style.display = 'none';
+            
+            // Copy all input fields from the payment form
+            form.querySelectorAll('input').forEach((input) => {
+              const htmlInput = input as HTMLInputElement;
+              const newInput = document.createElement('input');
+              newInput.type = htmlInput.type || 'hidden';
+              newInput.name = htmlInput.name;
+              newInput.value = htmlInput.value;
+              hiddenForm.appendChild(newInput);
+            });
+            
+            // Append to body and submit (this works reliably on all browsers including iPhone Safari)
+            document.body.appendChild(hiddenForm);
+            
+            // Submit the form - this will open the payment gateway in a new tab/window
+            hiddenForm.submit();
+            
+            // Store a reference to indicate payment window is open
+            setPaymentWindow(window);
+            
+            // Clean up the form after a short delay
+            setTimeout(() => {
+              try {
+                if (document.body.contains(hiddenForm)) {
+                  document.body.removeChild(hiddenForm);
+                }
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }, 1000);
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
             toast.error(
