@@ -1228,7 +1228,7 @@ function CheckoutPageContent() {
 
     // IMPORTANT: For Safari compatibility, open payment window IMMEDIATELY 
     // in the user-initiated event handler (before any async operations)
-    // This window will be populated after the fetch completes
+    // This window will be redirected to the payment page after the fetch completes
     let paymentWindow: Window | null = null;
     if (paymentMethod === "card") {
       paymentWindow = window.open("", "_blank");
@@ -1514,9 +1514,6 @@ function CheckoutPageContent() {
           console.log("💳 Card payment - received HTML form");
           const paymentFormHtml = await response.text();
           
-          // Log the HTML response
-          console.log("📄 HTML Response:", paymentFormHtml);
-          
           // Extract order ID from the form (MerchantReference field)
           const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
           if (orderIdMatch) {
@@ -1524,259 +1521,26 @@ function CheckoutPageContent() {
             console.log(`🆔 Extracted order ID from payment form: ${orderId}`);
             setOrderId(orderId);
             addActiveOrder(orderId, locationCart.locationName);
+          } else {
+            throw new Error("Could not extract order ID from payment form");
           }
 
           // Don't clear cart yet - wait for payment verification
 
-          // Parse the payment form HTML
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = paymentFormHtml;
-          const form = tempDiv.querySelector('form');
-          
-          if (!form) {
-            throw new Error("Could not find payment form in response");
-          }
-
-          // Extract form action and method
-          const formAction = form.getAttribute('action') || '';
-          const formMethod = form.getAttribute('method') || 'POST';
-          
-          // Detect iOS/iPhone Safari - needs special handling
-          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-          const isIOSSafari = isIOS && isSafari;
-          
-          if (isIOSSafari && paymentWindow && !paymentWindow.closed) {
-            // For iPhone Safari: Keep the pre-opened window and write form to it
-            // Safari blocks popups from form submissions, so we must use the pre-opened window
-            try {
-              // Clear the window first
-              paymentWindow.document.open();
-              paymentWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                  <head>
-                    <title>Πληρωμή</title>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  </head>
-                  <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                    <div style="text-align: center;">
-                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                      ${paymentFormHtml}
-                    </div>
-                    <script>
-                      // Auto-submit the form when the page loads
-                      (function() {
-                        var form = document.querySelector('form');
-                        if (form) {
-                          setTimeout(function() {
-                            form.submit();
-                          }, 100);
-                        }
-                      })();
-                    </script>
-                  </body>
-                </html>
-              `);
-              paymentWindow.document.close();
-            } catch (writeError) {
-              console.error("Error writing to payment window on Safari:", writeError);
-              // If document.write fails, try using the window's location with a data URL
-              try {
-                const blob = new Blob([`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <title>Πληρωμή</title>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    </head>
-                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                      <div style="text-align: center;">
-                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                        ${paymentFormHtml}
-                      </div>
-                      <script>
-                        (function() {
-                          var form = document.querySelector('form');
-                          if (form) {
-                            setTimeout(function() {
-                              form.submit();
-                            }, 100);
-                          }
-                        })();
-                      </script>
-                    </body>
-                  </html>
-                `], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                paymentWindow.location.href = url;
-              } catch (blobError) {
-                console.error("Error with blob URL:", blobError);
-                // Final fallback: create form in the current window and submit to the pre-opened window
-                const hiddenForm = document.createElement('form');
-                hiddenForm.method = formMethod;
-                hiddenForm.action = formAction;
-                hiddenForm.target = paymentWindow.name || '_blank';
-                hiddenForm.style.display = 'none';
-                
-                form.querySelectorAll('input, textarea, select').forEach((element) => {
-                  const htmlElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-                  if (htmlElement.name) {
-                    const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-                    newElement.name = htmlElement.name;
-                    if ('value' in htmlElement) {
-                      (newElement as any).value = htmlElement.value || '';
-                    }
-                    hiddenForm.appendChild(newElement);
-                  }
-                });
-                
-                document.body.appendChild(hiddenForm);
-                hiddenForm.submit();
-                
-                setTimeout(() => {
-                  try {
-                    if (document.body.contains(hiddenForm)) {
-                      document.body.removeChild(hiddenForm);
-                    }
-                  } catch (e) {}
-                }, 1000);
-              }
-            }
-          } else if (isIOS && !isSafari) {
-            // For iPhone Chrome/other browsers: Use form submission method
-            if (paymentWindow && !paymentWindow.closed) {
-              paymentWindow.close();
-            }
-            
-            const hiddenForm = document.createElement('form');
-            hiddenForm.method = formMethod;
-            hiddenForm.action = formAction;
-            hiddenForm.target = '_blank';
-            hiddenForm.style.display = 'none';
-            
-            form.querySelectorAll('input, textarea, select').forEach((element) => {
-              const htmlElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-              if (htmlElement.name) {
-                const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-                newElement.name = htmlElement.name;
-                if ('value' in htmlElement) {
-                  (newElement as any).value = htmlElement.value || '';
-                }
-                hiddenForm.appendChild(newElement);
-              }
-            });
-            
-            document.body.appendChild(hiddenForm);
-            hiddenForm.submit();
-            
-            setTimeout(() => {
-              try {
-                if (document.body.contains(hiddenForm)) {
-                  document.body.removeChild(hiddenForm);
-                }
-              } catch (e) {}
-            }, 1000);
+          // Redirect the pre-opened window to the payment redirect page
+          if (paymentWindow && !paymentWindow.closed) {
+            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
+            paymentWindow.location.href = redirectUrl;
           } else {
-            // For desktop/Android: Use window.write method (better UX)
-            if (paymentWindow && !paymentWindow.closed) {
-              try {
-                paymentWindow.document.open();
-                paymentWindow.document.write(`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <title>Πληρωμή</title>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    </head>
-                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                      <div style="text-align: center;">
-                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Παρακαλώ υποβάλετε τη φόρμα πληρωμής</p>
-                        ${paymentFormHtml}
-                      </div>
-                    </body>
-                  </html>
-                `);
-                paymentWindow.document.close();
-              } catch (writeError) {
-                console.error("Error writing to payment window:", writeError);
-                // Fallback to form submission
-                const hiddenForm = document.createElement('form');
-                hiddenForm.method = formMethod;
-                hiddenForm.action = formAction;
-                hiddenForm.target = '_blank';
-                hiddenForm.style.display = 'none';
-                
-                form.querySelectorAll('input').forEach((input) => {
-                  const htmlInput = input as HTMLInputElement;
-                  const newInput = document.createElement('input');
-                  newInput.type = htmlInput.type || 'hidden';
-                  newInput.name = htmlInput.name;
-                  newInput.value = htmlInput.value || '';
-                  hiddenForm.appendChild(newInput);
-                });
-                
-                document.body.appendChild(hiddenForm);
-                hiddenForm.submit();
-                
-                setTimeout(() => {
-                  try {
-                    if (document.body.contains(hiddenForm)) {
-                      document.body.removeChild(hiddenForm);
-                    }
-                  } catch (e) {}
-                }, 1000);
-              }
-            } else {
-              // Window was blocked, use form submission
-              const hiddenForm = document.createElement('form');
-              hiddenForm.method = formMethod;
-              hiddenForm.action = formAction;
-              hiddenForm.target = '_blank';
-              hiddenForm.style.display = 'none';
-              
-              form.querySelectorAll('input').forEach((input) => {
-                const htmlInput = input as HTMLInputElement;
-                const newInput = document.createElement('input');
-                newInput.type = htmlInput.type || 'hidden';
-                newInput.name = htmlInput.name;
-                newInput.value = htmlInput.value || '';
-                hiddenForm.appendChild(newInput);
-              });
-              
-              document.body.appendChild(hiddenForm);
-              hiddenForm.submit();
-              
-              setTimeout(() => {
-                try {
-                  if (document.body.contains(hiddenForm)) {
-                    document.body.removeChild(hiddenForm);
-                  }
-                } catch (e) {}
-              }, 1000);
-            }
+            // Window was blocked, open it now (may be blocked by Safari)
+            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
+            window.open(redirectUrl, "_blank");
           }
-
-          // TEMPORARILY REMOVED: Redirect to order tracking page
-          // if (orderId) {
-          //   router.push(`/${currentLang}/order/${orderId}`);
-          // } else {
-          //   router.push(`/${currentLang}`);
-          // }
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
             "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
           );
-          // TEMPORARILY REMOVED: Redirect to order tracking page
-          // if (orderId) {
-          //   router.push(`/${currentLang}/order/${orderId}`);
-          // } else {
-          //   router.push(`/${currentLang}`);
-          // }
         }
         return; // Exit early for card payments
       }
@@ -1804,112 +1568,32 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Use the pre-opened window if available, otherwise create form
-            if (paymentWindow && !paymentWindow.closed) {
-              try {
-                paymentWindow.document.open();
-                paymentWindow.document.write(`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <title>Πληρωμή</title>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    </head>
-                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                      <div style="text-align: center;">
-                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                        ${result.data.payment_form}
-                      </div>
-                      <script>
-                        (function() {
-                          var form = document.querySelector('form');
-                          if (form) {
-                            setTimeout(function() {
-                              form.submit();
-                            }, 100);
-                          }
-                        })();
-                      </script>
-                    </body>
-                  </html>
-                `);
-                paymentWindow.document.close();
-              } catch (writeError) {
-                // Fallback to form submission
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = result.data.payment_form;
-                const form = tempDiv.querySelector('form');
-                
-                if (form) {
-                  const formAction = form.getAttribute('action') || '';
-                  const formMethod = form.getAttribute('method') || 'POST';
-                  
-                  const hiddenForm = document.createElement('form');
-                  hiddenForm.method = formMethod;
-                  hiddenForm.action = formAction;
-                  hiddenForm.target = '_blank';
-                  hiddenForm.style.display = 'none';
-                  
-                  form.querySelectorAll('input').forEach((input) => {
-                    const htmlInput = input as HTMLInputElement;
-                    const newInput = document.createElement('input');
-                    newInput.type = htmlInput.type || 'hidden';
-                    newInput.name = htmlInput.name;
-                    newInput.value = htmlInput.value;
-                    hiddenForm.appendChild(newInput);
-                  });
-                  
-                  document.body.appendChild(hiddenForm);
-                  hiddenForm.submit();
-                  
-                  setTimeout(() => {
-                    try {
-                      if (document.body.contains(hiddenForm)) {
-                        document.body.removeChild(hiddenForm);
-                      }
-                    } catch (e) {}
-                  }, 1000);
-                }
-              }
-            } else {
-              // Fallback: use form submission
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = result.data.payment_form;
-              const form = tempDiv.querySelector('form');
-              
-              if (!form) {
-                throw new Error("Could not find payment form in response");
-              }
+            // Extract order ID from the payment form HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = result.data.payment_form;
+            const form = tempDiv.querySelector('form');
+            
+            if (!form) {
+              throw new Error("Could not find payment form in response");
+            }
 
-              const formAction = form.getAttribute('action') || '';
-              const formMethod = form.getAttribute('method') || 'POST';
-              
-              const hiddenForm = document.createElement('form');
-              hiddenForm.method = formMethod;
-              hiddenForm.action = formAction;
-              hiddenForm.target = '_blank';
-              hiddenForm.style.display = 'none';
-              
-              form.querySelectorAll('input').forEach((input) => {
-                const htmlInput = input as HTMLInputElement;
-                const newInput = document.createElement('input');
-                newInput.type = htmlInput.type || 'hidden';
-                newInput.name = htmlInput.name;
-                newInput.value = htmlInput.value;
-                hiddenForm.appendChild(newInput);
-              });
-              
-              document.body.appendChild(hiddenForm);
-              hiddenForm.submit();
-              
-              setTimeout(() => {
-                try {
-                  if (document.body.contains(hiddenForm)) {
-                    document.body.removeChild(hiddenForm);
-                  }
-                } catch (e) {}
-              }, 1000);
+            // Extract order ID from MerchantReference field
+            const merchantRefInput = form.querySelector('input[name="MerchantReference"]') as HTMLInputElement;
+            const extractedOrderId = merchantRefInput?.value ? parseInt(merchantRefInput.value) : orderId;
+            
+            if (extractedOrderId && extractedOrderId !== orderId) {
+              setOrderId(extractedOrderId);
+              addActiveOrder(extractedOrderId, locationCart.locationName);
+            }
+
+            // Redirect the pre-opened window to the payment redirect page
+            if (paymentWindow && !paymentWindow.closed) {
+              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
+              paymentWindow.location.href = redirectUrl;
+            } else {
+              // Window was blocked, open it now (may be blocked by Safari)
+              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
+              window.open(redirectUrl, "_blank");
             }
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
