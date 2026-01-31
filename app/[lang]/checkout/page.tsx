@@ -1541,63 +1541,143 @@ function CheckoutPageContent() {
           const formAction = form.getAttribute('action') || '';
           const formMethod = form.getAttribute('method') || 'POST';
           
-          // Detect iOS/iPhone - use form submission method for better reliability
+          // Detect iOS/iPhone Safari - needs special handling
           const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isIOSSafari = isIOS && isSafari;
           
-          if (isIOS) {
-            // For iPhone/iOS: Use form submission method (more reliable than document.write)
-            // Close the pre-opened window if it exists, we'll use form submission instead
+          if (isIOSSafari && paymentWindow && !paymentWindow.closed) {
+            // For iPhone Safari: Keep the pre-opened window and write form to it
+            // Safari blocks popups from form submissions, so we must use the pre-opened window
+            try {
+              // Clear the window first
+              paymentWindow.document.open();
+              paymentWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Πληρωμή</title>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                    <div style="text-align: center;">
+                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                      ${paymentFormHtml}
+                    </div>
+                    <script>
+                      // Auto-submit the form when the page loads
+                      (function() {
+                        var form = document.querySelector('form');
+                        if (form) {
+                          setTimeout(function() {
+                            form.submit();
+                          }, 100);
+                        }
+                      })();
+                    </script>
+                  </body>
+                </html>
+              `);
+              paymentWindow.document.close();
+            } catch (writeError) {
+              console.error("Error writing to payment window on Safari:", writeError);
+              // If document.write fails, try using the window's location with a data URL
+              try {
+                const blob = new Blob([`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Πληρωμή</title>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                      <div style="text-align: center;">
+                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                        ${paymentFormHtml}
+                      </div>
+                      <script>
+                        (function() {
+                          var form = document.querySelector('form');
+                          if (form) {
+                            setTimeout(function() {
+                              form.submit();
+                            }, 100);
+                          }
+                        })();
+                      </script>
+                    </body>
+                  </html>
+                `], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                paymentWindow.location.href = url;
+              } catch (blobError) {
+                console.error("Error with blob URL:", blobError);
+                // Final fallback: create form in the current window and submit to the pre-opened window
+                const hiddenForm = document.createElement('form');
+                hiddenForm.method = formMethod;
+                hiddenForm.action = formAction;
+                hiddenForm.target = paymentWindow.name || '_blank';
+                hiddenForm.style.display = 'none';
+                
+                form.querySelectorAll('input, textarea, select').forEach((element) => {
+                  const htmlElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+                  if (htmlElement.name) {
+                    const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+                    newElement.name = htmlElement.name;
+                    if ('value' in htmlElement) {
+                      (newElement as any).value = htmlElement.value || '';
+                    }
+                    hiddenForm.appendChild(newElement);
+                  }
+                });
+                
+                document.body.appendChild(hiddenForm);
+                hiddenForm.submit();
+                
+                setTimeout(() => {
+                  try {
+                    if (document.body.contains(hiddenForm)) {
+                      document.body.removeChild(hiddenForm);
+                    }
+                  } catch (e) {}
+                }, 1000);
+              }
+            }
+          } else if (isIOS && !isSafari) {
+            // For iPhone Chrome/other browsers: Use form submission method
             if (paymentWindow && !paymentWindow.closed) {
               paymentWindow.close();
             }
             
-            // Create hidden form and submit directly
             const hiddenForm = document.createElement('form');
             hiddenForm.method = formMethod;
             hiddenForm.action = formAction;
             hiddenForm.target = '_blank';
             hiddenForm.style.display = 'none';
             
-            // Copy all input fields with proper encoding
-            form.querySelectorAll('input').forEach((input) => {
-              const htmlInput = input as HTMLInputElement;
-              const newInput = document.createElement('input');
-              newInput.type = htmlInput.type || 'hidden';
-              newInput.name = htmlInput.name;
-              // Ensure value is properly set (handle special characters)
-              newInput.value = htmlInput.value || '';
-              hiddenForm.appendChild(newInput);
-            });
-            
-            // Also copy any hidden fields or other form elements
-            form.querySelectorAll('textarea, select').forEach((element) => {
-              const htmlElement = element as HTMLTextAreaElement | HTMLSelectElement;
+            form.querySelectorAll('input, textarea, select').forEach((element) => {
+              const htmlElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
               if (htmlElement.name) {
-                const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLTextAreaElement | HTMLSelectElement;
+                const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
                 newElement.name = htmlElement.name;
-                if (htmlElement instanceof HTMLTextAreaElement) {
-                  (newElement as HTMLTextAreaElement).value = htmlElement.value;
-                } else if (htmlElement instanceof HTMLSelectElement) {
-                  (newElement as HTMLSelectElement).value = htmlElement.value;
+                if ('value' in htmlElement) {
+                  (newElement as any).value = htmlElement.value || '';
                 }
                 hiddenForm.appendChild(newElement);
               }
             });
             
             document.body.appendChild(hiddenForm);
-            
-            // Submit the form - this will open payment gateway in new tab
             hiddenForm.submit();
             
-            // Clean up after a delay
             setTimeout(() => {
               try {
                 if (document.body.contains(hiddenForm)) {
                   document.body.removeChild(hiddenForm);
                 }
-              } catch (e) {
-                // Ignore cleanup errors
-              }
+              } catch (e) {}
             }, 1000);
           } else {
             // For desktop/Android: Use window.write method (better UX)
