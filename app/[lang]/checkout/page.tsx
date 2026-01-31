@@ -1528,39 +1528,102 @@ function CheckoutPageContent() {
 
           // Don't clear cart yet - wait for payment verification
 
-          // Use the pre-opened window if available (Safari-compatible), otherwise create form
-          if (paymentWindow && !paymentWindow.closed) {
-            // Write the payment form to the pre-opened window
-            try {
-              paymentWindow.document.open();
-              paymentWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                  <head>
-                    <title>Πληρωμή</title>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  </head>
-                  <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                    <div style="text-align: center;">
-                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Παρακαλώ υποβάλετε τη φόρμα πληρωμής</p>
-                      ${paymentFormHtml}
-                    </div>
-                  </body>
-                </html>
-              `);
-              paymentWindow.document.close();
-            } catch (writeError) {
-              console.error("Error writing to payment window:", writeError);
-              // Fallback: use form submission method
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = paymentFormHtml;
-              const form = tempDiv.querySelector('form');
-              
-              if (form) {
-                const formAction = form.getAttribute('action') || '';
-                const formMethod = form.getAttribute('method') || 'POST';
-                
+          // Parse the payment form HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = paymentFormHtml;
+          const form = tempDiv.querySelector('form');
+          
+          if (!form) {
+            throw new Error("Could not find payment form in response");
+          }
+
+          // Extract form action and method
+          const formAction = form.getAttribute('action') || '';
+          const formMethod = form.getAttribute('method') || 'POST';
+          
+          // Detect iOS/iPhone - use form submission method for better reliability
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          
+          if (isIOS) {
+            // For iPhone/iOS: Use form submission method (more reliable than document.write)
+            // Close the pre-opened window if it exists, we'll use form submission instead
+            if (paymentWindow && !paymentWindow.closed) {
+              paymentWindow.close();
+            }
+            
+            // Create hidden form and submit directly
+            const hiddenForm = document.createElement('form');
+            hiddenForm.method = formMethod;
+            hiddenForm.action = formAction;
+            hiddenForm.target = '_blank';
+            hiddenForm.style.display = 'none';
+            
+            // Copy all input fields with proper encoding
+            form.querySelectorAll('input').forEach((input) => {
+              const htmlInput = input as HTMLInputElement;
+              const newInput = document.createElement('input');
+              newInput.type = htmlInput.type || 'hidden';
+              newInput.name = htmlInput.name;
+              // Ensure value is properly set (handle special characters)
+              newInput.value = htmlInput.value || '';
+              hiddenForm.appendChild(newInput);
+            });
+            
+            // Also copy any hidden fields or other form elements
+            form.querySelectorAll('textarea, select').forEach((element) => {
+              const htmlElement = element as HTMLTextAreaElement | HTMLSelectElement;
+              if (htmlElement.name) {
+                const newElement = document.createElement(htmlElement.tagName.toLowerCase()) as HTMLTextAreaElement | HTMLSelectElement;
+                newElement.name = htmlElement.name;
+                if (htmlElement instanceof HTMLTextAreaElement) {
+                  (newElement as HTMLTextAreaElement).value = htmlElement.value;
+                } else if (htmlElement instanceof HTMLSelectElement) {
+                  (newElement as HTMLSelectElement).value = htmlElement.value;
+                }
+                hiddenForm.appendChild(newElement);
+              }
+            });
+            
+            document.body.appendChild(hiddenForm);
+            
+            // Submit the form - this will open payment gateway in new tab
+            hiddenForm.submit();
+            
+            // Clean up after a delay
+            setTimeout(() => {
+              try {
+                if (document.body.contains(hiddenForm)) {
+                  document.body.removeChild(hiddenForm);
+                }
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }, 1000);
+          } else {
+            // For desktop/Android: Use window.write method (better UX)
+            if (paymentWindow && !paymentWindow.closed) {
+              try {
+                paymentWindow.document.open();
+                paymentWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Πληρωμή</title>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                      <div style="text-align: center;">
+                        <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Παρακαλώ υποβάλετε τη φόρμα πληρωμής</p>
+                        ${paymentFormHtml}
+                      </div>
+                    </body>
+                  </html>
+                `);
+                paymentWindow.document.close();
+              } catch (writeError) {
+                console.error("Error writing to payment window:", writeError);
+                // Fallback to form submission
                 const hiddenForm = document.createElement('form');
                 hiddenForm.method = formMethod;
                 hiddenForm.action = formAction;
@@ -1572,7 +1635,7 @@ function CheckoutPageContent() {
                   const newInput = document.createElement('input');
                   newInput.type = htmlInput.type || 'hidden';
                   newInput.name = htmlInput.name;
-                  newInput.value = htmlInput.value;
+                  newInput.value = htmlInput.value || '';
                   hiddenForm.appendChild(newInput);
                 });
                 
@@ -1584,52 +1647,37 @@ function CheckoutPageContent() {
                     if (document.body.contains(hiddenForm)) {
                       document.body.removeChild(hiddenForm);
                     }
-                  } catch (e) {
-                    // Ignore cleanup errors
-                  }
+                  } catch (e) {}
                 }, 1000);
               }
+            } else {
+              // Window was blocked, use form submission
+              const hiddenForm = document.createElement('form');
+              hiddenForm.method = formMethod;
+              hiddenForm.action = formAction;
+              hiddenForm.target = '_blank';
+              hiddenForm.style.display = 'none';
+              
+              form.querySelectorAll('input').forEach((input) => {
+                const htmlInput = input as HTMLInputElement;
+                const newInput = document.createElement('input');
+                newInput.type = htmlInput.type || 'hidden';
+                newInput.name = htmlInput.name;
+                newInput.value = htmlInput.value || '';
+                hiddenForm.appendChild(newInput);
+              });
+              
+              document.body.appendChild(hiddenForm);
+              hiddenForm.submit();
+              
+              setTimeout(() => {
+                try {
+                  if (document.body.contains(hiddenForm)) {
+                    document.body.removeChild(hiddenForm);
+                  }
+                } catch (e) {}
+              }, 1000);
             }
-          } else {
-            // Fallback: window was blocked or closed, use form submission
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = paymentFormHtml;
-            const form = tempDiv.querySelector('form');
-            
-            if (!form) {
-              throw new Error("Could not find payment form in response");
-            }
-
-            const formAction = form.getAttribute('action') || '';
-            const formMethod = form.getAttribute('method') || 'POST';
-            
-            const hiddenForm = document.createElement('form');
-            hiddenForm.method = formMethod;
-            hiddenForm.action = formAction;
-            hiddenForm.target = '_blank';
-            hiddenForm.style.display = 'none';
-            
-            form.querySelectorAll('input').forEach((input) => {
-              const htmlInput = input as HTMLInputElement;
-              const newInput = document.createElement('input');
-              newInput.type = htmlInput.type || 'hidden';
-              newInput.name = htmlInput.name;
-              newInput.value = htmlInput.value;
-              hiddenForm.appendChild(newInput);
-            });
-            
-            document.body.appendChild(hiddenForm);
-            hiddenForm.submit();
-            
-            setTimeout(() => {
-              try {
-                if (document.body.contains(hiddenForm)) {
-                  document.body.removeChild(hiddenForm);
-                }
-              } catch (e) {
-                // Ignore cleanup errors
-              }
-            }, 1000);
           }
 
           // TEMPORARILY REMOVED: Redirect to order tracking page
