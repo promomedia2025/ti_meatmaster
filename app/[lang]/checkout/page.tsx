@@ -1543,21 +1543,9 @@ function CheckoutPageContent() {
                   </head>
                   <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
                     <div style="text-align: center;">
-                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                      <p style="margin-bottom: 20px; font-size: 16px; color: #333;">Παρακαλώ υποβάλετε τη φόρμα πληρωμής</p>
                       ${paymentFormHtml}
                     </div>
-                    <script>
-                      // Auto-submit the form when the page loads
-                      (function() {
-                        var form = document.querySelector('form');
-                        if (form) {
-                          // Small delay to ensure form is ready
-                          setTimeout(function() {
-                            form.submit();
-                          }, 100);
-                        }
-                      })();
-                    </script>
                   </body>
                 </html>
               `);
