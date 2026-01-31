@@ -27,7 +27,7 @@ export function PaymentRedirect({ formData }: { formData: PaymentFormData }) {
       ref={formRef}
       action="https://paycenter.piraeusbank.gr/redirection/pay.aspx"
       method="POST"
-      target="_blank" // Opens in new tab
+      // No target="_blank" - form submits in current window (already in a new tab from checkout)
     >
       <input type="hidden" name="AcquirerId" value={formData.AcquirerId} />
       <input type="hidden" name="MerchantId" value={formData.MerchantId} />
