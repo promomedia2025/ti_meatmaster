@@ -1601,10 +1601,14 @@ function CheckoutPageContent() {
               "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
           }
+        } else {
+          // For cash on delivery orders, redirect to order tracking page
+          if (orderId) {
+            router.push(`/${currentLang}/order/${orderId}`);
+          } else {
+            router.push(`/${currentLang}`);
+          }
         }
-
-        // TEMPORARILY REMOVED: Redirect to order tracking page
-        // router.push(`/${currentLang}/order/${orderId}`);
       } else {
         console.warn("⚠️ No orderId found in API response:", result);
         alert(

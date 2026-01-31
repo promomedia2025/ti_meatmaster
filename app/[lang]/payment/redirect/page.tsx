@@ -11,10 +11,10 @@ function PaymentRedirectContent() {
 
   // TODO: Replace these with your actual payment gateway credentials
   const paymentFormData = {
-    AcquirerId: "14", // Replace with actual value
-    MerchantId: "2145221159", // Replace with actual value
-    PosId: "2136744836", // Replace with actual value
-    User: "CO578011", // Replace with actual value
+    AcquirerId: process.env.NEXT_PUBLIC_ACQUIRER_ID || ""  , // Replace with actual value
+    MerchantId: process.env.NEXT_PUBLIC_MERCHANT_ID || "", // Replace with actual value
+    PosId: process.env.NEXT_PUBLIC_POS_ID || "", // Replace with actual value
+    User: process.env.NEXT_PUBLIC_USER || "", // Replace with actual value
     LanguageCode: lang === "en" ? "en-US" : "el-GR",
     MerchantReference: orderId || "",
     ParamBackLink: typeof window !== 'undefined' 
