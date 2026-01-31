@@ -1,4 +1,4 @@
-# Piraeus Bank Payment Integration Setup Guide
+# Piraeus Bank Payment Integration Setup 
 
 This document outlines the setup and configuration required for Piraeus Bank credit card payment integration.
 
