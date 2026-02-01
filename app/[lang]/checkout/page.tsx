@@ -2002,7 +2002,7 @@ function CheckoutPageContent() {
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-blue-400" />
                         <span className="text-white text-sm sm:text-base">
-                          ΔΟΚΙΜΑΣΤΙΚΗ ΜΕΘΟΔΟΣ (ΜΗΝ , ΔΕΝ ΘΑ ΛΑΒΟΥΜΕ ΠΑΡΑΓΓΕΛΙΑ)
+                          Πληρωμή με κάρτα
                         </span>
                       </div>
                     </label>
