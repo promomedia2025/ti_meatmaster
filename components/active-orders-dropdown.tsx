@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { usePusher } from "@/lib/pusher-context";
-import { Package, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Package, Clock, CheckCircle, XCircle, ArrowRight, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Order {
@@ -36,75 +36,33 @@ export function ActiveOrdersDropdown({
   const [error, setError] = useState<string | null>(null);
   const subscribedChannelsRef = useRef<Set<string>>(new Set());
 
-  // Fetch active orders when dropdown opens
   useEffect(() => {
     if (isOpen && isAuthenticated && user?.id) {
       fetchActiveOrders();
     }
   }, [isOpen, isAuthenticated, user?.id]);
 
-  // Subscribe to Pusher channels for order updates
   useEffect(() => {
-    if (!isConnected || !isOpen || orders.length === 0) {
-      return;
-    }
+    if (!isConnected || !isOpen || orders.length === 0) return;
 
-    console.log(
-      "🔍 Active Orders Dropdown - Setting up Pusher subscriptions for orders:",
-      orders.map((o) => o.order_id)
-    );
-
-    // Subscribe to each order's channel
     orders.forEach((order) => {
       const channelName = `order.${order.order_id}`;
-
       if (!subscribedChannelsRef.current.has(channelName)) {
-        console.log(`📡 Subscribing to channel: ${channelName}`);
         const channel = subscribe(channelName);
-
         if (channel) {
           subscribedChannelsRef.current.add(channelName);
-
-          // Listen for order status updates
           channel.bind("orderStatusUpdated", (data: any) => {
-            console.log(
-              `📦 Order ${order.order_id} status updated in dropdown:`,
-              data
-            );
-
             const newStatus = data.status_name || data.statusName;
-            console.log(
-              `🔍 Order ${order.order_id} status update: "${newStatus}"`
-            );
-
-            const isOrderCompleted =
-              newStatus && ["Completed", "Canceled"].includes(newStatus);
-
-            console.log(
-              `🔍 Is order ${order.order_id} completed? ${isOrderCompleted}`
-            );
+            const isOrderCompleted = newStatus && ["Completed", "Canceled", "Cancelled"].includes(newStatus);
 
             if (isOrderCompleted) {
-              // Remove the order from dropdown if it's completed/cancelled
-              setOrders((prevOrders) =>
-                prevOrders.filter(
-                  (prevOrder) => prevOrder.order_id !== order.order_id
-                )
-              );
-              console.log(
-                `🗑️ Order ${order.order_id} removed from dropdown (status: ${newStatus})`
-              );
+              setOrders((prev) => prev.filter((o) => o.order_id !== order.order_id));
             } else {
-              // Update the order status if it's still active
-              setOrders((prevOrders) =>
-                prevOrders.map((prevOrder) =>
-                  prevOrder.order_id === order.order_id
-                    ? {
-                        ...prevOrder,
-                        status_id: data.status_id || prevOrder.status_id,
-                        status_name: newStatus || prevOrder.status_name,
-                      }
-                    : prevOrder
+              setOrders((prev) =>
+                prev.map((o) =>
+                  o.order_id === order.order_id
+                    ? { ...o, status_id: data.status_id || o.status_id, status_name: newStatus || o.status_name }
+                    : o
                 )
               );
             }
@@ -113,14 +71,8 @@ export function ActiveOrdersDropdown({
       }
     });
 
-    // Cleanup function
     return () => {
-      console.log(
-        "🔌 Active Orders Dropdown - Cleaning up Pusher subscriptions"
-      );
-      subscribedChannelsRef.current.forEach((channelName) => {
-        unsubscribe(channelName);
-      });
+      subscribedChannelsRef.current.forEach((channelName) => unsubscribe(channelName));
       subscribedChannelsRef.current.clear();
     };
   }, [isConnected, isOpen, orders, subscribe, unsubscribe]);
@@ -129,76 +81,23 @@ export function ActiveOrdersDropdown({
     try {
       setIsLoading(true);
       setError(null);
-
-      // Add cache-busting to ensure fresh data
       const response = await fetch(
         `/api/orders?user_id=${user?.id}&_t=${Date.now()}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        }
+        { headers: { "Cache-Control": "no-cache" } }
       );
       const data = await response.json();
 
       if (data.success && data.data && Array.isArray(data.data)) {
-        // Filter to show only active orders (exclude completed and cancelled)
-        console.log(
-          "🔍 All orders from API:",
-          data.data.map((o) => ({ id: o.order_id, status: o.status_name }))
-        );
-
         const activeOrders = data.data.filter((order: Order) => {
-          const originalStatus = order.status_name;
           const status = order.status_name?.toLowerCase();
-
-          console.log(`🔍 Order ${order.order_id}:`, {
-            originalStatus: `"${originalStatus}"`,
-            lowercasedStatus: `"${status}"`,
-            statusLength: originalStatus?.length,
-            hasSpaces: originalStatus?.includes(" "),
-            trimmedStatus: `"${originalStatus?.trim()}"`,
-          });
-
-          const isActive =
-            status !== "completed" &&
-            status !== "canceled" &&
-            status !== "cancelled";
-
-          console.log(`🔍 Order ${order.order_id} filtering check:`, {
-            isCompleted: status === "completed",
-            isCancelled: status === "cancelled" || status === "canceled",
-            finalResult: isActive ? "✅ KEEP" : "🚫 FILTER OUT",
-          });
-
-          if (!isActive) {
-            console.log(
-              `🚫 Filtering out order ${order.order_id} with status: "${order.status_name}"`
-            );
-          } else {
-            console.log(
-              `✅ Keeping order ${order.order_id} with status: "${order.status_name}"`
-            );
-          }
-
-          return isActive;
+          return status !== "completed" && status !== "canceled" && status !== "cancelled";
         });
-
-        console.log(
-          "✅ Active orders after filtering:",
-          activeOrders.map((o) => ({ id: o.order_id, status: o.status_name }))
-        );
         setOrders(activeOrders);
       } else {
         setOrders([]);
-        setError(data.message || "Failed to load orders");
+        if (!data.success) setError(data.message);
       }
     } catch (err) {
-      console.error("Error fetching active orders:", err);
       setError("Failed to load orders");
       setOrders([]);
     } finally {
@@ -206,145 +105,139 @@ export function ActiveOrdersDropdown({
     }
   };
 
-  const getStatusIcon = (statusName: string) => {
-    switch (statusName.toLowerCase()) {
-      case "pending":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case "delivery":
-        return <Package className="w-4 h-4 text-blue-500" />;
-      case "received":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "canceled":
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
+  // --- LOCALIZATION & STYLING ---
+  const getStatusLabel = (statusName: string) => {
+    const s = statusName.toLowerCase();
+    if (s.includes("pending")) return "Εκκρεμεί";
+    if (s.includes("delivery") || s.includes("road")) return "Στο δρόμο";
+    if (s.includes("received")) return "Ελήφθη";
+    if (s.includes("process")) return "Ετοιμάζεται";
+    return statusName;
   };
 
-  const getStatusColor = (statusName: string) => {
-    switch (statusName.toLowerCase()) {
-      case "pending":
-        return "text-yellow-500";
-      case "delivery":
-        return "text-blue-500";
-      case "received":
-        return "text-green-500";
-      case "canceled":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
+  const getStatusStyle = (statusName: string) => {
+    const s = statusName.toLowerCase();
+    if (s.includes("pending") || s.includes("process")) return { icon: <Clock className="w-4 h-4 text-[#ff9328]" />, color: "text-[#ff9328]" };
+    if (s.includes("delivery")) return { icon: <Package className="w-4 h-4 text-blue-500" />, color: "text-blue-500" };
+    if (s.includes("received")) return { icon: <CheckCircle className="w-4 h-4 text-green-500" />, color: "text-green-500" };
+    return { icon: <Clock className="w-4 h-4 text-muted-foreground" />, color: "text-muted-foreground" };
   };
 
   const formatDate = (orderDate: string, orderTime: string) => {
     try {
       const date = new Date(`${orderDate}T${orderTime}`);
-      return date.toLocaleDateString("el-GR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      return date.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" });
     } catch {
-      return `${orderDate} ${orderTime}`;
+      return orderTime;
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-full right-0 mt-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-[70]">
+    <div 
+      className="absolute top-14 right-0 w-80 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-[70] overflow-hidden origin-top-right animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+    >
+      {/* Triangle Indicator */}
+      <div className="absolute -top-1.5 right-4 w-3 h-3 bg-popover border-l border-t border-border transform rotate-45 z-10"></div>
+
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-popover relative z-20">
         <div className="flex items-center gap-2">
-          <Package className="w-5 h-5 text-blue-500" />
-          <h3 className="text-white font-semibold">Παραγγελίες</h3>
+          <div className="bg-[#ff9328]/10 p-1.5 rounded-full">
+            <Package className="w-4 h-4 text-[#ff9328]" />
+          </div>
+          <h3 className="font-bold text-sm">Ενεργές Παραγγελίες</h3>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
-        >
-          ×
-        </button>
+        <div className="bg-[#ff9328] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            {orders.length}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="max-h-96 overflow-y-auto">
+      {/* Content List */}
+      <div className="max-h-[400px] overflow-y-auto bg-popover relative z-20 custom-scrollbar">
         {isLoading ? (
-          <div className="space-y-3 py-4">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="bg-gray-800 rounded-lg p-4 space-y-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-2/3" />
+          <div className="p-4 space-y-4">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-3">
+                 <Skeleton className="h-10 w-10 rounded-full bg-muted" />
+                 <div className="space-y-2 flex-1">
+                   <Skeleton className="h-4 w-3/4 bg-muted" />
+                   <Skeleton className="h-3 w-1/2 bg-muted" />
+                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="p-4 text-center">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="p-8 text-center">
+            <p className="text-red-500 text-sm font-medium">Σφάλμα φόρτωσης</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="p-4 text-center">
-            <Package className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-            <p className="text-gray-400 text-sm">Δεν υπάρχουν παραγγελίες</p>
+          <div className="p-8 text-center flex flex-col items-center justify-center">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                <Package className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-foreground font-medium text-sm">Καμία ενεργή παραγγελία</p>
+            <p className="text-muted-foreground text-xs mt-1">Κάντε την παραγγελία σας τώρα!</p>
           </div>
         ) : (
-          <div className="p-2">
-            {orders.map((order) => (
-              <div
-                key={order.order_id}
-                className="p-3 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
-                onClick={() => {
-                  router.push(`/order/${order.order_id}`);
-                  onClose();
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h4 className="text-white font-medium text-sm">
-                      {order.location_name}
-                    </h4>
-                    <p className="text-gray-400 text-xs">
-                      #{order.order_id} •{" "}
-                      {formatDate(order.order_date, order.order_time)}
-                    </p>
+          <div className="flex flex-col">
+            {orders.map((order) => {
+              const statusStyle = getStatusStyle(order.status_name);
+              return (
+                <div
+                  key={order.order_id}
+                  onClick={() => {
+                    router.push(`/order/${order.order_id}`);
+                    onClose();
+                  }}
+                  className="group flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b border-border/50 last:border-0"
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Status Icon */}
+                    <div className="mt-1">
+                      {statusStyle.icon}
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-sm text-foreground group-hover:text-[#ff9328] transition-colors line-clamp-1">
+                        {order.location_name}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <span className="font-mono">#{order.order_id}</span>
+                        <span>•</span>
+                        <span>{formatDate(order.order_date, order.order_time)}</span>
+                      </div>
+                      <p className={`text-xs font-bold mt-1 ${statusStyle.color}`}>
+                          {getStatusLabel(order.status_name)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-white font-semibold text-sm">
-                      {parseFloat(order.order_total).toFixed(2)}{" "}
-                      {order.currency}
-                    </p>
+
+                  <div className="text-right pl-2">
+                     <span className="block font-bold text-sm text-foreground whitespace-nowrap">
+                       {parseFloat(order.order_total).toFixed(2)} {order.currency}
+                     </span>
+                     <ArrowRight className="w-4 h-4 text-[#ff9328] ml-auto mt-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(order.status_name)}
-                  <span
-                    className={`text-xs font-medium ${getStatusColor(
-                      order.status_name
-                    )}`}
-                  >
-                    {order.status_name}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Footer */}
       {orders.length > 0 && (
-        <div className="p-3 border-t border-gray-800">
+        <div className="p-3 bg-muted/30 border-t border-border relative z-20">
           <button
             onClick={() => {
               router.push("/order-history");
               onClose();
             }}
-            className="w-full text-center text-blue-500 hover:text-blue-400 text-sm font-medium transition-colors"
+            className="w-full py-2 text-center text-sm font-medium text-foreground hover:text-[#ff9328] transition-colors rounded-lg hover:bg-muted"
           >
-            Προβολή όλων των παραγγελιών
+            Ιστορικό Παραγγελιών
           </button>
         </div>
       )}

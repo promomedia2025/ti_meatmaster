@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderMenuItem {
@@ -84,11 +84,11 @@ export function OrderDetailsModal({
       if (data.success && data.data) {
         setOrderDetails(data.data);
       } else {
-        setError("Failed to load order details");
+        setError("Αποτυχία φόρτωσης λεπτομερειών");
       }
     } catch (err) {
       console.error("Error fetching order details:", err);
-      setError("Failed to load order details");
+      setError("Αποτυχία φόρτωσης λεπτομερειών");
     } finally {
       setIsLoading(false);
     }
@@ -117,16 +117,16 @@ export function OrderDetailsModal({
       case "delivery":
       case "delivered":
       case "complete":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
+        return "bg-green-500/10 text-green-400 border-green-500/20";
       case "received":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
       case "pending":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
       case "cancelled":
       case "canceled":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
+        return "bg-[#7C2429]/10 text-[#7C2429] border-[#7C2429]/20";
       default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+        return "bg-zinc-800 text-zinc-400 border-zinc-700";
     }
   };
 
@@ -134,8 +134,9 @@ export function OrderDetailsModal({
     switch (statusName.toLowerCase()) {
       case "delivery":
       case "delivered":
+        return "Στο δρόμο";
       case "complete":
-        return "Παραδόθηκε";
+        return "Ολοκληρώθηκε";
       case "received":
         return "Ελήφθη";
       case "pending":
@@ -148,79 +149,91 @@ export function OrderDetailsModal({
     }
   };
 
+  // Helper to translate Order Total titles if needed
+  const getTranslatedTitle = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.includes("subtotal")) return "Υποσύνολο";
+    if (lower.includes("total")) return "Σύνολο";
+    if (lower.includes("delivery")) return "Κόστος Διανομής";
+    return title;
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col mx-4 shadow-xl"
+        className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-800 p-6 flex items-center justify-between z-10 rounded-t-lg">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-xl font-bold text-white">
               Παραγγελία #{orderId}
             </h2>
             {orderDetails && (
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-zinc-400 text-sm mt-1">
                 {orderDetails.location_name}
               </p>
             )}
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+            className="text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full"
           >
-            <X className="w-6 h-6" />
-          </button>
+            <X className="w-5 h-5" />
+          </Button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400">Φόρτωση λεπτομερειών...</div>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+              <div className="text-zinc-500">Φόρτωση λεπτομερειών...</div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="text-red-400">{error}</div>
+              <div className="text-[#7C2429] bg-[#7C2429]/10 border border-[#7C2429]/20 p-4 rounded-lg inline-block">
+                {error}
+              </div>
             </div>
           ) : orderDetails ? (
             <>
               {/* Order Info */}
-              <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Πληροφορίες Παραγγελίας
+              <div className="bg-black border border-zinc-800 rounded-xl p-5">
+                <h3 className="text-sm font-bold text-zinc-300 tracking-wider mb-4 border-b border-zinc-800 pb-2">
+                  Πληροφορίες
                 </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
                   <div>
-                    <span className="text-gray-400">Ημερομηνία:</span>
-                    <p className="text-white">{formatDate(orderDetails.order_date)}</p>
+                    <span className="block text-zinc-500 mb-1">Ημερομηνία</span>
+                    <p className="text-white font-medium">{formatDate(orderDetails.order_date)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-400">Ώρα:</span>
-                    <p className="text-white">{formatTime(orderDetails.order_time)}</p>
+                    <span className="block text-zinc-500 mb-1">Ώρα</span>
+                    <p className="text-white font-medium">{formatTime(orderDetails.order_time)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-400">Κατάσταση:</span>
-                    <p className="text-white">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs border ${getStatusColor(
-                          orderDetails.status_name
-                        )}`}
-                      >
-                        {getStatusText(orderDetails.status_name)}
-                      </span>
-                    </p>
+                    <span className="block text-zinc-500 mb-1">Κατάσταση</span>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
+                        orderDetails.status_name
+                      )}`}
+                    >
+                      {getStatusText(orderDetails.status_name)}
+                    </span>
                   </div>
                   {orderDetails.order_type_name && (
                     <div>
-                      <span className="text-gray-400">Τύπος:</span>
-                      <p className="text-white">{orderDetails.order_type_name}</p>
+                      <span className="block text-zinc-500 mb-1">Τύπος</span>
+                      <p className="text-white font-medium">{orderDetails.order_type_name}</p>
                     </div>
                   )}
                 </div>
@@ -228,21 +241,21 @@ export function OrderDetailsModal({
 
               {/* Delivery Address */}
               {(orderDetails.bell_name || orderDetails.floor) && (
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">
+                <div className="bg-black border border-zinc-800 rounded-xl p-5">
+                  <h3 className="text-sm font-bold text-zinc-300 tracking-wider mb-4 border-b border-zinc-800 pb-2">
                     Διεύθυνση Παράδοσης
                   </h3>
-                  <div className="space-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     {orderDetails.floor && (
                       <div>
-                        <span className="text-gray-400">Όροφος:</span>
-                        <p className="text-white">{orderDetails.floor}</p>
+                        <span className="block text-zinc-500 mb-1">Όροφος</span>
+                        <p className="text-white font-medium">{orderDetails.floor}</p>
                       </div>
                     )}
                     {orderDetails.bell_name && (
                       <div>
-                        <span className="text-gray-400">Κουδούνι:</span>
-                        <p className="text-white">{orderDetails.bell_name}</p>
+                        <span className="block text-zinc-500 mb-1">Κουδούνι</span>
+                        <p className="text-white font-medium">{orderDetails.bell_name}</p>
                       </div>
                     )}
                   </div>
@@ -251,41 +264,38 @@ export function OrderDetailsModal({
 
               {/* Order Items */}
               {orderDetails.menu_items && orderDetails.menu_items.length > 0 && (
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">
+                <div className="bg-black border border-zinc-800 rounded-xl p-5">
+                  <h3 className="text-sm font-bold text-zinc-300 tracking-wider mb-4 border-b border-zinc-800 pb-2">
                     Προϊόντα ({orderDetails.menu_items.length})
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {orderDetails.menu_items.map((item, index) => (
                       <div
                         key={index}
-                        className="bg-gray-900 rounded-lg p-4 border border-gray-700"
+                        className="flex justify-between items-start pb-4 border-b border-zinc-800 last:border-0 last:pb-0"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <h4 className="text-white font-semibold">
-                              {item.menu_name}
-                            </h4>
-                            {item.menu_comment && (
-                              <p className="text-gray-400 text-sm mt-1">
-                                Σχόλιο: {item.menu_comment}
-                              </p>
-                            )}
-                            {item.menu_options && (
-                              <p className="text-gray-400 text-sm mt-1">
-                                {item.menu_options}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right ml-4">
-                            <p className="text-white font-semibold">
-                              {formatCurrency(item.menu_subtotal)}{" "}
-                              {orderDetails.currency}
-                            </p>
-                            <p className="text-gray-400 text-sm">
-                              Ποσότητα: {item.menu_quantity}
-                            </p>
-                          </div>
+                        <div className="flex gap-3">
+                            <div className="flex items-center justify-center w-6 h-6 bg-zinc-800 text-white text-xs font-bold rounded">
+                                {item.menu_quantity}x
+                            </div>
+                            <div>
+                                <h4 className="text-white font-medium text-sm">
+                                    {item.menu_name}
+                                </h4>
+                                {item.menu_options && (
+                                    <p className="text-zinc-500 text-xs mt-1">
+                                    {item.menu_options}
+                                    </p>
+                                )}
+                                {item.menu_comment && (
+                                    <p className="text-zinc-500 text-xs mt-1 italic">
+                                    "{item.menu_comment}"
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="text-white font-medium text-sm whitespace-nowrap">
+                          {formatCurrency(item.menu_subtotal)} {orderDetails.currency}
                         </div>
                       </div>
                     ))}
@@ -296,52 +306,41 @@ export function OrderDetailsModal({
               {/* Order Totals */}
               {orderDetails.order_totals &&
                 orderDetails.order_totals.length > 0 && (
-                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">
-                      Σύνοψη
-                    </h3>
+                  <div className="bg-zinc-800/50 border border-zinc-800 rounded-xl p-5">
                     <div className="space-y-2">
                       {orderDetails.order_totals
                         .sort((a, b) => a.priority - b.priority)
-                        .map((total, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between items-center"
-                          >
-                            <span
-                              className={
-                                total.title.toLowerCase().includes("total") &&
-                                !total.title.toLowerCase().includes("subtotal")
-                                  ? "text-white font-semibold"
-                                  : "text-gray-300"
-                              }
-                            >
-                              {total.title}
-                            </span>
-                            <span
-                              className={
-                                total.title.toLowerCase().includes("total") &&
-                                !total.title.toLowerCase().includes("subtotal")
-                                  ? "text-white font-semibold text-lg"
-                                  : "text-gray-300"
-                              }
-                            >
-                              {formatCurrency(total.value)}{" "}
-                              {orderDetails.currency}
-                            </span>
-                          </div>
-                        ))}
+                        .map((total, index) => {
+                            const isTotal = total.title.toLowerCase().includes("total") && !total.title.toLowerCase().includes("subtotal");
+                            return (
+                                <div
+                                    key={index}
+                                    className={`flex justify-between items-center ${isTotal ? "pt-2 mt-2 border-t border-zinc-700" : ""}`}
+                                >
+                                    <span
+                                    className={isTotal ? "text-white font-bold text-base" : "text-zinc-400 text-sm"}
+                                    >
+                                    {getTranslatedTitle(total.title)}
+                                    </span>
+                                    <span
+                                    className={isTotal ? "text-white font-bold text-lg" : "text-zinc-300 text-sm"}
+                                    >
+                                    {formatCurrency(total.value)} {orderDetails.currency}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
                   </div>
                 )}
 
               {/* Order Comment */}
               {orderDetails.comment && (
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Σχόλια Παραγγελίας
+                <div className="bg-black border border-zinc-800 rounded-xl p-5">
+                  <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-2 border-b border-zinc-800 pb-2">
+                    Σχόλια
                   </h3>
-                  <p className="text-gray-300">{orderDetails.comment}</p>
+                  <p className="text-zinc-300 text-sm italic">"{orderDetails.comment}"</p>
                 </div>
               )}
             </>
@@ -349,10 +348,10 @@ export function OrderDetailsModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-800 p-6 flex justify-end">
+        <div className="border-t border-zinc-800 p-6 bg-zinc-900 rounded-b-xl flex justify-end">
           <Button
             onClick={onClose}
-            className="bg-gray-800 text-white hover:bg-gray-700"
+            className="bg-white text-black hover:bg-zinc-200 font-medium px-6"
           >
             Κλείσιμο
           </Button>

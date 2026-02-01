@@ -3,25 +3,39 @@
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { MapPin, Clock, User, LogOut, Settings, Heart } from "lucide-react";
+import { MapPin, Clock, LogOut, Settings, Heart } from "lucide-react";
 import Link from "next/link";
 
 export default function UserPage() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading } = useAuth() as any;
   const router = useRouter();
 
+  // --- Helper Logic for Name & Initials ---
+  const getFullName = () => {
+    if (!user) return "Προφίλ Χρήστη";
+    if (user.first_name || user.last_name) {
+      return `${user.first_name || ""} ${user.last_name || ""}`.trim();
+    }
+    return user.name || user.email || "Προφίλ Χρήστη";
+  };
+
+  const getInitials = () => {
+    if (!user) return "U";
+    const first = user.first_name?.charAt(0) || "";
+    const last = user.last_name?.charAt(0) || "";
+    if (first || last) return (first + last).toUpperCase();
+    const fallback = user.name || user.email || "";
+    return fallback.charAt(0).toUpperCase() || "U";
+  };
+
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push("/");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-white">Redirecting...</div>
-      </div>
-    );
+  if (isLoading || (!user && isAuthenticated !== false)) {
+    return <div className="min-h-screen bg-black" />;
   }
 
   const handleLogout = () => {
@@ -29,118 +43,98 @@ export default function UserPage() {
     router.push("/");
   };
 
+  const renderMenuItem = (
+    href: string | null,
+    title: string,
+    description: string,
+    icon: React.ReactNode,
+    onClick?: () => void
+  ) => {
+    const content = (
+      <div className="flex items-center gap-4">
+        {/* ICON: Using Brand Orange #ff9328 */}
+        <div className="w-12 h-12 rounded-xl bg-[#ff9328]/10 flex items-center justify-center text-[#ff9328] group-hover:bg-[#ff9328] group-hover:text-white transition-all duration-300">
+          {icon}
+        </div>
+        
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-white group-hover:text-[#ff9328] transition-colors">
+            {title}
+          </h3>
+          <p className="text-zinc-500 text-sm group-hover:text-zinc-400 transition-colors">
+            {description}
+          </p>
+        </div>
+        
+        <div className="text-zinc-600 group-hover:text-[#ff9328] transition-colors transform group-hover:translate-x-1 duration-200">
+          →
+        </div>
+      </div>
+    );
+
+    const baseClasses = "block w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[#ff9328]/30 hover:bg-zinc-800 transition-all duration-200 group";
+
+    return href ? (
+      <Link href={href} className={baseClasses}>{content}</Link>
+    ) : (
+      <button onClick={onClick} className={baseClasses}>{content}</button>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
+      <div className="bg-zinc-900 border-b border-zinc-800">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center gap-6">
+            {/* Avatar Circle: Brand Orange Background */}
+            <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center border-4 border-black shadow-xl shrink-0">
+              <span className="text-3xl font-bold text-white tracking-wider">
+                {getInitials()}
+              </span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                {user?.name || user?.email || "User Profile"}
+            
+            <div className="overflow-hidden">
+              <h1 className="text-3xl font-bold text-white truncate mb-1">
+                {getFullName()}
               </h1>
-              <p className="text-gray-400">{user?.email}</p>
+              <p className="text-zinc-400 truncate">{user?.email}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Menu Items */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="space-y-4">
-          {/* Profile */}
-          <Link
-            href="/user/profile"
-            className="block bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
-                <Settings className="w-6 h-6 text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">
-                  Προφίλ Χρήστη
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Επεξεργασία των προσωπικών σας στοιχείων
-                </p>
-              </div>
-              <div className="text-gray-400 group-hover:text-white transition-colors">
-                →
-              </div>
-            </div>
-          </Link>
+          {renderMenuItem(
+            "/user/profile",
+            "Προφίλ Χρήστη", 
+            "Επεξεργασία των προσωπικών σας στοιχείων",
+            <Settings className="w-6 h-6" />
+          )}
 
+          {renderMenuItem(
+            "/address-book",
+            "Βιβλίο Διευθύνσεων",
+            "Διαχείριση των διευθύνσεων παράδοσης",
+            <MapPin className="w-6 h-6" />
+          )}
 
-          {/* Address Book */}
-          <Link
-            href="/address-book"
-            className="block bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center group-hover:bg-green-500/30 transition-colors">
-                <MapPin className="w-6 h-6 text-green-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">
-                  Βιβλίο Διευθύνσεων
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Διαχείριση των διευθύνσεων παράδοσης
-                </p>
-              </div>
-              <div className="text-gray-400 group-hover:text-white transition-colors">
-                →
-              </div>
-            </div>
-          </Link>
+          {renderMenuItem(
+            "/order-history",
+            "Ιστορικό Παραγγελιών",
+            "Προβολή των προηγούμενων παραγγελιών σας",
+            <Clock className="w-6 h-6" />
+          )}
 
-          {/* Order History */}
-          <Link
-            href="/order-history"
-            className="block bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
-                <Clock className="w-6 h-6 text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">
-                  Ιστορικό Παραγγελιών
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Προβολή των προηγούμενων παραγγελιών σας
-                </p>
-              </div>
-              <div className="text-gray-400 group-hover:text-white transition-colors">
-                →
-              </div>
-            </div>
-          </Link>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-full bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors group text-left"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
-                <LogOut className="w-6 h-6 text-red-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">Αποσύνδεση</h3>
-                <p className="text-gray-400 text-sm">
-                  Αποσύνδεση από τον λογαριασμό σας
-                </p>
-              </div>
-              <div className="text-gray-400 group-hover:text-white transition-colors">
-                →
-              </div>
-            </div>
-          </button>
+          {renderMenuItem(
+            null,
+            "Αποσύνδεση",
+            "Αποσύνδεση από τον λογαριασμό σας",
+            <LogOut className="w-6 h-6" />,
+            handleLogout
+          )}
         </div>
       </div>
     </div>

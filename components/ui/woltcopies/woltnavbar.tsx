@@ -1,7 +1,6 @@
 "use client";
 
 import { WoltLocation } from "./location";
-import WoltSearchBar from "./woltsearchbar";
 import { LocationModal } from "@/components/location-modal";
 import { AuthModal } from "@/components/auth-modal";
 import { SearchResultsOverlay } from "@/components/search-results-overlay";
@@ -18,10 +17,9 @@ import { type Locale } from "@/lib/i18n/config";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { User, X, ShoppingCart, Package } from "lucide-react";
-import Logo from "@/public/logo.png";
+import { User, X, Package } from "lucide-react";
 import Link from "next/link";
-import LocationCartCTA from "@/components/LocationCartCTA"; // 👈 ADDED
+import LocationCartCTA from "@/components/LocationCartCTA";
 
 interface WoltNavbarProps {
   lang: Locale;
@@ -54,6 +52,21 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
   const { coordinates, refreshAddress } = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const navbarRef = useRef<HTMLDivElement>(null);
+
+  // --- HELPER FUNCTIONS FOR USER DATA ---
+  const getInitials = () => {
+    if (!user) return "";
+    const first = user.first_name?.charAt(0) || "";
+    const last = user.last_name?.charAt(0) || "";
+    return (first + last).toUpperCase() || user.email?.charAt(0).toUpperCase() || "?";
+  };
+
+  const getFullName = () => {
+    if (!user) return "";
+    const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+    return fullName || user.email || "User";
+  };
+  // ---------------------------------------
 
   // Check if we're on a restaurant or location page
   const isRestaurantPage =
@@ -95,12 +108,9 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
   useEffect(() => {
     const fetchCityFromIP = async () => {
       try {
-        // Call our internal API route instead of external APIs
         const response = await fetch("/api/get-location");
-
         if (response.ok) {
           const data = await response.json();
-
           if (data.city) {
             setCityName(data.city);
           }
@@ -111,7 +121,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
         setIsLoadingCity(false);
       }
     };
-
     fetchCityFromIP();
   }, []);
 
@@ -122,7 +131,7 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
     }
   }, [lang, coordinates, refreshAddress]);
 
-  // Update location display when coordinates change (user selects location)
+  // Update location display when coordinates change
   useEffect(() => {
     if (!coordinates) return;
 
@@ -137,39 +146,26 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
           const result = await response.json();
           if (result.success && result.data) {
             const address = result.data.address || {};
-
-            // Extract street, house number, and postal code
             const street = address.road || address.street || "";
             const houseNumber = address.house_number || "";
             const postcode = address.postcode || "";
+            const city = address.city || "";
 
-            // Build display string: "Street HouseNumber, PostalCode, City"
             const parts = [];
-            if (street && houseNumber) {
-              parts.push(`${street} ${houseNumber}`);
-            } else if (street) {
-              parts.push(street);
-            }
-            if (postcode) {
-              parts.push(postcode);
-            }
-            if (address.city) {
-              parts.push(address.city);
-            }
+            if (street && houseNumber) parts.push(`${street} ${houseNumber}`);
+            else if (street) parts.push(street);
+            if (postcode) parts.push(postcode);
+            if (city) parts.push(city);
 
-            const locationDisplay =
-              parts.length > 0
-                ? parts.join(", ")
-                : address.suburb ||
-                  address.neighbourhood ||
-                  address.city ||
-                  "Location";
+            const locationDisplay = parts.length > 0 
+              ? parts.join(", ") 
+              : address.suburb || address.neighbourhood || address.city || "Location";
 
             setCityName(locationDisplay);
           }
         }
       } catch (error) {
-        // Error handling without logging
+        // Error handling
       } finally {
         setIsLoadingCity(false);
       }
@@ -182,20 +178,11 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-
-      // Check if click is on the profile button itself
       const profileButton = document.querySelector("[data-profile-button]");
-      if (profileButton && profileButton.contains(target)) {
-        return; // Don't close if clicking on the profile button
-      }
-
-      // Check if click is on the profile dropdown itself
+      if (profileButton && profileButton.contains(target)) return;
       const profileDropdown = document.querySelector("[data-profile-dropdown]");
-      if (profileDropdown && profileDropdown.contains(target)) {
-        return; // Don't close if clicking inside the dropdown
-      }
+      if (profileDropdown && profileDropdown.contains(target)) return;
 
-      // Close the dropdown if clicking outside
       if (isProfileDialogOpen) {
         setIsProfileDialogOpen(false);
       }
@@ -204,40 +191,23 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
     if (isProfileDialogOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isProfileDialogOpen]);
 
-  // Close search when clicking outside (but not on search results or tags)
+  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-
-      // Check if click is on search results overlay
-      const searchResultsOverlay = document.querySelector(
-        "[data-search-results]"
-      );
-      if (searchResultsOverlay && searchResultsOverlay.contains(target)) {
-        return; // Don't close if clicking on search results
-      }
-
-      // Check if click is on search tags
+      const searchResultsOverlay = document.querySelector("[data-search-results]");
+      if (searchResultsOverlay && searchResultsOverlay.contains(target)) return;
       const searchTags = document.querySelector("[data-search-tags]");
-      if (searchTags && searchTags.contains(target)) {
-        return; // Don't close if clicking on search tags
-      }
+      if (searchTags && searchTags.contains(target)) return;
+      if (navbarRef.current && navbarRef.current.contains(target)) return;
 
-      // Check if click is on the navbar (search bar, profile, etc.)
-      if (navbarRef.current && navbarRef.current.contains(target)) {
-        return; // Don't close if clicking on navbar elements
-      }
-
-      // Close search if clicking outside all the above areas
       if (isSearchExpanded) {
         setIsSearchExpanded(false);
-        // Delay showing cart icon until after animation completes (300ms)
         setTimeout(() => {
           setShowCartIcon(true);
         }, 300);
@@ -247,7 +217,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
     if (isSearchExpanded) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -255,14 +224,11 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
 
   const handleSearchToggle = (isExpanded: boolean) => {
     setIsSearchExpanded(isExpanded);
-
     if (!isExpanded) {
-      // Delay showing cart icon until after animation completes (300ms)
       setTimeout(() => {
         setShowCartIcon(true);
       }, 300);
     } else {
-      // Hide cart icon immediately when expanding
       setShowCartIcon(false);
     }
   };
@@ -270,13 +236,12 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
   const handleProfileClick = () => {
     if (isSearchExpanded) {
       setIsSearchExpanded(false);
-      // Delay showing cart icon until after animation completes (300ms)
       setTimeout(() => {
         setShowCartIcon(true);
       }, 300);
     } else {
-      setIsActiveOrdersOpen(false); // Close active orders dropdown
-      setIsProfileDialogOpen(true);
+      setIsActiveOrdersOpen(false);
+      setIsProfileDialogOpen((prev) => !prev);
     }
   };
 
@@ -285,7 +250,7 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
       await logout();
       setIsProfileDialogOpen(false);
     } catch (error) {
-      // Error handling without logging
+      // Error handling
     }
   };
 
@@ -312,7 +277,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             : "bg-transparent"
         }`}
       >
-        {/* Dark gray background overlay - only show on non-restaurant pages or when search is expanded */}
         {!isRestaurantPage && (
           <div
             className={`absolute top-0 right-0 h-full transition-all duration-300 ease-in-out ${
@@ -340,7 +304,6 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
                 className="w-[70px] h-[60px] scale-100"
               />
             </Link>
-            {/* Location on desktop - next to logo, only when not scrolled and search not expanded */}
             {!isScrolled && !isSearchExpanded && (
               <div className="hidden lg:block">
                 <WoltLocation
@@ -358,31 +321,22 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             <div className="sm:hidden">
               <LanguageSwitcher currentLang={lang} />
             </div>
-            {/* Active Orders Button */}
-            <div
-              className={`hidden sm:block ${
-                isSearchExpanded ? "hidden sm:hidden" : ""
-              }`}
-            >
+            
+            <div className={`hidden sm:block ${isSearchExpanded ? "hidden sm:hidden" : ""}`}>
               <LanguageSwitcher currentLang={lang} />
             </div>
+
+            {/* Active Orders Button */}
             {isAuthenticated && (
-              <div
-                className={`relative ${
-                  isSearchExpanded ? "hidden sm:block" : ""
-                }`}
-              >
+              <div className={`relative ${isSearchExpanded ? "hidden sm:block" : ""}`}>
                 <button
                   onClick={() => {
-                    setIsProfileDialogOpen(false); // Close profile dropdown
+                    setIsProfileDialogOpen(false);
                     setIsActiveOrdersOpen(!isActiveOrdersOpen);
                   }}
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-background hover:bg-muted border-2 border-border transition-colors focus-visible:ring-2 focus-visible:ring-[#FF9800] focus-visible:border-[#FF9800] focus-visible:outline-none"
                 >
-                  <Package
-                    className="w-5 h-5 text-muted-foreground"
-                    strokeWidth={2.5}
-                  />
+                  <Package className="w-5 h-5 text-muted-foreground" strokeWidth={2.5} />
                 </button>
                 <ActiveOrdersDropdown
                   isOpen={isActiveOrdersOpen}
@@ -390,73 +344,93 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
                 />
               </div>
             )}
-            {/* Language Switcher */}
+
+            {/* User Profile Button & Dropdown */}
             <div className="relative">
               <button
                 data-profile-button
-                onClick={handleProfileClick}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-background hover:bg-muted border-2 border-border transition-colors focus-visible:ring-2 focus-visible:ring-[#FF9800] focus-visible:border-[#FF9800] focus-visible:outline-none"
+                onClick={isAuthenticated ? handleProfileClick : handleAuthClick}
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors focus-visible:outline-none
+                  ${isAuthenticated
+                    ? "bg-[#ff9328] border-[#ff9328] hover:bg-[#915316]"
+                    : "bg-background border-border hover:bg-muted"
+                  }
+                `}
               >
                 {isSearchExpanded ? (
-                  <X
-                    className="w-5 h-5 text-muted-foreground"
-                    strokeWidth={2.5}
-                  />
+                  <X className={`w-5 h-5 stroke-[2.5px] ${isAuthenticated ? "text-white" : "text-muted-foreground"}`} />
                 ) : (
-                  <User
-                    className="w-5 h-5 text-muted-foreground"
-                    strokeWidth={2.5}
-                  />
+                  <User className={`w-5 h-5 stroke-[2.5px] ${isAuthenticated ? "text-white" : "text-muted-foreground"}`} />
                 )}
               </button>
 
-              {/* Profile Dropdown */}
               {isProfileDialogOpen && (
                 <div
                   data-profile-dropdown
-                  className="absolute top-13 right-[5px] bg-background border border-border rounded-lg shadow-lg min-w-[200px] z-[70]"
+                  className="absolute top-14 right-0 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl min-w-[260px] z-[70] overflow-hidden origin-top-right animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 ease-out"
                 >
-                  {/* Inverted triangle */}
-                  <div className="absolute -top-2 right-2 w-4 h-4 bg-background border-l border-t border-border transform rotate-45"></div>
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-popover border-l border-t border-border transform rotate-45 z-10"></div>
+
                   {!isAuthenticated ? (
-                    <div className="py-2">
+                    <div className="flex flex-col py-1 relative z-20 bg-popover">
                       <div
-                        className="px-4 py-3 border-b border-border cursor-pointer hover:bg-muted transition-colors"
+                        className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between group"
                         onClick={handleAuthClick}
                       >
-                        {dict.navigation.loginOrRegister}
+                        <span className="font-medium">{dict.navigation.loginOrRegister}</span>
+                        <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-foreground text-sm">
-                          {dict.navigation.language}
-                        </p>
+                      <div className="h-[1px] bg-border mx-4 my-1"></div>
+                      <div className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between group">
+                        <p className="text-sm font-medium">{dict.navigation.language}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">English</span>
+                          <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-2">
+                    <div className="flex flex-col relative z-20 bg-popover">
+                      {/* User Profile Header Card */}
                       <div
-                        className="px-4 py-3 border-b border-border cursor-pointer hover:bg-muted transition-colors"
+                        className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border group"
                         onClick={() => {
                           router.push(`/${lang}/user`);
                           setIsProfileDialogOpen(false);
                         }}
                       >
-                        <p className="text-foreground text-sm">
-                          {dict.navigation.profile}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground font-bold shrink-0 border border-border/50">
+                            {getInitials()}
+                          </div>
+                          <div className="flex-1 flex flex-col overflow-hidden">
+                            <span className="font-bold text-sm text-foreground truncate">
+                              {getFullName()}
+                            </span>
+                            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                              {dict.navigation.profile}
+                            </span>
+                          </div>
+                          <svg className="w-5 h-5 text-muted-foreground group-hover:text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
                       </div>
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-foreground text-sm">
-                          {dict.navigation.language}
-                        </p>
-                      </div>
-                      <div className="px-4 py-3">
-                        <button
-                          onClick={handleLogout}
-                          className="text-foreground text-sm hover:text-muted-foreground transition-colors"
-                        >
-                          {dict.navigation.logout}
-                        </button>
+
+                      {/* Menu Items */}
+                      <div className="py-2">
+                        <div className="px-4 py-3">
+                          <button
+                            onClick={handleLogout}
+                            className="w-full text-left text-sm font-medium text-foreground hover:text-muted-foreground transition-colors"
+                          >
+                            {dict.navigation.logout}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -465,27 +439,22 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             </div>
 
             {/* Cart Buttons */}
-{isAuthenticated && (
-  <div
-    className={`flex items-center gap-3 ${
-      isSearchExpanded ? "hidden sm:flex" : ""
-    }`}
-  >
-    {pathname.includes("/location/") && locationId && (
-      <div
-        className="hidden md:flex"
-        onClick={() => setCartViewLocationId(locationId)}
-      >
-        <LocationCartCTA locationId={locationId} />
-      </div>
-    )}
-  </div>
-)}
-
+            {isAuthenticated && (
+              <div className={`flex items-center gap-3 ${isSearchExpanded ? "hidden sm:flex" : ""}`}>
+                {pathname.includes("/location/") && locationId && (
+                  <div
+                    className="hidden md:flex"
+                    onClick={() => setCartViewLocationId(locationId)}
+                  >
+                    <LocationCartCTA locationId={locationId} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Search Tags - only show when search is expanded */}
+        {/* Search Tags */}
         {isSearchExpanded && (
           <div className="relative z-10 max-w-[1600px] w-full mx-auto">
             <SearchTags
@@ -495,7 +464,7 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
           </div>
         )}
 
-        {/* Location below navbar - only on mobile/tablet, hidden on desktop */}
+        {/* Location below navbar (mobile) */}
         {!isScrolled && (
           <div
             className={`lg:hidden relative h-[50px] flex items-center transition-all duration-300 max-w-[1600px] w-full mx-auto ${
@@ -522,7 +491,7 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
         />
       </div>
 
-      {/* Search Results - positioned to connect with search bar */}
+      {/* Search Results */}
       {isSearchExpanded && (
         <div className="relative z-[50] -mt-2">
           <SearchResultsOverlay

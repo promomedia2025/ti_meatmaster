@@ -1,6 +1,6 @@
 "use client";
 
-import { X, MapPin } from "lucide-react";
+import { X, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import GooglePlacesCustom from "./google-places-custom";
@@ -18,333 +18,206 @@ export function AddAddressModal({
   onClose,
   onAddressAdded,
 }: AddAddressModalProps) {
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const [address, setAddress] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [bellName, setBellName] = useState("");
   const [floor, setFloor] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Handle address input change
   const handleAddressChange = (value: string) => {
     setAddress(value);
   };
 
-  // Handle Google Places selection
   const handleGooglePlaceSelect = (place: any) => {
-    console.log("🗺️ Full Google Place Object:", place);
-    console.log("📍 Formatted Address:", place.formatted_address);
-    console.log("🏠 Address Components:", place.address_components);
-    console.log("📍 Geometry:", place.geometry);
-
-    // Extract and log coordinates
-    if (place?.geometry?.location) {
-      const lat =
-        typeof place.geometry.location.lat === "function"
-          ? place.geometry.location.lat()
-          : place.geometry.location.lat;
-      const lng =
-        typeof place.geometry.location.lng === "function"
-          ? place.geometry.location.lng()
-          : place.geometry.location.lng;
-
-      console.log("📍 [ADD-ADDRESS-MODAL] Selected address coordinates:", {
-        latitude: lat,
-        longitude: lng,
-      });
-    } else {
-      console.log(
-        "📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place"
-      );
-    }
-
     setSelectedPlace(place);
     setAddress(place.formatted_address);
-
-    if (place.formatted_address) {
-      console.log("✅ Place selected successfully!");
-    }
   };
 
-  // Generate Google Maps embed URL
   const getMapsEmbedUrl = (place: any) => {
     if (!place?.geometry?.location) return null;
+    const lat = typeof place.geometry.location.lat === "function" ? place.geometry.location.lat() : place.geometry.location.lat;
+    const lng = typeof place.geometry.location.lng === "function" ? place.geometry.location.lng() : place.geometry.location.lng;
+    const addr = encodeURIComponent(place.formatted_address);
+    return `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${addr}&center=${lat},${lng}&zoom=15`;
+  };
 
-    const lat = place.geometry.location.lat();
-    const lng = place.geometry.location.lng();
-    const address = encodeURIComponent(place.formatted_address);
+  const handleSave = async () => {
+    if (!selectedPlace) return;
+    setIsSaving(true);
 
-    return `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${address}&center=${lat},${lng}&zoom=15`;
+    try {
+      // 1. Extract Coordinates
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      if (selectedPlace?.geometry?.location) {
+        latitude = typeof selectedPlace.geometry.location.lat === "function" ? selectedPlace.geometry.location.lat() : selectedPlace.geometry.location.lat;
+        longitude = typeof selectedPlace.geometry.location.lng === "function" ? selectedPlace.geometry.location.lng() : selectedPlace.geometry.location.lng;
+      }
+
+      // 2. Extract Components
+      const components = selectedPlace.address_components || [];
+      let streetNumber = "", route = "", city = "", state = "", postcode = "", country = "";
+
+      components.forEach((c: any) => {
+        if (c.types.includes("street_number")) streetNumber = c.long_name;
+        if (c.types.includes("route")) route = c.long_name;
+        if (c.types.includes("locality") || c.types.includes("administrative_area_level_2")) city = c.long_name;
+        if (c.types.includes("administrative_area_level_1")) state = c.long_name;
+        if (c.types.includes("postal_code")) postcode = c.long_name;
+        if (c.types.includes("country")) country = c.long_name;
+      });
+
+      const address1 = route && streetNumber ? `${route} ${streetNumber}` : (route || streetNumber || selectedPlace.formatted_address);
+
+      // 3. API Payload
+      const apiBody: any = {
+        customer_id: user?.id,
+        address_1: address1,
+        city: city || "",
+        state: state || "",
+        postcode: postcode || "",
+        country: country || "Ελλάδα",
+        bell_name: bellName || "",
+        floor: floor || "",
+        is_default: false,
+      };
+
+      if (latitude && longitude) {
+        apiBody.latitude = latitude;
+        apiBody.longitude = longitude;
+      }
+
+      const csrfResponse = await fetch("/api/csrf");
+      const { csrfToken } = await csrfResponse.json();
+
+      const response = await fetch("/api/address-book/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+        body: JSON.stringify(apiBody),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        if (onAddressAdded) onAddressAdded();
+        onClose();
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-lg w-full max-w-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-white">
-                Προσθήκη Διεύθυνσης
-              </h2>
-              <p className="text-gray-400 text-sm">
-                Προσθέστε μια νέα διεύθυνση παράδοσης
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-gray-400 hover:text-white hover:bg-gray-800"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
+    <>
+      {/* Dark Mode Google Places Styles */}
+      <style jsx global>{`
+        .pac-container {
+          background-color: #18181b !important;
+          border: 1px solid #27272a !important;
+          border-radius: 0.75rem;
+          margin-top: 8px;
+          z-index: 9999 !important;
+        }
+        .pac-item {
+          border-top: 1px solid #27272a !important;
+          color: #a1a1aa !important;
+          padding: 10px 14px;
+        }
+        .pac-item:hover { background-color: #27272a !important; }
+        .pac-item-query { color: #ffffff !important; }
+        .pac-logo:after { display: none; }
+        .pac-icon { filter: invert(100%) opacity(0.5); }
+      `}</style>
 
-        {/* Form */}
-        <div className="p-6 space-y-6">
-          {/* Google Places Autocomplete */}
-          <div className="space-y-2">
-            <label className="text-base font-medium text-white">
-              Διεύθυνση *
-            </label>
-            <GooglePlacesCustom
-              value={address}
-              onChange={handleAddressChange}
-              onPlaceSelect={handleGooglePlaceSelect}
-              placeholder="Αναζήτηση διεύθυνσης..."
-              className="w-full"
-            />
-          </div>
-
-          {/* Google Maps Preview */}
-          {selectedPlace && (
-            <div className="space-y-2">
-              <label className="text-base font-medium text-white">
-                Προεπισκόπηση
-              </label>
-              <div className="w-full h-64 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-                {getMapsEmbedUrl(selectedPlace) ? (
-                  <iframe
-                    src={getMapsEmbedUrl(selectedPlace)}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Selected Address Preview"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-400">Map Preview</p>
-                    </div>
-                  </div>
-                )}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-200">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-[#ff9328]/10 rounded-full flex items-center justify-center border border-[#ff9328]/20">
+                <MapPin className="w-5 h-5 text-[#ff9328]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Προσθήκη Διεύθυνσης</h2>
+                <p className="text-zinc-500 text-xs">Εισάγετε τα στοιχεία παράδοσης</p>
               </div>
             </div>
-          )}
-
-          {/* Bell Name Field */}
-          {selectedPlace && (
-            <div className="space-y-2">
-              <label
-                htmlFor="bellName"
-                className="text-base font-medium text-white"
-              >
-                Όνομα στο Κουδούνι
-              </label>
-              <Input
-                id="bellName"
-                type="text"
-                value={bellName}
-                onChange={(e) => setBellName(e.target.value)}
-                placeholder="π.χ. Παππάς"
-                className="w-full bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
-            </div>
-          )}
-
-          {/* Floor Field */}
-          {selectedPlace && (
-            <div className="space-y-2">
-              <label
-                htmlFor="floor"
-                className="text-base font-medium text-white"
-              >
-                Όροφος
-              </label>
-              <Input
-                id="floor"
-                type="text"
-                value={floor}
-                onChange={(e) => setFloor(e.target.value)}
-                placeholder="π.χ. 3"
-                className="w-full bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white py-3 text-base"
-            >
-              Κλείσιμο
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-zinc-500 hover:text-white rounded-full">
+              <X className="w-5 h-5" />
             </Button>
-            <Button
-              type="button"
-              onClick={async () => {
-                if (!selectedPlace) {
-                  console.log("❌ No address selected");
-                  return;
-                }
+          </div>
 
-                try {
-                  // Extract coordinates from selected place
-                  let latitude: number | undefined;
-                  let longitude: number | undefined;
+          <div className="p-6 space-y-5">
+            {/* Search Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-400  tracking-wider">Διεύθυνση *</label>
+              <GooglePlacesCustom
+                value={address}
+                onChange={handleAddressChange}
+                onPlaceSelect={handleGooglePlaceSelect}
+                placeholder="Αναζητήστε την οδό σας..."
+              />
+            </div>
 
-                  if (selectedPlace?.geometry?.location) {
-                    latitude =
-                      typeof selectedPlace.geometry.location.lat === "function"
-                        ? selectedPlace.geometry.location.lat()
-                        : selectedPlace.geometry.location.lat;
-                    longitude =
-                      typeof selectedPlace.geometry.location.lng === "function"
-                        ? selectedPlace.geometry.location.lng()
-                        : selectedPlace.geometry.location.lng;
+            {selectedPlace && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+                {/* Map Preview */}
+                <div className="w-full h-40 bg-black rounded-xl overflow-hidden border border-zinc-800 relative">
+                  {getMapsEmbedUrl(selectedPlace) && (
+                    <iframe
+                      src={getMapsEmbedUrl(selectedPlace)!}
+                      width="100%" height="100%" style={{ border: 0 }}
+                      className="grayscale invert-[0.9] hue-rotate-180 contrast-125 opacity-60"
+                    />
+                  )}
+                  <div className="absolute inset-0 pointer-events-none border-inner border-zinc-800/50" />
+                </div>
 
-                    console.log(
-                      "📍 [ADD-ADDRESS-MODAL] Address coordinates before saving:",
-                      {
-                        latitude,
-                        longitude,
-                      }
-                    );
-                  } else {
-                    console.log(
-                      "📍 [ADD-ADDRESS-MODAL] No coordinates available in selected place"
-                    );
-                  }
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-zinc-400 ">Κουδούνι</label>
+                    <Input 
+                      value={bellName} onChange={(e) => setBellName(e.target.value)} 
+                      placeholder="π.χ. Παππάς"
+                      className="bg-black border-zinc-800 text-white focus:border-[#ff9328]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-zinc-400 ">Όροφος</label>
+                    <Input 
+                      value={floor} onChange={(e) => setFloor(e.target.value)} 
+                      placeholder="π.χ. 2ος"
+                      className="bg-black border-zinc-800 text-white focus:border-[#ff9328]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-                  // Extract address components from Google Places
-                  const addressComponents =
-                    selectedPlace.address_components || [];
-                  let streetNumber = "";
-                  let route = "";
-                  let city = "";
-                  let state = "";
-                  let postcode = "";
-                  let country = "";
-
-                  addressComponents.forEach((component: any) => {
-                    const types = component.types;
-                    if (types.includes("street_number")) {
-                      streetNumber = component.long_name;
-                    } else if (types.includes("route")) {
-                      route = component.long_name;
-                    } else if (
-                      types.includes("locality") ||
-                      types.includes("administrative_area_level_2")
-                    ) {
-                      city = component.long_name;
-                    } else if (types.includes("administrative_area_level_1")) {
-                      state = component.long_name;
-                    } else if (types.includes("postal_code")) {
-                      postcode = component.long_name;
-                    } else if (types.includes("country")) {
-                      country = component.long_name;
-                    }
-                  });
-
-                  // Construct address_1 (route + street number) - Greek format
-                  const address1 =
-                    route && streetNumber
-                      ? `${route} ${streetNumber}`.trim()
-                      : route ||
-                        streetNumber ||
-                        selectedPlace.formatted_address;
-
-                  // API body structure
-                  const apiBody: any = {
-                    customer_id: user?.id || 3, // Use actual user ID from auth context
-                    address_1: address1 || selectedPlace.formatted_address,
-                    city: city || "",
-                    state: state || "",
-                    postcode: postcode || "",
-                    country: country || "Ελλάδα",
-                    bell_name: bellName || "",
-                    floor: floor || "",
-                    is_default: false,
-                  };
-
-                  // Add coordinates if available
-                  if (latitude !== undefined && longitude !== undefined) {
-                    apiBody.latitude = latitude;
-                    apiBody.longitude = longitude;
-                  }
-
-                  console.log("📤 API Body for address creation:", apiBody);
-
-                  // Get CSRF token
-                  const csrfResponse = await fetch("/api/csrf");
-                  const csrfData = await csrfResponse.json();
-
-                  if (!csrfData.csrfToken) {
-                    throw new Error("Failed to get CSRF token");
-                  }
-
-                  // Make API call to create address
-                  const response = await fetch("/api/address-book/create", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "x-csrf-token": csrfData.csrfToken,
-                    },
-                    body: JSON.stringify(apiBody),
-                  });
-
-                  const result = await response.json();
-
-                  if (result.success) {
-                    console.log("✅ Address created successfully:", result);
-                    // Call the callback to refresh addresses
-                    if (onAddressAdded) {
-                      console.log(
-                        "🔄 Calling onAddressAdded to refresh address list"
-                      );
-                      onAddressAdded();
-                    }
-                    // Close the modal
-                    onClose();
-                  } else {
-                    console.error("❌ Failed to create address:", result);
-                    alert(`Failed to create address: ${result.message}`);
-                  }
-                } catch (error) {
-                  console.error("❌ Error creating address:", error);
-                  alert("An error occurred while creating the address");
-                }
-              }}
-              disabled={!selectedPlace}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Actions */}
+          <div className="p-6 border-t border-zinc-800 flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1 border-zinc-800 text-zinc-400 hover:bg-zinc-800">
+              Ακύρωση
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={!selectedPlace || isSaving}
+              className="flex-1 bg-[#ff9328] hover:bg-[#915316] text-white font-bold shadow-lg shadow-orange-900/20"
             >
-              Αποθήκευση Διεύθυνσης
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Αποθήκευση"}
             </Button>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

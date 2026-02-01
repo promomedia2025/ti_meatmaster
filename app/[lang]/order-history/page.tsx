@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useEffect, useState } from "react";
-import { Clock, ArrowLeft, Package, MapPin } from "lucide-react";
+import { Clock, ArrowLeft, Package, Receipt, Calendar, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderDetailsModal } from "@/components/order-details-modal";
@@ -22,7 +22,7 @@ interface Order {
 }
 
 export default function OrderHistoryPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth() as any;
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,222 +31,166 @@ export default function OrderHistoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && isAuthenticated === false) {
       router.push("/");
-      return;
     }
+  }, [isAuthenticated, authLoading, router]);
 
+  useEffect(() => {
     if (user?.id) {
       fetchOrders();
+    } else if (!authLoading && !isAuthenticated) {
+      setIsLoading(false);
     }
-  }, [isAuthenticated, user?.id, router]);
+  }, [user?.id, authLoading, isAuthenticated]);
 
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
       setError(null);
-
       const response = await fetch(`/api/orders?user_id=${user?.id}`);
       const data = await response.json();
 
-      console.log("Orders API response:", data);
-
-      // Handle the specific API response structure
       if (data.success && data.data && Array.isArray(data.data)) {
         setOrders(data.data);
       } else {
         setOrders([]);
-        setError(data.message || "Failed to load orders");
+        if (!data.success) setError(data.message || "Αποτυχία φόρτωσης παραγγελιών");
       }
     } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError("Failed to load orders");
+      setError("Σφάλμα κατά τη φόρτωση του ιστορικού");
       setOrders([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getStatusColor = (statusName: string) => {
-    switch (statusName.toLowerCase()) {
-      case "delivery":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "received":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-      case "pending":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-      case "cancelled":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-    }
-  };
-
-  const getStatusText = (statusName: string) => {
-    switch (statusName.toLowerCase()) {
-      case "delivery":
-        return "Παραδόθηκε";
-      case "received":
-        return "Ελήφθη";
-      case "pending":
-        return "Εκκρεμεί";
-      case "cancelled":
-        return "Ακυρώθηκε";
-      default:
-        return statusName;
-    }
+  // --- GREEK STATUS MAPPING ---
+  const getStatusDisplay = (statusName: string) => {
+    const s = statusName.toLowerCase();
+    if (s.includes("delivery") || s.includes("road") || s.includes("δρόμο")) 
+      return { text: "Σε εξέλιξη", style: "bg-[#ff9328]/10 text-[#ff9328] border-[#ff9328]/20" };
+    if (s.includes("received") || s.includes("completed") || s.includes("ολοκληρώθηκε")) 
+      return { text: "Ολοκληρώθηκε", style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
+    if (s.includes("pending") || s.includes("processing") || s.includes("εκκρεμεί")) 
+      return { text: "Εκκρεμεί", style: "bg-amber-500/10 text-amber-400 border-amber-500/20" };
+    if (s.includes("cancelled") || s.includes("canceled") || s.includes("ακυρώθηκε")) 
+      return { text: "Ακυρώθηκε", style: "bg-red-500/10 text-red-400 border-red-500/20" };
+    
+    return { text: statusName, style: "bg-zinc-800 text-zinc-400 border-zinc-700" };
   };
 
   const formatDate = (orderDate: string, orderTime: string) => {
-    // Combine date and time to create a proper datetime string
-    const dateTimeString = `${orderDate}T${orderTime}`;
-    const date = new Date(dateTimeString);
+    const date = new Date(`${orderDate}T${orderTime}`);
     return date.toLocaleDateString("el-GR", {
-      year: "numeric",
-      month: "long",
       day: "numeric",
+      month: "short",
+      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-white">Redirecting...</div>
-      </div>
-    );
-  }
+  if (authLoading || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/user"
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-white" />
-            </Link>
-            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-              <Clock className="w-6 h-6 text-white" />
+      <div className="bg-zinc-900 border-b border-zinc-800">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center border-4 border-zinc-900 shadow-xl shrink-0">
+              <Clock className="w-8 h-8 text-[#ff9328]" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">
-                Ιστορικό Παραγγελιών
-              </h1>
-              <p className="text-gray-400">
-                Προβολή των προηγούμενων παραγγελιών σας
-              </p>
+              <h1 className="text-3xl font-bold text-white mb-1">Ιστορικό Παραγγελιών</h1>
+              <p className="text-zinc-400">Διαχειριστείτε τις προηγούμενες παραγγελίες σας</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Loading State */}
-        {isLoading && (
+        <div className="mb-8">
+          <Link 
+            href="/user" 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-sm hover:text-white transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Πίσω στο προφίλ</span>
+          </Link>
+        </div>
+
+        {isLoading ? (
           <div className="space-y-4">
-            {[...Array(3)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <Skeleton className="h-6 w-48 mb-2" />
-                    <Skeleton className="h-4 w-64" />
-                  </div>
-                  <div className="text-right">
-                    <Skeleton className="h-6 w-24 mb-2" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <Skeleton className="h-6 w-1/3 bg-zinc-800 mb-4" />
+                <Skeleton className="h-4 w-1/2 bg-zinc-800" />
               </div>
             ))}
           </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
-            <p className="text-red-200">{error}</p>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-16 bg-zinc-900/50 border border-zinc-800 rounded-xl border-dashed">
+            <Package className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-6">Δεν βρέθηκαν παραγγελίες</h3>
+            <Link href="/" className="bg-[#ff9328] text-white px-8 py-3 rounded-full font-bold transition-all hover:bg-[#915316]">
+              Κάντε την πρώτη σας παραγγελία
+            </Link>
           </div>
-        )}
-
-        {/* Orders List */}
-        {!isLoading && !error && (
+        ) : (
           <div className="space-y-4">
-            {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Δεν υπάρχουν παραγγελίες
-                </h3>
-                <p className="text-gray-400">
-                  Οι παραγγελίες σας θα εμφανίζονται εδώ
-                </p>
-              </div>
-            ) : (
-              orders.map((order) => (
+            {orders.map((order) => {
+              const status = getStatusDisplay(order.status_name);
+              return (
                 <div
                   key={order.order_id}
                   onClick={() => {
                     setSelectedOrderId(order.order_id);
                     setIsModalOpen(true);
                   }}
-                  className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[#ff9328]/30 hover:bg-zinc-800/50 transition-all cursor-pointer group"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {order.location_name}
-                      </h3>
-                      <p className="text-gray-400 text-sm">
-                        #{order.order_id} •{" "}
-                        {formatDate(order.order_date, order.order_time)}
-                      </p>
+                  <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328]/50 transition-colors">
+                        <Receipt className="w-6 h-6 text-zinc-500 group-hover:text-[#ff9328] transition-colors" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white group-hover:text-[#ff9328] transition-colors">
+                          {order.location_name}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500 mt-1">
+                          <span className="font-mono">#{order.order_id}</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(order.order_date, order.order_time)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white font-semibold text-lg">
-                        {parseFloat(order.order_total).toFixed(2)}{" "}
-                        {order.currency}
-                      </p>
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs border ${getStatusColor(
-                          order.status_name
-                        )}`}
-                      >
-                        {getStatusText(order.status_name)}
+
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-[10px]  tracking-wider font-bold border ${status.style}`}>
+                        {status.text}
                       </span>
+                      <p className="text-white font-bold text-xl">
+                        {parseFloat(order.order_total).toFixed(2)} {order.currency}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Clock className="w-4 h-4" />
-                    <span>
-                      Σύνολο: {parseFloat(order.order_total).toFixed(2)}{" "}
-                      {order.currency}
-                    </span>
+                  <div className="flex items-center justify-end pt-4 border-t border-zinc-800/50 mt-4 text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                    <span>Λεπτομέρειες παραγγελίας</span>
+                    <ChevronRight className="w-4 h-4 ml-1" />
                   </div>
                 </div>
-              ))
-            )}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
-
-      {/* Order Details Modal */}
       <OrderDetailsModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -256,6 +200,7 @@ export default function OrderHistoryPage() {
         orderId={selectedOrderId}
         userId={user?.id || null}
       />
+      <MobileBottomNav />
     </div>
   );
 }
