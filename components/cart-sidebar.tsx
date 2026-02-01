@@ -9,6 +9,8 @@ import {
   RotateCcw,
   Loader2,
   Trash2,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
@@ -133,10 +135,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [isRemoving, setIsRemoving] = useState(false);
   const [clearingCarts, setClearingCarts] = useState<Set<number>>(new Set());
-  const [locationImages, setLocationImages] = useState<Map<number, string>>(
-    new Map()
-  );
-  const fetchedLocationIdsRef = useRef<Set<number>>(new Set());
+  
+  // REMOVED: locationImages state and fetching logic (since we removed the header image)
+  
   const [menuItemImages, setMenuItemImages] = useState<Map<number, string>>(
     new Map()
   );
@@ -227,59 +228,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
     // Optimistic UI: hide carts that are being cleared
     return filtered.filter((cart) => !clearingCarts.has(cart.locationId));
   }, [locationCarts, locationId, clearingCarts]);
-
-  // Fetch location images for carts
-  useEffect(() => {
-    const fetchLocationImages = async () => {
-      if (displayCarts.length === 0) return;
-
-      // Use functional update to check current state without including it in dependencies
-      let missingIds: number[] = [];
-      setLocationImages((currentImages) => {
-        const locationIds = displayCarts.map((cart) => cart.locationId);
-        missingIds = locationIds.filter(
-          (id) =>
-            !fetchedLocationIdsRef.current.has(id) &&
-            !currentImages.has(id) &&
-            !displayCarts.find((c) => c.locationId === id)?.locationImage
-        );
-        return currentImages; // Don't update yet
-      });
-
-      if (missingIds.length === 0) return;
-
-      // Mark as being fetched to prevent duplicate requests
-      missingIds.forEach((id) => fetchedLocationIdsRef.current.add(id));
-
-      try {
-        // Fetch all locations and filter by the ones we need
-        const response = await fetch("/api/locations");
-        const data = await response.json();
-
-        if (data.success && data.data?.locations) {
-          // Use functional update to add new images
-          setLocationImages((prevImages) => {
-            const updatedImages = new Map(prevImages);
-            data.data.locations.forEach((location: any) => {
-              if (
-                missingIds.includes(location.id) &&
-                location.images?.thumbnail?.url
-              ) {
-                updatedImages.set(location.id, location.images.thumbnail.url);
-              }
-            });
-            return updatedImages;
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching location images:", error);
-        // Remove from fetched set on error so we can retry
-        missingIds.forEach((id) => fetchedLocationIdsRef.current.delete(id));
-      }
-    };
-
-    fetchLocationImages();
-  }, [displayCarts]);
 
   // Fetch menu item images for cart items
   useEffect(() => {
@@ -396,17 +344,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   }, [activeCartTab, isAuthenticated, user?.id, locationId, fetchOrders]);
 
   const handleOrderAgain = async (order: Order) => {
-    // For now, we'll just show a message since we don't have the detailed order items
-    // In a real implementation, you'd need to fetch the order details first
     alert(
       `Παραγγελία ξανά για ${order.location_name} - Σύνολο: ${order.order_total} ${order.currency}`
     );
-
-    // TODO: Implement actual order again functionality
-    // This would involve:
-    // 1. Fetching the detailed order items from the API
-    // 2. Adding those items to the cart
-    // 3. Navigating to the restaurant page
   };
 
   const formatDate = (orderDate: string, orderTime: string) => {
@@ -473,35 +413,25 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const buildInitialSelections = useCallback(
     (menuItem: LocationMenuItem, cartItem: CartItem): SelectedOption[] => {
       if (!menuItem.menu_options || !cartItem.options) {
-        console.log("No menu options or cart item options found:", {
-          hasMenuOptions: !!menuItem.menu_options,
-          hasCartOptions: !!cartItem.options,
-        });
         return [];
       }
 
-      // Optimized: Create Maps for O(1) lookups instead of O(N) linear searches
       const cartOptionsMap = new Map<number, CartItemOption>(
         cartItem.options.map((opt) => [opt.menu_option_id, opt])
       );
 
       const selections: SelectedOption[] = [];
 
-      // O(M) where M = menu options count
       menuItem.menu_options.forEach((option) => {
-        // O(1) lookup instead of O(C) linear search
         const cartOption = cartOptionsMap.get(option.menu_option_id);
         if (!cartOption) return;
 
-        // Create Map for option values for O(1) lookup
         const optionValuesMap = new Map<number, MenuOptionValueData>(
           option.option_values.map((val) => [val.menu_option_value_id, val])
         );
 
-        // O(V) where V = cart values count (was O(V × OV))
         const matchingValues = cartOption.values
           .map((value) => {
-            // O(1) lookup instead of O(OV) linear search
             const optValue = optionValuesMap.get(value.menu_option_value_id);
             return optValue && optValue.available !== false ? optValue : null;
           })
@@ -510,9 +440,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           );
 
         if (!matchingValues.length) {
-          console.log(
-            `No matching values found for option ${option.option_name}`
-          );
           return;
         }
 
@@ -534,9 +461,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         });
       });
 
-      console.log(
-        `Built ${selections.length} initial selections from ${cartItem.options.length} cart options`
-      );
       return selections;
     },
     [isSingleSelectMenuOption]
@@ -545,30 +469,25 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
   const getStatusColor = (statusName: string) => {
     switch (statusName.toLowerCase()) {
       case "delivery":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
+        return "bg-green-500/10 text-green-400 border-green-500/20";
       case "received":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
       case "pending":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
       case "cancelled":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
+        return "bg-[#ff9328]/10 text-[#ff9328] border-[#ff9328]/20";
       default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+        return "bg-zinc-800 text-zinc-400 border-zinc-700";
     }
   };
 
   const getStatusText = (statusName: string) => {
     switch (statusName.toLowerCase()) {
-      case "delivery":
-        return "Παραδόθηκε";
-      case "received":
-        return "Ελήφθη";
-      case "pending":
-        return "Εκκρεμεί";
-      case "cancelled":
-        return "Ακυρώθηκε";
-      default:
-        return statusName;
+      case "delivery": return "Στο δρόμο";
+      case "received": return "Ολοκληρώθηκε";
+      case "pending": return "Εκκρεμεί";
+      case "cancelled": return "Ακυρώθηκε";
+      default: return statusName;
     }
   };
 
@@ -585,8 +504,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
   const handleCartItemOptionsClick = useCallback(
     async (cart: ServerLocationCart, cartItem: CartItem) => {
-      console.log("Cart item clicked:", cartItem);
-
       if (
         !locationId ||
         isLoadingMenuOptions ||
@@ -596,7 +513,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         return;
       }
 
-      // Open modal immediately with loading state
       setModalCartItem(cartItem);
       setModalLocationId(cart.locationId);
       setModalInitialQuantity(cartItem.qty);
@@ -604,7 +520,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
       setModalRestaurantStatus(cart.restaurantStatus);
       setIsMenuOptionsModalOpen(true);
       setIsLoadingMenuOptions(true);
-      // Set menuItem to null initially - modal will show loading state
       setModalMenuItem(null);
       setModalInitialSelections([]);
 
@@ -613,7 +528,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         let menuItemsMap = menuItemsMapCacheRef.current.get(cart.locationId);
 
         if (!menuItems) {
-          // Fetch all menu items with pagination support
           let allMenuItems: LocationMenuItem[] = [];
           let page = 1;
           const perPage = 100;
@@ -631,7 +545,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
             allMenuItems.push(...(data.data.menu_items as LocationMenuItem[]));
 
-            // Check if there are more pages
             const pagination = data.data?.pagination;
             if (
               !pagination ||
@@ -647,44 +560,26 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           menuItems = allMenuItems;
           menuItemsCacheRef.current.set(cart.locationId, menuItems);
 
-          // Create Map for O(1) lookup by menu_id
           menuItemsMap = new Map<number, LocationMenuItem>();
           menuItems.forEach((item) => {
-            menuItemsMap.set(item.menu_id, item);
+            menuItemsMap!.set(item.menu_id, item);
           });
           menuItemsMapCacheRef.current.set(cart.locationId, menuItemsMap);
         } else if (!menuItemsMap) {
-          // If we have menuItems from cache but no Map, create it
           menuItemsMap = new Map<number, LocationMenuItem>();
           menuItems.forEach((item) => {
-            menuItemsMap.set(item.menu_id, item);
+            menuItemsMap!.set(item.menu_id, item);
           });
           menuItemsMapCacheRef.current.set(cart.locationId, menuItemsMap);
         }
 
-        console.log("Looking for menu item with id:", cartItem.id);
-        console.log("Available menu items count:", menuItems.length);
-        console.log(
-          "Available menu item IDs:",
-          menuItems.map((item) => item.menu_id)
-        );
-
-        // Optimized: Use Map for O(1) lookup instead of O(N) linear search
         let menuItem: LocationMenuItem | undefined;
 
         if (menuItemsMap) {
-          // O(1) lookup - try with cartItem.id as-is (assuming it's a number)
           const cartItemId =
             typeof cartItem.id === "number" ? cartItem.id : Number(cartItem.id);
           menuItem = menuItemsMap.get(cartItemId);
-
-          // If not found and we have a valid number, the item doesn't exist
-          // (No need for additional type coercion since Map keys are numbers)
         } else {
-          // Fallback to linear search if Map doesn't exist (shouldn't happen)
-          console.warn(
-            "Menu items Map cache not found, falling back to linear search"
-          );
           menuItem = menuItems.find((item) => item.menu_id === cartItem.id);
           if (!menuItem) {
             menuItem = menuItems.find(
@@ -694,20 +589,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         }
 
         if (!menuItem) {
-          console.error("Menu item not found:", {
-            cartItemId: cartItem.id,
-            cartItemIdType: typeof cartItem.id,
-            cartItemName: cartItem.name,
-            locationId: cart.locationId,
-            availableMenuIds: menuItems.map((item) => item.menu_id),
-            availableMenuIdTypes: menuItems.map((item) => typeof item.menu_id),
-            menuItemsCount: menuItems.length,
-            firstFewMenuItems: menuItems.slice(0, 3).map((item) => ({
-              id: item.menu_id,
-              name: item.menu_name,
-              type: typeof item.menu_id,
-            })),
-          });
           toast.error(
             `Δεν βρέθηκε το προϊόν "${cartItem.name}" στο μενού. Ίσως έχει αφαιρεθεί.`
           );
@@ -716,11 +597,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
         }
 
         const initialSelections = buildInitialSelections(menuItem, cartItem);
-        console.log("Initial selections built:", initialSelections);
-        console.log("Cart item options:", cartItem.options);
-        console.log("Menu item options:", menuItem.menu_options);
-
-        // Update modal with menu item data
         setModalMenuItem(menuItem);
         setModalInitialSelections(initialSelections);
       } catch (error) {
@@ -754,7 +630,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
       setIsSubmittingMenuOptions(true);
 
       try {
-        // Transform optionValues from flat array to grouped format required by API
         const transformedOptions = (optionValues || []).reduce(
           (acc: any[], optionValue: any) => {
             const existingOption = acc.find(
@@ -783,7 +658,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           []
         );
 
-        // Call server-side API route to update cart item
         const response = await fetch("/api/cart/update", {
           method: "PUT",
           headers: {
@@ -808,7 +682,6 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           return;
         }
 
-        // Refresh cart to get updated data
         await refreshCart();
 
         toast.success("Το προϊόν ενημερώθηκε επιτυχώς");
@@ -838,13 +711,13 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
       }`}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Sidebar with responsive animation */}
       <div
-        className={`fixed bg-[#1a1a1a] border-border shadow-xl transition-all duration-500 ease-out flex flex-col
+        className={`fixed bg-zinc-900 border-l border-zinc-800 shadow-2xl transition-all duration-500 ease-out flex flex-col
           /* Mobile: bottom-to-top animation, full width */
-          bottom-0 left-0 right-0 ${locationId ? "h-screen" : "h-[91vh]"} ${
+          bottom-0 left-0 right-0 ${locationId ? "h-screen" : "h-[95vh]"} ${
           locationId ? "" : "rounded-t-2xl border-t"
         }
           /* Desktop: right-to-left animation, 30vw width */
@@ -856,11 +729,11 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           <h2 className="text-xl font-bold text-white">Οι παραγγελίες σου</h2>
           <button
             onClick={onClose}
-            className="p-2 bg-[#3f3f3f] rounded-full hover:bg-[#4f4f4f] transition-colors cursor-pointer"
+            className="p-2 bg-black rounded-full hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-800"
           >
             <X className="w-5 h-5 text-white" />
           </button>
@@ -868,13 +741,13 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
         {/* Tabs - only show when not in a specific restaurant */}
         {!locationId && (
-          <div className="flex border-b border-border">
+          <div className="flex border-b border-zinc-800 bg-black">
             <button
               onClick={() => setActiveCartTab("carts")}
               className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                 activeCartTab === "carts"
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-zinc-900 text-white border-b-2 border-[#ff9328]"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               Καλάθια αγορών
@@ -883,8 +756,8 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
               onClick={() => setActiveCartTab("orders")}
               className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                 activeCartTab === "orders"
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-zinc-900 text-white border-b-2 border-[#ff9328]"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               Παραγγελία ξανά
@@ -897,19 +770,19 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           {!locationId && activeCartTab === "orders" ? (
             <div className=" ">
               {isLoadingOrders ? (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {[...Array(3)].map((_, index) => (
                     <div
                       key={index}
-                      className="bg-[#3f3f3f] rounded-lg p-2 border border-gray-700"
+                      className="bg-black rounded-xl p-4 border border-zinc-800"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <Skeleton className="h-4 w-32 mb-2" />
-                          <Skeleton className="h-3 w-48 mb-2" />
+                          <Skeleton className="h-4 w-32 mb-2 bg-zinc-800" />
+                          <Skeleton className="h-3 w-48 mb-2 bg-zinc-800" />
                           <div className="flex items-center gap-2">
-                            <Skeleton className="h-4 w-16" />
-                            <Skeleton className="h-5 w-20 rounded" />
+                            <Skeleton className="h-4 w-16 bg-zinc-800" />
+                            <Skeleton className="h-5 w-20 rounded bg-zinc-800" />
                           </div>
                         </div>
                       </div>
@@ -917,38 +790,39 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                   ))}
                 </div>
               ) : ordersError ? (
-                <div className="text-center text-red-400 py-8">
+                <div className="text-center text-[#ff9328] py-8 bg-[#ff9328]/10 rounded-xl m-4 border border-[#ff9328]/20">
                   <p>{ordersError}</p>
                 </div>
               ) : orders.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center text-zinc-500 py-16 flex flex-col items-center">
+                  <Clock className="w-12 h-12 mb-4 opacity-50" />
                   <p>Δεν υπάρχουν προηγούμενες παραγγελίες</p>
                 </div>
               ) : (
-                <div className="cart-scrollbar">
+                <div className="cart-scrollbar space-y-4">
                   {Array.isArray(orders) &&
                     orders.map((order) => (
                       <div
                         key={order.order_id}
-                        className="bg-[#3f3f3f] rounded-lg p-2 border border-gray-700"
+                        className="bg-black rounded-xl p-4 border border-zinc-800 hover:border-zinc-700 transition-colors"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <h3 className="text-white font-medium text-sm mb-1">
+                            <h3 className="text-white font-bold text-sm mb-1">
                               {order.location_name}
                             </h3>
-                            <p className="text-gray-400 text-xs mb-2">
-                              #{order.order_id} •{" "}
-                              {formatDate(order.order_date, order.order_time)}
+                            <p className="text-zinc-400 text-xs mb-2 flex items-center gap-2">
+                              <span>#{order.order_id}</span>
+                              <span className="text-zinc-600">•</span>
+                              <span>{formatDate(order.order_date, order.order_time)}</span>
                             </p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-semibold text-sm">
+                            <div className="flex items-center gap-3">
+                              <span className="text-white font-bold text-sm">
                                 {parseFloat(order.order_total).toFixed(2)}{" "}
                                 {order.currency}
                               </span>
                               <span
-                                className={`inline-block px-2 py-1 rounded text-xs border ${getStatusColor(
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusColor(
                                   order.status_name
                                 )}`}
                               >
@@ -960,7 +834,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
                         <button
                           onClick={() => handleOrderAgain(order)}
-                          className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm flex items-center justify-center gap-2"
+                          className="w-full bg-zinc-900 text-zinc-300 py-2.5 rounded-lg font-medium hover:bg-zinc-800 hover:text-white transition-all text-sm flex items-center justify-center gap-2 border border-zinc-800"
                         >
                           <RotateCcw className="w-4 h-4" />
                           Παραγγελία ξανά
@@ -973,8 +847,10 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
           ) : (!locationId && activeCartTab === "carts") || locationId ? (
             <div className="flex flex-col flex-1 min-h-0">
               {displayCarts.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center text-zinc-500 py-16 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4 border border-zinc-800">
+                      <ShoppingCart className="w-8 h-8 text-zinc-600" />
+                  </div>
                   <p>
                     {locationId
                       ? "Το καλάθι είναι άδειο"
@@ -999,38 +875,17 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                               : () => handleCartClick(locationCart)
                           }
                           className={`${
-                            locationId ? "" : "border border-[#505050]"
-                          } rounded-lg p-4 ${
+                            locationId ? "" : "border border-zinc-800 bg-zinc-900"
+                          } rounded-xl p-4 ${
                             locationId
                               ? ""
-                              : "cursor-pointer hover:border-[#606060] hover:bg-[#2a2a2a]"
-                          } transition-colors`}
+                              : "cursor-pointer hover:border-zinc-700 hover:bg-black transition-all"
+                          }`}
                         >
-                          {/* Location Header */}
-                          <div className="flex items-center justify-between mb-3">
+                          {/* Location Header - NO IMAGE */}
+                          <div className="flex items-center justify-between mb-4 border-b border-zinc-800/50 pb-3">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              {(locationCart.locationImage ||
-                                locationImages.get(
-                                  locationCart.locationId
-                                )) && (
-                                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={
-                                      locationCart.locationImage ||
-                                      locationImages.get(
-                                        locationCart.locationId
-                                      ) ||
-                                      ""
-                                    }
-                                    alt={locationCart.locationName}
-                                    fill
-                                    className="object-cover"
-                                    sizes="48px"
-                                  />
-                                </div>
-                              )}
-
-                              <h3 className="text-white font-medium truncate">
+                              <h3 className="text-white font-bold truncate text-base">
                                 {locationCart.locationName}
                               </h3>
                             </div>
@@ -1043,7 +898,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                 disabled={clearingCarts.has(
                                   locationCart.locationId
                                 )}
-                                className={`text-red-400 hover:text-red-300 transition-colors ${
+                                className={`text-zinc-500 hover:text-[#ff9328] transition-colors p-2 hover:bg-black rounded-full ${
                                   clearingCarts.has(locationCart.locationId)
                                     ? "opacity-50 cursor-not-allowed"
                                     : ""
@@ -1051,9 +906,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                 title="Διαγραφή καλαθιού"
                               >
                                 {clearingCarts.has(locationCart.locationId) ? (
-                                  <Skeleton className="w-4 h-4 rounded-full" />
+                                  <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
-                                  <Trash2 className="w-4 h-4 text-white bg-[#3f3f3f] rounded-full cursor-pointer" />
+                                  <Trash2 className="w-4 h-4" />
                                 )}
                               </button>
                             </div>
@@ -1061,7 +916,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
 
                           {/* Location Items */}
                           <div
-                            className={locationId ? "space-y-2" : "flex gap-2"}
+                            className={locationId ? "space-y-3" : "flex flex-col gap-2"}
                           >
                             {Array.isArray(locationCart.items) &&
                               locationCart.items.map((item) => (
@@ -1077,162 +932,188 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                   }
                                   className={`${
                                     locationId
-                                      ? "flex items-start gap-3 py-2 rounded-lg cursor-pointer hover:bg-[#2a2a2a]"
-                                      : "flex items-center rounded"
+                                      ? "flex flex-col gap-3 p-3 rounded-xl cursor-pointer bg-black border border-zinc-800 hover:border-zinc-700 transition-all"
+                                      : "flex items-center justify-between p-2 rounded bg-black/50"
                                   } transition-all duration-300 ease-in-out ${
                                     removingItems.has(item.rowId)
                                       ? "opacity-0 scale-95 -translate-x-4"
                                       : "opacity-100 scale-100 translate-x-0"
                                   }`}
                                 >
-                                  {item.image || menuItemImages.get(item.id) ? (
-                                    <div
-                                      className={`relative ${
-                                        locationId ? "w-16 h-16" : "w-16 h-12"
-                                      } rounded-lg overflow-hidden flex-shrink-0`}
-                                    >
-                                      <Image
-                                        src={
-                                          item.image ||
-                                          menuItemImages.get(item.id) ||
-                                          ""
+                                  {/* Item Header Row */}
+                                  <div className="flex items-start justify-between w-full">
+                                      <div className="flex gap-3 items-start flex-1">
+                                          {/* Qty Badge (if no image or always visible) */}
+                                          {!locationId && (
+                                              <span className="text-zinc-500 font-bold text-xs pt-1">{item.qty}x</span>
+                                          )}
+                                          
+                                          {/* Item Image */}
+                                          {(item.image || menuItemImages.get(item.id)) ? (
+                                            <div
+                                              className={`relative ${
+                                                locationId ? "w-16 h-16" : "w-10 h-10"
+                                              } rounded-lg overflow-hidden flex-shrink-0 border border-zinc-800`}
+                                            >
+                                              <Image
+                                                src={
+                                                  item.image ||
+                                                  menuItemImages.get(item.id) ||
+                                                  ""
+                                                }
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="128px"
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              className={`${
+                                                locationId ? "w-16 h-12" : "w-10 h-10"
+                                              } rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0`}
+                                            >
+                                                <span className="text-[10px] text-zinc-600">IMG</span>
+                                            </div>
+                                          )}
+
+                                          <div className="flex flex-col">
+                                            <h4 className="text-white text-sm font-bold leading-tight">
+                                              {item.name}
+                                            </h4>
+                                            
+                                            {/* Options & Comments Preview */}
+                                            {locationId && (
+                                                <div className="text-xs text-zinc-500 mt-1 space-y-0.5">
+                                                    {item.comment && <p className="italic">"{item.comment}"</p>}
+                                                    {item.options && item.options.length > 0 && (
+                                                        <p>{item.options.length} επιλογές</p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {!locationId && (
+                                                <p className="text-zinc-500 text-xs mt-0.5">
+                                                    {item.price.toFixed(2)}€
+                                                </p>
+                                            )}
+                                          </div>
+                                      </div>
+
+                                      {/* Price (Location View) */}
+                                      {locationId && (
+                                          <div className="text-white font-bold text-sm">
+                                              {item.subtotal.toFixed(2)}€
+                                          </div>
+                                      )}
+                                  </div>
+
+                                  {/* Controls (Only in Location View) */}
+                                  {locationId && (
+                                    <div className="flex items-center justify-between w-full pt-2 border-t border-zinc-800/50 mt-1">
+                                      <div className="flex items-center gap-1 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateQuantity(
+                                              locationCart.locationId,
+                                              item.rowId,
+                                              item.qty - 1
+                                            );
+                                          }}
+                                          className="w-8 h-8 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+                                        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
+                                        <span className="text-white font-bold text-sm w-6 text-center">
+                                          {item.qty}
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateQuantity(
+                                              locationCart.locationId,
+                                              item.rowId,
+                                              item.qty + 1
+                                            );
+                                          }}
+                                          className="w-8 h-8 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveItem(
+                                            locationCart.locationId,
+                                            item.rowId
+                                          );
+                                        }}
+                                        disabled={
+                                          removingItems.has(item.rowId) ||
+                                          isRemoving
                                         }
-                                        alt={item.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="64px"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className={`${
-                                        locationId ? "w-16 h-12" : "w-16 h-16"
-                                      } rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0`}
-                                    >
-                                      <span className="text-white text-xs font-medium text-center px-2 line-clamp-2">
-                                        {item.name}
-                                      </span>
+                                        className={`p-2 hover:bg-red-500/10 rounded-lg group/trash transition-colors ${
+                                          removingItems.has(item.rowId) ||
+                                          isRemoving
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : ""
+                                        }`}
+                                      >
+                                        {removingItems.has(item.rowId) ? (
+                                          <Loader2 className="w-4 h-4 animate-spin text-[#ff9328]" />
+                                        ) : (
+                                          <Trash2 className="w-4 h-4 text-zinc-600 group-hover/trash:text-[#ff9328]" />
+                                        )}
+                                      </button>
                                     </div>
                                   )}
-                                  {locationId && (
-                                    <div className="flex flex-row flex-1 justify-between items-center">
-                                      <div className="flex flex-col">
-                                        <h4 className="text-white text-sm font-medium flex-1">
-                                          {item.name}
-                                        </h4>
-                                        <p className="text-gray-400 text-sm mt-1">
-                                          {item.price.toFixed(2)}€
-                                        </p>
+                                  
+                                  {/* Qty Controls for Global Cart (Compact) */}
+                                  {!locationId && (
+                                      <div className="flex items-center gap-2">
+                                          {expandedQuantityItems.has(item.rowId) ? (
+                                              <div className="flex items-center gap-1 bg-black border border-zinc-800 rounded p-0.5">
+                                                  <button
+                                                      onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          updateQuantity(locationCart.locationId, item.rowId, item.qty - 1);
+                                                      }}
+                                                      className="w-6 h-6 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400"
+                                                  >
+                                                      -
+                                                  </button>
+                                                  <span className="text-xs text-white px-1">{item.qty}</span>
+                                                  <button
+                                                      onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          updateQuantity(locationCart.locationId, item.rowId, item.qty + 1);
+                                                      }}
+                                                      className="w-6 h-6 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400"
+                                                  >
+                                                      +
+                                                  </button>
+                                                  <button
+                                                      onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleRemoveItem(locationCart.locationId, item.rowId);
+                                                      }}
+                                                      className="w-6 h-6 flex items-center justify-center hover:bg-red-900/30 rounded text-red-400 ml-1"
+                                                  >
+                                                      <Trash2 className="w-3 h-3" />
+                                                  </button>
+                                              </div>
+                                          ) : (
+                                              <button
+                                                  onClick={(e) => toggleQuantityControls(item.rowId, e)}
+                                                  className="border border-zinc-700 hover:border-[#ff9328] text-zinc-400 hover:text-white transition-colors text-xs p-1 rounded w-8 text-center"
+                                              >
+                                                  {item.qty}
+                                              </button>
+                                          )}
                                       </div>
-                                      <div>
-                                        {expandedQuantityItems.has(
-                                          item.rowId
-                                        ) ? (
-                                          <div className="flex items-center gap-2">
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateQuantity(
-                                                  locationCart.locationId,
-                                                  item.rowId,
-                                                  item.qty - 1
-                                                );
-                                                // Collapse after a short delay
-                                                setTimeout(() => {
-                                                  setExpandedQuantityItems(
-                                                    (prev) => {
-                                                      const newSet = new Set(
-                                                        prev
-                                                      );
-                                                      newSet.delete(item.rowId);
-                                                      return newSet;
-                                                    }
-                                                  );
-                                                }, 300);
-                                              }}
-                                              className="w-8 h-8 rounded-full bg-gray-600 text-white hover:bg-gray-500 flex items-center justify-center text-sm transition-colors"
-                                            >
-                                              -
-                                            </button>
-                                            <span className="text-white text-sm w-8 text-center">
-                                              {item.qty}
-                                            </span>
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateQuantity(
-                                                  locationCart.locationId,
-                                                  item.rowId,
-                                                  item.qty + 1
-                                                );
-                                                // Collapse after a short delay
-                                                setTimeout(() => {
-                                                  setExpandedQuantityItems(
-                                                    (prev) => {
-                                                      const newSet = new Set(
-                                                        prev
-                                                      );
-                                                      newSet.delete(item.rowId);
-                                                      return newSet;
-                                                    }
-                                                  );
-                                                }, 300);
-                                              }}
-                                              className="w-8 h-8 rounded-full bg-gray-600 text-white hover:bg-gray-500 flex items-center justify-center text-sm transition-colors"
-                                            >
-                                              +
-                                            </button>
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveItem(
-                                                  locationCart.locationId,
-                                                  item.rowId
-                                                );
-                                                setExpandedQuantityItems(
-                                                  (prev) => {
-                                                    const newSet = new Set(
-                                                      prev
-                                                    );
-                                                    newSet.delete(item.rowId);
-                                                    return newSet;
-                                                  }
-                                                );
-                                              }}
-                                              disabled={
-                                                removingItems.has(item.rowId) ||
-                                                isRemoving
-                                              }
-                                              className={`text-red-400 hover:text-red-300 transition-colors ${
-                                                removingItems.has(item.rowId) ||
-                                                isRemoving
-                                                  ? "opacity-50 cursor-not-allowed"
-                                                  : ""
-                                              }`}
-                                            >
-                                              {removingItems.has(item.rowId) ? (
-                                                <Skeleton className="w-4 h-4 rounded" />
-                                              ) : (
-                                                <Trash2 className="w-4 h-4" />
-                                              )}
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <div
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              toggleQuantityControls(
-                                                item.rowId,
-                                                e
-                                              );
-                                            }}
-                                            className="border-2 border-[#505050] hover:border-blue-400 text-blue-400 text-center cursor-pointer transition-colors text-xs font-medium p-2 rounded w-[40px] h-[40px] flex items-center justify-center"
-                                          >
-                                            {item.qty}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
                                   )}
                                 </div>
                               ))}
@@ -1242,15 +1123,15 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                           <div
                             className={`${
                               locationId
-                                ? "fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-gray-600 p-4"
-                                : "mt-3 pt-3 border-t border-gray-600"
+                                ? "fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-zinc-800 p-4 md:absolute md:w-full"
+                                : "mt-3 pt-3 border-t border-zinc-800"
                             }`}
                           >
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="text-gray-300 text-sm">
-                                Σύνολο:
+                            <div className="flex justify-between items-center mb-4">
+                              <span className="text-zinc-400 text-sm font-medium tracking-wide">
+                                Σύνολο
                               </span>
-                              <span className="text-white font-medium">
+                              <span className="text-white font-bold text-lg">
                                 {locationCart.summary.total.toFixed(2)}€
                               </span>
                             </div>
@@ -1273,10 +1154,10 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                               disabled={isDeliveryBlocked(
                                 locationCart.locationId
                               )}
-                              className={`w-full font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center shadow-2xl backdrop-blur-sm ${
+                              className={`w-full font-bold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg active:scale-[0.98] ${
                                 isDeliveryBlocked(locationCart.locationId)
-                                  ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                                  : "bg-[#ff9328ff] hover:bg-[#915316] text-white shadow-blue-500/25"
+                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                  : "bg-[#ff9328] hover:bg-[#915316] text-white"
                               }`}
                             >
                               Ολοκλήρωση παραγγελίας
@@ -1289,8 +1170,8 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
               )}
             </div>
           ) : (
-            <div className="text-center text-gray-400 py-8">
-              <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <div className="text-center text-zinc-500 py-16 flex flex-col items-center">
+              <ShoppingCart className="w-12 h-12 mb-4 opacity-50" />
               <p>Δεν υπάρχουν προηγούμενες παραγγελίες</p>
             </div>
           )}

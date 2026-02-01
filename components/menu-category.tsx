@@ -86,64 +86,73 @@ export default function MenuCategory({
 
   return (
     <div ref={categoryRef} className="mb-8">
-      <h2 className="text-xl font-bold text-white mb-4">{categoryName}</h2>
+      {/* Category Header with Orange Accent Border */}
+      <h2 className="text-xl font-bold text-white mb-4 pl-2 border-l-4 border-[#ff9328]">
+        {categoryName}
+      </h2>
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-12">
         {categoryItems.map((item) => (
           <div
             key={item.menu_id}
             id={String(item.menu_id)}
             onClick={() => onMenuItemClick(item)}
-            className="bg-transparent sm:bg-gray-900 rounded-lg overflow-hidden border-0 sm:border border-gray-800 border-b border-gray-700 sm:border-b-0 flex pb-4 sm:pb-0 transition-transform duration-200 hover:scale-105 cursor-pointer"
+            className="bg-transparent sm:bg-zinc-900 rounded-xl overflow-hidden border-0 sm:border border-zinc-800 border-b border-zinc-800/50 sm:border-b-zinc-800 flex pb-4 sm:pb-0 transition-all duration-200 hover:scale-[1.02] hover:border-[#ff9328]/50 hover:shadow-[0_0_20px_rgba(255,147,40,0.15)] cursor-pointer group"
           >
-            {/* Left side - Text content (60-70% width) */}
-            <div className="flex-1 p-4 flex flex-col justify-between">
-              <div>
-                <h3 className="text-white font-medium mb-2 text-lg">
+            {/* Left side - Text content */}
+            <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+              <div className="flex flex-col h-full">
+                <h3 className="text-white font-bold mb-2 text-lg group-hover:text-[#ff9328] transition-colors truncate">
                   {item.menu_name}
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  {item.menu_description || ""}
-                </p>
+                
+                {/* Description with constraints */}
+                <div className="flex-1 min-h-[40px] max-w-full">
+                    <p className="text-zinc-400 text-sm leading-relaxed line-clamp-2 w-full break-words">
+                    {item.menu_description || ""}
+                    </p>
+                </div>
               </div>
+              
               <div className="mt-3">
-                <p className="text-[#ff9328ff] font-bold text-lg">
+                <p className="text-white font-bold text-lg">
                   {item.menu_price.toFixed(2)} {item.currency}
                 </p>
                 {item.minimum_qty > 1 && (
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-zinc-500 text-sm mt-1">
                     Min: {item.minimum_qty}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Right side - Image and Add button (30-40% width) */}
+            {/* Right side - Image and Add button */}
             <div className="relative w-32 h-32 flex-shrink-0 p-2.5">
-              <div className="w-full h-full rounded flex items-center justify-center relative overflow-hidden">
+              <div className="w-full h-full rounded-lg flex items-center justify-center relative overflow-hidden bg-transparent">
                 {item.image?.url ? (
                   <Image
                     src={item.image.url}
                     alt={item.menu_name}
                     fill
-                    className="object-cover"
-                    sizes="128px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    sizes="180px"
                   />
                 ) : (
-                  <span className="text-gray-400 text-xs"></span>
+                  <div className="h-full w-full bg-transparent" />
                 )}
               </div>
 
-              {/* Add button positioned at top-right corner of image */}
+              {/* Add button - Orange Brand Color */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onMenuItemClick(item);
                 }}
                 disabled={loadingItemId === item.menu_id || !isAuthenticated}
-                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328ff] rounded-full flex items-center justify-center hover:bg-[#915316] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-gray-900"
+                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328] rounded-full flex items-center justify-center hover:bg-[#915316] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-black hover:scale-110 active:scale-95 z-10"
               >
                 {loadingItemId === item.menu_id ? (
-                  <Skeleton className="w-5 h-5 rounded-full" />
+                  <Skeleton className="w-5 h-5 rounded-full bg-white/20" />
                 ) : (
                   <Plus className="w-5 h-5 text-white" />
                 )}

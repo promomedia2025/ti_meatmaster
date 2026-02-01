@@ -24,7 +24,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
   // Login fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   // Registration fields
   const [firstName, setFirstName] = useState("");
@@ -37,9 +37,21 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Validation Helpers
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const isValidPhone = (phone: string) => {
+    // Check if it has at least 10 digits (handling +30 or spaces)
+    const digits = phone.replace(/\D/g, "");
+    return digits.length >= 10;
+  };
+
   // Update current mode when prop changes
   React.useEffect(() => {
     setCurrentMode(mode);
+    setError(""); // Clear errors on mode switch
   }, [mode]);
 
   if (!isOpen) return null;
@@ -49,16 +61,36 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
     setError("");
     setIsSubmitting(true);
 
+    // --- Login Validation ---
+    if (!email.trim()) {
+      setError("Παρακαλώ εισάγετε το email σας");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Μη έγκυρη μορφή email");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!password) {
+      setError("Παρακαλώ εισάγετε τον κωδικό πρόσβασης");
+      setIsSubmitting(false);
+      return;
+    }
+    // ------------------------
+
     try {
       const result = await login(email, password, remember);
       if (result.success) {
         onClose();
         resetForm();
       } else {
-        setError(result.error || "Login failed");
+        setError(result.error || "Η σύνδεση απέτυχε");
       }
     } catch (error) {
-      setError("An unexpected error occurred");
+      setError("Παρουσιάστηκε απροσδόκητο σφάλμα");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +101,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
     setError("");
     setIsSubmitting(true);
 
-    // Client-side validation
+    // --- Register Validation ---
     if (!firstName.trim()) {
       setError("Το όνομα είναι υποχρεωτικό");
       setIsSubmitting(false);
@@ -88,8 +120,20 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
       return;
     }
 
+    if (!isValidEmail(registerEmail)) {
+      setError("Μη έγκυρη μορφή email");
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!telephone.trim()) {
       setError("Το τηλέφωνο είναι υποχρεωτικό");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isValidPhone(telephone)) {
+      setError("Παρακαλώ εισάγετε έγκυρο αριθμό τηλεφώνου (τουλάχιστον 10 ψηφία)");
       setIsSubmitting(false);
       return;
     }
@@ -111,6 +155,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
       setIsSubmitting(false);
       return;
     }
+    // ---------------------------
 
     try {
       const result = await register(
@@ -135,76 +180,61 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
   };
 
   const resetForm = () => {
-    // Reset login fields
     setEmail("");
     setPassword("");
     setRemember(false);
-
-    // Reset registration fields
     setFirstName("");
     setLastName("");
     setRegisterEmail("");
     setRegisterPassword("");
     setPasswordConfirmation("");
     setTelephone("");
-
     setError("");
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-      <div className="bg-[#1a1a1a] rounded-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-md p-6 relative shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-zinc-400 hover:text-white hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">
-            {currentMode === "login" ? "Σύνδεση" : "Δημιούργησε λογαριασμό"}
+          <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
+            {currentMode === "login" ? "Σύνδεση" : "Δημιουργία λογαριασμού"}
           </h2>
         </div>
 
         {currentMode === "login" ? (
           <>
             <div className="space-y-3 mb-6">
-              <div className="text-left">
-                <button
-                  type="button"
-                  onClick={() => setCurrentMode("register")}
-                  className="text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                  Δεν έχετε λογαριασμό? Εγγραφή
-                </button>
-              </div>
-              <form onSubmit={handleLoginSubmit}>
-                <div className="mb-4">
-                  <div className="space-y-3">
+              <form onSubmit={handleLoginSubmit} noValidate>
+                <div className="mb-6">
+                  <div className="space-y-4">
                     <Input
                       type="email"
                       placeholder="Email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                     />
                     <Input
                       type="password"
                       placeholder="Κωδικός πρόσβασης"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                     />
                   </div>
-                  <div>
+                  <div className="mt-2">
                     <Link href="/forgot-password">
                       <Button
                         type="button"
                         variant="link"
-                        className="text-sm text-gray-400 hover:text-white transition-colors p-2 text-left"
+                        className="text-sm text-zinc-400 hover:text-[#ff9328] transition-colors p-0 h-auto font-normal"
                       >
                         Ξεχάσετε τον κωδικό πρόσβασης;
                       </Button>
@@ -212,68 +242,86 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                   </div>
 
                   {/* Remember Me Checkbox */}
-                  <div className="flex items-center space-x-2 mt-3">
+                  <div className="flex items-center space-x-2 mt-4">
                     <Checkbox
                       id="remember"
                       checked={remember}
                       onCheckedChange={(checked) =>
                         setRemember(checked === true)
                       }
+                      className="data-[state=checked]:bg-[#ff9328] data-[state=checked]:border-[#ff9328] border-zinc-600 bg-zinc-900"
                     />
                     <label
                       htmlFor="remember"
-                      className="text-sm text-gray-300 cursor-pointer"
+                      className="text-sm text-zinc-300 cursor-pointer select-none"
                     >
                       Θυμήσου με
                     </label>
                   </div>
 
                   {error && (
-                    <p className="text-red-400 text-sm mt-2">{error}</p>
+                    <p className="text-red-400 text-sm mt-3 bg-red-900/10 p-2 rounded border border-red-900/20 animate-in fade-in slide-in-from-top-1">
+                        {error}
+                    </p>
                   )}
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isSubmitting || isLoading}
-                  className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white h-12 mb-4 disabled:opacity-50"
+                  className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 mb-4 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
                 >
-                  {isSubmitting ? "Συνδέομαι..." : "Επόμενο"}
+                  {isSubmitting ? "Συνδέομαι..." : "Είσοδος"}
                 </Button>
               </form>
-              {/* Google Sign In */}
+              
+              {/* Switch to Register Button */}
+              <div className="pt-2 border-t border-zinc-800">
+                <p className="text-center text-zinc-500 text-sm mb-3">Δεν έχετε λογαριασμό;</p>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setError("");
+                    setCurrentMode("register");
+                  }}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-white h-12 font-bold border border-zinc-700 hover:border-zinc-600 transition-all"
+                >
+                  Εγγραφή
+                </Button>
+              </div>
             </div>
           </>
         ) : (
-          <form onSubmit={handleRegisterSubmit}>
-            <div className="text-left">
-              <button
+          <form onSubmit={handleRegisterSubmit} noValidate>
+            <div className="text-left mb-6">
+              <Button
                 type="button"
-                onClick={() => setCurrentMode("login")}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                onClick={() => {
+                    setError("");
+                    setCurrentMode("login");
+                }}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white h-12 font-bold border border-zinc-700 hover:border-zinc-600 transition-all"
               >
-                Έχετε ήδη λογαριασμό? Σύνδεση
-              </button>
+                Έχετε ήδη λογαριασμό; Σύνδεση
+              </Button>
             </div>
-            <div className="mb-4">
-              <div className="space-y-3">
+            <div className="mb-6">
+              <div className="space-y-4">
                 {/* First Name and Last Name side by side */}
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   <Input
                     type="text"
                     placeholder="Όνομα"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12 flex-1"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                   />
                   <Input
                     type="text"
                     placeholder="Επώνυμο"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    required
-                    className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12 flex-1"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                   />
                 </div>
                 <Input
@@ -281,42 +329,38 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                   placeholder="Email"
                   value={registerEmail}
                   onChange={(e) => setRegisterEmail(e.target.value)}
-                  required
-                  className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                 />
                 <Input
                   type="tel"
                   placeholder="Τηλέφωνο"
                   value={telephone}
                   onChange={(e) => setTelephone(e.target.value)}
-                  required
-                  className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                 />
                 <Input
                   type="password"
                   placeholder="Κωδικός πρόσβασης"
                   value={registerPassword}
                   onChange={(e) => setRegisterPassword(e.target.value)}
-                  required
-                  className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                 />
                 <Input
                   type="password"
                   placeholder="Επιβεβαίωση κωδικού"
                   value={passwordConfirmation}
                   onChange={(e) => setPasswordConfirmation(e.target.value)}
-                  required
-                  className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                 />
               </div>
 
-              {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+              {error && <p className="text-red-400 text-sm mt-3 bg-red-900/10 p-2 rounded border border-red-900/20 animate-in fade-in slide-in-from-top-1">{error}</p>}
             </div>
 
             <Button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white h-12 mb-4 disabled:opacity-50"
+              className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 mb-2 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
             >
               {isSubmitting ? "Εγγραφή..." : "Εγγραφή"}
             </Button>

@@ -124,7 +124,7 @@ export function OrderDetailsModal({
         return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
       case "cancelled":
       case "canceled":
-        return "bg-[#7C2429]/10 text-[#7C2429] border-[#7C2429]/20";
+        return "bg-[#ff9328]/10 text-[#ff9328] border-[#ff9328]/20";
       default:
         return "bg-zinc-800 text-zinc-400 border-zinc-700";
     }
@@ -200,7 +200,7 @@ export function OrderDetailsModal({
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="text-[#7C2429] bg-[#7C2429]/10 border border-[#7C2429]/20 p-4 rounded-lg inline-block">
+              <div className="text-[#ff9328] bg-[#ff9328]/10 border border-[#ff9328]/20 p-4 rounded-lg inline-block">
                 {error}
               </div>
             </div>

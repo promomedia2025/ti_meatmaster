@@ -24,14 +24,14 @@ export default function LocationCartCTA({ locationId }: Props) {
         setIsCartSidebarOpen(true);
       }}
       className="
-        flex items-center gap-3 bg-[#ff9328ff] hover:bg-[#c46c15]
+        flex items-center gap-3 bg-[#ff9328] hover:bg-[#915316]
         text-white font-medium py-3 px-5 rounded-2xl
         transition-all duration-200 shadow-lg
       "
     >
       <span
         className="
-          bg-white text-[#ff9328ff] text-sm font-bold px-2 py-1
+          bg-white text-[#ff9328] text-sm font-bold px-2 py-1
           rounded-full min-w-[20px] h-5 flex items-center justify-center
         "
       >

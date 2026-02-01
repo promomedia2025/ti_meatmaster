@@ -41,6 +41,15 @@ export default function OrderStatusPage() {
     string | null
   >(null);
 
+  // Helper to translate API total titles to Greek
+  const getTranslatedTitle = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes("subtotal")) return "Υποσύνολο";
+    if (lowerTitle.includes("total")) return "Σύνολο";
+    if (lowerTitle.includes("delivery")) return "Κόστος Διανομής";
+    return title;
+  };
+
   // Fetch initial order status from API
   useEffect(() => {
     const fetchOrderStatus = async () => {
@@ -240,21 +249,21 @@ export default function OrderStatusPage() {
     if (statusLower.includes("transit") || statusLower.includes("way")) {
       return <Truck className="w-8 h-8 text-blue-500" />;
     }
-    return <Clock className="w-8 h-8 text-gray-500" />;
+    return <Clock className="w-8 h-8 text-zinc-500" />;
   };
 
   const getStatusColor = (status: string) => {
     const statusLower = status?.toLowerCase() || "";
     if (statusLower.includes("complete") || statusLower.includes("delivered")) {
-      return "bg-green-50 border-green-200 text-green-700";
+      return "bg-green-500/10 border-green-500/20 text-green-400";
     }
     if (statusLower.includes("preparing") || statusLower.includes("received")) {
-      return "bg-yellow-50 border-yellow-200 text-yellow-700";
+      return "bg-yellow-500/10 border-yellow-500/20 text-yellow-400";
     }
     if (statusLower.includes("transit") || statusLower.includes("way")) {
-      return "bg-blue-50 border-blue-200 text-blue-700";
+      return "bg-blue-500/10 border-blue-500/20 text-blue-400";
     }
-    return "bg-gray-50 border-gray-200 text-gray-700";
+    return "bg-zinc-800 border-zinc-700 text-zinc-400";
   };
 
   const getStatusText = (statusName: string) => {
@@ -263,6 +272,7 @@ export default function OrderStatusPage() {
     // Exact matches first
     switch (statusLower) {
       case "delivery":
+        return "Σε Παράδοση";
       case "delivered":
       case "complete":
       case "completed":
@@ -435,12 +445,12 @@ export default function OrderStatusPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="bg-zinc-900 border-b border-zinc-800">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/order-history")}
-              className="p-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-full bg-black border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -453,14 +463,14 @@ export default function OrderStatusPage() {
 
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         {/* Connection Status */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mb-6">
+        <Card className="bg-zinc-900 border-zinc-800 p-4 mb-6">
           <div className="flex items-center gap-3">
             <div
               className={`w-3 h-3 rounded-full ${
                 isConnected ? "bg-green-400 animate-pulse" : "bg-red-400"
               }`}
             ></div>
-            <span className="text-gray-300 text-sm">
+            <span className="text-zinc-400 text-sm">
               {isConnected
                 ? "Συνδεδεμένο - Λήψη ενημερώσεων σε πραγματικό χρόνο"
                 : "Αποσυνδεδεμένο"}
@@ -470,23 +480,23 @@ export default function OrderStatusPage() {
 
         {/* Order Status */}
         {isLoading ? (
-          <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
+          <Card className="bg-zinc-900 border-zinc-800 p-6 mb-6">
             <div className="text-center">
               <div className="flex justify-center mb-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
+                <Skeleton className="h-12 w-12 rounded-full bg-zinc-800" />
               </div>
-              <Skeleton className="h-8 w-48 mx-auto mb-2" />
-              <Skeleton className="h-4 w-64 mx-auto mb-6" />
-              <Skeleton className="h-8 w-32 mx-auto rounded-full" />
-              <div className="mt-6 pt-6 border-t border-gray-700">
-                <Skeleton className="h-4 w-40 mx-auto mb-2" />
-                <Skeleton className="h-12 w-32 mx-auto" />
+              <Skeleton className="h-8 w-48 mx-auto mb-2 bg-zinc-800" />
+              <Skeleton className="h-4 w-64 mx-auto mb-6 bg-zinc-800" />
+              <Skeleton className="h-8 w-32 mx-auto rounded-full bg-zinc-800" />
+              <div className="mt-6 pt-6 border-t border-zinc-800">
+                <Skeleton className="h-4 w-40 mx-auto mb-2 bg-zinc-800" />
+                <Skeleton className="h-12 w-32 mx-auto bg-zinc-800" />
               </div>
             </div>
           </Card>
         ) : orderStatus ? (
           <>
-            <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
+            <Card className="bg-zinc-900 border-zinc-800 p-6 mb-6">
               <div className="text-center">
                 <div className="flex justify-center mb-4">
                   {getStatusIcon(orderStatus.statusName)}
@@ -494,12 +504,12 @@ export default function OrderStatusPage() {
                 <h2 className="text-2xl font-bold text-white mb-2">
                   {getStatusText(orderStatus.statusName)}
                 </h2>
-                <p className="text-gray-400 text-sm mb-6">
+                <p className="text-zinc-400 text-sm mb-6">
                   Τελευταία ενημέρωση:{" "}
                   {new Date(orderStatus.updatedAt).toLocaleString("el-GR")}
                 </p>
                 <div
-                  className={`inline-block px-4 py-2 rounded-full border ${getStatusColor(
+                  className={`inline-block px-4 py-2 rounded-full border text-sm font-medium ${getStatusColor(
                     orderStatus.statusName
                   )}`}
                 >
@@ -508,15 +518,15 @@ export default function OrderStatusPage() {
 
                 {/* Timer Display */}
                 {timeRemaining !== null && orderDetails && (
-                  <div className="mt-6 pt-6 border-t border-gray-700">
+                  <div className="mt-6 pt-6 border-t border-zinc-800">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="text-gray-400 text-sm">
+                      <span className="text-zinc-400 text-sm">
                         {timeRemaining > 0
                           ? "Εκτιμώμενος χρόνος:"
                           : "Η παραγγελία σας είναι έτοιμη!"}
                       </span>
                       {timeRemaining > 0 && (
-                        <div className="text-4xl font-bold text-[#ff9328ff] font-mono">
+                        <div className="text-4xl font-bold text-[#ff9328] font-mono">
                           {formatTimeRemaining(timeRemaining)}
                         </div>
                       )}
@@ -533,28 +543,28 @@ export default function OrderStatusPage() {
 
             {/* Order Details */}
             {orderDetails && (
-              <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
+              <Card className="bg-zinc-900 border-zinc-800 p-6 mb-6">
+                <h3 className="text-lg font-bold text-white mb-4">
                   Λεπτομέρειες Παραγγελίας
                 </h3>
 
                 {/* Order Info */}
                 <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
                   <div>
-                    <span className="text-gray-400">Ημερομηνία:</span>
+                    <span className="text-zinc-500 font-medium block mb-1">Ημερομηνία:</span>
                     <p className="text-white">
                       {formatDate(orderDetails.order_date)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-400">Ώρα:</span>
+                    <span className="text-zinc-500 font-medium block mb-1">Ώρα:</span>
                     <p className="text-white">
                       {formatTime(orderDetails.order_time)}
                     </p>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-400">Εστιατόριο:</span>
-                    <p className="text-white">{orderDetails.location_name}</p>
+                    <span className="text-zinc-500 font-medium block mb-1">Εστιατόριο:</span>
+                    <p className="text-white font-medium">{orderDetails.location_name}</p>
                   </div>
                 </div>
 
@@ -562,36 +572,36 @@ export default function OrderStatusPage() {
                 {orderDetails.menu_items &&
                   orderDetails.menu_items.length > 0 && (
                     <div className="mb-6">
-                      <h4 className="text-md font-semibold text-white mb-3">
+                      <h4 className="text-sm font-bold text-zinc-300 tracking-wider mb-3">
                         Προϊόντα ({orderDetails.menu_items.length})
                       </h4>
                       <div className="space-y-3">
                         {orderDetails.menu_items.map((item, index) => (
                           <div
                             key={index}
-                            className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+                            className="bg-black rounded-lg p-4 border border-zinc-800"
                           >
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1">
-                                <h5 className="text-white font-medium">
+                                <h5 className="text-white font-bold">
                                   {item.menu_name}
                                 </h5>
                                 {item.menu_comment && (
-                                  <p className="text-gray-400 text-sm mt-1">
-                                    Σχόλιο: {item.menu_comment}
+                                  <p className="text-zinc-500 text-sm mt-1 italic">
+                                    "{item.menu_comment}"
                                   </p>
                                 )}
                                 {item.menu_options && (
-                                  <p className="text-gray-400 text-sm mt-1">
+                                  <p className="text-zinc-400 text-sm mt-1">
                                     {item.menu_options}
                                   </p>
                                 )}
                               </div>
                               <div className="text-right ml-4">
-                                <p className="text-white font-medium">
+                                <p className="text-zinc-300 font-medium text-sm">
                                   {item.menu_quantity}x
                                 </p>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-white font-bold text-sm mt-1">
                                   {formatCurrency(item.menu_subtotal)}{" "}
                                   {orderDetails.currency}
                                 </p>
@@ -606,7 +616,7 @@ export default function OrderStatusPage() {
                 {/* Order Totals */}
                 {orderDetails.order_totals &&
                   orderDetails.order_totals.length > 0 && (
-                    <div className="border-t border-gray-700 pt-4">
+                    <div className="border-t border-zinc-800 pt-4">
                       <div className="space-y-2">
                         {orderDetails.order_totals
                           .sort((a, b) => a.priority - b.priority)
@@ -616,26 +626,26 @@ export default function OrderStatusPage() {
                               className="flex justify-between items-center"
                             >
                               <span
-                                className={
+                                className={`text-sm ${
                                   total.title.toLowerCase().includes("total") &&
                                   !total.title
                                     .toLowerCase()
                                     .includes("subtotal")
-                                    ? "text-white font-semibold"
-                                    : "text-gray-300"
-                                }
+                                    ? "text-white font-bold text-base"
+                                    : "text-zinc-400"
+                                }`}
                               >
-                                {total.title}
+                                {getTranslatedTitle(total.title)}
                               </span>
                               <span
-                                className={
+                                className={`${
                                   total.title.toLowerCase().includes("total") &&
                                   !total.title
                                     .toLowerCase()
                                     .includes("subtotal")
-                                    ? "text-white font-semibold text-lg"
-                                    : "text-gray-300"
-                                }
+                                    ? "text-[#ff9328] font-bold text-xl"
+                                    : "text-zinc-300 font-medium"
+                                }`}
                               >
                                 {formatCurrency(total.value)}{" "}
                                 {orderDetails.currency}
@@ -649,13 +659,13 @@ export default function OrderStatusPage() {
             )}
           </>
         ) : (
-          <Card className="bg-gray-900 border-gray-800 p-8">
+          <Card className="bg-zinc-900 border-zinc-800 p-8">
             <div className="text-center">
-              <Clock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-white mb-2">
                 Αναμονή για ενημερώσεις
               </h3>
-              <p className="text-gray-400">
+              <p className="text-zinc-400">
                 Η παραγγελία σας ελήφθη. Θα λάβετε ενημερώσεις σε πραγματικό
                 χρόνο.
               </p>
@@ -664,15 +674,15 @@ export default function OrderStatusPage() {
         )}
 
         {/* Info Card */}
-        <Card className="bg-gray-900 border-gray-800 p-4 mt-6">
-          <h3 className="text-lg font-semibold text-white mb-3">Πληροφορίες</h3>
-          <ul className="space-y-2 text-gray-300 text-sm">
-            <li>• Η σελίδα ενημερώνεται αυτόματα σε πραγματικό χρόνο</li>
+        <Card className="bg-zinc-900 border-zinc-800 p-4 mt-6">
+          <h3 className="text-base font-bold text-white mb-3">Πληροφορίες</h3>
+          <ul className="space-y-2 text-zinc-400 text-sm list-disc pl-4">
+            <li>Η σελίδα ενημερώνεται αυτόματα σε πραγματικό χρόνο</li>
             <li>
-              • Μπορείτε να κρατήσετε τη σελίδα ανοιχτή για να δείτε τις
+              Μπορείτε να κρατήσετε τη σελίδα ανοιχτή για να δείτε τις
               ενημερώσεις
             </li>
-            <li>• Οι ειδοποιήσεις θα εμφανίζονται επίσης στην αρχική σελίδα</li>
+            <li>Οι ειδοποιήσεις θα εμφανίζονται επίσης στην αρχική σελίδα</li>
           </ul>
         </Card>
 
@@ -680,14 +690,14 @@ export default function OrderStatusPage() {
         <div className="mt-6 space-y-3">
           <Button
             onClick={() => router.push("/order-history")}
-            className="w-full bg-gray-800 text-white hover:bg-gray-700"
+            className="w-full bg-zinc-800 text-white hover:bg-zinc-700 h-12 text-sm font-medium border border-zinc-700"
           >
             Προβολή Ιστορικού Παραγγελιών
           </Button>
           <Button
             onClick={() => router.push("/")}
             variant="outline"
-            className="w-full border-gray-700 text-gray-300 hover:bg-gray-800"
+            className="w-full bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white h-12 text-sm"
           >
             Επιστροφή στην Αρχική
           </Button>
