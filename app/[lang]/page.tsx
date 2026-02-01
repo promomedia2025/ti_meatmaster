@@ -153,6 +153,18 @@ export default function HomePage() {
           locationSlug="cocofino-13"
         />
 
+        <div className="w-full my-8 rounded-xl overflow-hidden shadow-lg border border-white/10">
+          <video
+            className="w-full h-auto object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            // Ensure the file is in your /public folder
+            src="/delivery.mp4" 
+          />
+        </div>
+
         {/* FEATURED MENU ITEMS CAROUSEL */}
         <h2 className="text-2xl font-bold mb-4 mt-8 text-white">
           Προτεινόμενα Πιάτα
