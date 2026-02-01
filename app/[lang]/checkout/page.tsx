@@ -206,6 +206,7 @@ function CheckoutPageContent() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [paymentWindow, setPaymentWindow] = useState<Window | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
@@ -1131,6 +1132,39 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
+  // Listen for payment status messages from authorize page
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify message is from authorize page (check origin for security)
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === "PAYMENT_STATUS") {
+        console.log("💳 [CHECKOUT] Received payment status:", event.data);
+        
+        if (event.data.paymentVerified === true) {
+          // Payment successful - clear cart and redirect
+          if (locationCart) {
+            clearLocationCart(locationCart.locationId);
+            console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
+          }
+          
+          toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
+          
+          if (orderId) {
+            router.push(`/${currentLang}/order/${orderId}`);
+          }
+        } else {
+          // Payment failed - stay on checkout page
+          toast.error("Η πληρωμή απέτυχε. Μπορείτε να δοκιμάσετε ξανά.");
+          setIsSubmitting(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [locationCart, orderId, currentLang, router]);
+
   if (!locationCart) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -1190,6 +1224,35 @@ function CheckoutPageContent() {
     if (!locationId || !locationCart) {
       toast.error("Σφάλμα: Δεν βρέθηκε τοποθεσία");
       return;
+    }
+
+    // IMPORTANT: For Safari compatibility, open payment window IMMEDIATELY 
+    // in the user-initiated event handler (before any async operations)
+    // This window will be redirected to the payment page after the fetch completes
+    let paymentWindow: Window | null = null;
+    if (paymentMethod === "card") {
+      paymentWindow = window.open("", "_blank");
+      if (paymentWindow) {
+        // Write a loading page immediately
+        paymentWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Πληρωμή</title>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+              <div style="text-align: center;">
+                <p style="font-size: 18px; color: #333;">Παρακαλώ περιμένετε...</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+              </div>
+            </body>
+          </html>
+        `);
+        paymentWindow.document.close();
+        setPaymentWindow(paymentWindow);
+      }
     }
 
     setIsSubmitting(true);
@@ -1451,9 +1514,6 @@ function CheckoutPageContent() {
           console.log("💳 Card payment - received HTML form");
           const paymentFormHtml = await response.text();
           
-          // Log the HTML response
-          console.log("📄 HTML Response:", paymentFormHtml);
-          
           // Extract order ID from the form (MerchantReference field)
           const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
           if (orderIdMatch) {
@@ -1461,63 +1521,26 @@ function CheckoutPageContent() {
             console.log(`🆔 Extracted order ID from payment form: ${orderId}`);
             setOrderId(orderId);
             addActiveOrder(orderId, locationCart.locationName);
+          } else {
+            throw new Error("Could not extract order ID from payment form");
           }
 
-          // Clear the cart
-          clearLocationCart(locationCart.locationId);
-          console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
+          // Don't clear cart yet - wait for payment verification
 
-          // Open payment form in new window
-          const paymentWindow = window.open("", "_blank", "width=800,height=600");
-          
-          if (!paymentWindow) {
-            throw new Error("Popup blocked. Please allow popups for this site.");
+          // Redirect the pre-opened window to the payment redirect page
+          if (paymentWindow && !paymentWindow.closed) {
+            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
+            paymentWindow.location.href = redirectUrl;
+          } else {
+            // Window was blocked, open it now (may be blocked by Safari)
+            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
+            window.open(redirectUrl, "_blank");
           }
-
-          // Write the HTML form to the new window
-          paymentWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Πληρωμή</title>
-                <meta charset="UTF-8">
-              </head>
-              <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                <div style="text-align: center;">
-                  <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                  ${paymentFormHtml}
-                </div>
-                <script>
-                  // Auto-submit the form when the page loads
-                  window.onload = function() {
-                    var form = document.querySelector('form');
-                    if (form) {
-                      form.submit();
-                    }
-                  };
-                </script>
-              </body>
-            </html>
-          `);
-          paymentWindow.document.close();
-
-          // TEMPORARILY REMOVED: Redirect to order tracking page
-          // if (orderId) {
-          //   router.push(`/${currentLang}/order/${orderId}`);
-          // } else {
-          //   router.push(`/${currentLang}`);
-          // }
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
             "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
           );
-          // TEMPORARILY REMOVED: Redirect to order tracking page
-          // if (orderId) {
-          //   router.push(`/${currentLang}/order/${orderId}`);
-          // } else {
-          //   router.push(`/${currentLang}`);
-          // }
         }
         return; // Exit early for card payments
       }
@@ -1545,49 +1568,47 @@ function CheckoutPageContent() {
           try {
             console.log("💳 Opening payment form in new window (from JSON)");
             
-            // Open a new window for the payment form
-            const paymentWindow = window.open("", "_blank", "width=800,height=600");
+            // Extract order ID from the payment form HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = result.data.payment_form;
+            const form = tempDiv.querySelector('form');
             
-            if (!paymentWindow) {
-              throw new Error("Popup blocked. Please allow popups for this site.");
+            if (!form) {
+              throw new Error("Could not find payment form in response");
             }
 
-            // Write a complete HTML document with the payment form
-            paymentWindow.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <title>Πληρωμή</title>
-                  <meta charset="UTF-8">
-                </head>
-                <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                  <div style="text-align: center;">
-                    <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                    ${result.data.payment_form}
-                  </div>
-                  <script>
-                    // Auto-submit the form when the page loads
-                    window.onload = function() {
-                      var form = document.querySelector('form');
-                      if (form) {
-                        form.submit();
-                      }
-                    };
-                  </script>
-                </body>
-              </html>
-            `);
-            paymentWindow.document.close();
+            // Extract order ID from MerchantReference field
+            const merchantRefInput = form.querySelector('input[name="MerchantReference"]') as HTMLInputElement;
+            const extractedOrderId = merchantRefInput?.value ? parseInt(merchantRefInput.value) : orderId;
+            
+            if (extractedOrderId && extractedOrderId !== orderId) {
+              setOrderId(extractedOrderId);
+              addActiveOrder(extractedOrderId, locationCart.locationName);
+            }
+
+            // Redirect the pre-opened window to the payment redirect page
+            if (paymentWindow && !paymentWindow.closed) {
+              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
+              paymentWindow.location.href = redirectUrl;
+            } else {
+              // Window was blocked, open it now (may be blocked by Safari)
+              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
+              window.open(redirectUrl, "_blank");
+            }
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
             toast.error(
               "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
           }
+        } else {
+          // For cash on delivery orders, redirect to order tracking page
+          if (orderId) {
+            router.push(`/${currentLang}/order/${orderId}`);
+          } else {
+            router.push(`/${currentLang}`);
+          }
         }
-
-        // TEMPORARILY REMOVED: Redirect to order tracking page
-        // router.push(`/${currentLang}/order/${orderId}`);
       } else {
         console.warn("⚠️ No orderId found in API response:", result);
         alert(
