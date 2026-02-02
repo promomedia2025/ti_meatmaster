@@ -3,13 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 interface PaymentFormData {
-  AcquirerId: string;
-  MerchantId: string;
-  PosId: string;
-  User: string;
-  LanguageCode: string;
-  MerchantReference: string;
-  ParamBackLink?: string;
+  [key: string]: string | undefined;
 }
 
 export function PaymentRedirect({ formData }: { formData: PaymentFormData }) {
@@ -22,22 +16,25 @@ export function PaymentRedirect({ formData }: { formData: PaymentFormData }) {
     }
   }, []);
 
+  // Get form action from formData or use default
+  const formAction = formData.action || "https://paycenter.piraeusbank.gr/redirection/pay.aspx";
+
   return (
     <form
       ref={formRef}
-      action="https://paycenter.piraeusbank.gr/redirection/pay.aspx"
+      action={formAction}
       method="POST"
       // No target="_blank" - form submits in current window (already in a new tab from checkout)
     >
-      <input type="hidden" name="AcquirerId" value={formData.AcquirerId} />
-      <input type="hidden" name="MerchantId" value={formData.MerchantId} />
-      <input type="hidden" name="PosId" value={formData.PosId} />
-      <input type="hidden" name="User" value={formData.User} />
-      <input type="hidden" name="LanguageCode" value={formData.LanguageCode} />
-      <input type="hidden" name="MerchantReference" value={formData.MerchantReference} />
-      {formData.ParamBackLink && (
-        <input type="hidden" name="ParamBackLink" value={formData.ParamBackLink} />
-      )}
+      {Object.entries(formData).map(([name, value]) => {
+        // Skip 'action' as it's not a form field
+        if (name === 'action' || value === undefined || value === null) {
+          return null;
+        }
+        return (
+          <input key={name} type="hidden" name={name} value={value} />
+        );
+      })}
       
       {/* Fallback button in case auto-submit fails */}
       <noscript>

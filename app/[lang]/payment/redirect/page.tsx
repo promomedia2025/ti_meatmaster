@@ -9,12 +9,12 @@ function PaymentRedirectContent() {
   const orderId = searchParams.get("orderId");
   const lang = searchParams.get("lang") || "el";
 
-  // TODO: Replace these with your actual payment gateway credentials
+  // Construct payment form data using orderId and environment variables
   const paymentFormData = {
-    AcquirerId: process.env.NEXT_PUBLIC_ACQUIRER_ID || ""  , // Replace with actual value
-    MerchantId: process.env.NEXT_PUBLIC_MERCHANT_ID || "", // Replace with actual value
-    PosId: process.env.NEXT_PUBLIC_POS_ID || "", // Replace with actual value
-    User: process.env.NEXT_PUBLIC_USER || "", // Replace with actual value
+    AcquirerId: process.env.NEXT_PUBLIC_ACQUIRER_ID || "",
+    MerchantId: process.env.NEXT_PUBLIC_MERCHANT_ID || "",
+    PosId: process.env.NEXT_PUBLIC_POS_ID || "",
+    User: process.env.NEXT_PUBLIC_USER || "",
     LanguageCode: lang === "en" ? "en-US" : "el-GR",
     MerchantReference: orderId || "",
     ParamBackLink: typeof window !== 'undefined' 

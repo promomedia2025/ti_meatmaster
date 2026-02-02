@@ -113,7 +113,16 @@ function CheckoutPageContent() {
     useRestaurantStatus(locationId ? parseInt(locationId) : null);
 
   useEffect(() => {
-    // Restaurant status tracking
+    console.log("🍽️ [CHECKOUT] Restaurant Status:", {
+      locationId: locationId ? parseInt(locationId) : null,
+      isLoading: isLoadingRestaurantStatus,
+      restaurantStatus,
+      isOpen: restaurantStatus?.is_open,
+      pickupAvailable: restaurantStatus?.pickup_available,
+      deliveryAvailable: restaurantStatus?.delivery_available,
+      statusMessage: restaurantStatus?.status_message,
+      nextOpeningTime: restaurantStatus?.next_opening_time,
+    });
   }, [locationId, restaurantStatus, isLoadingRestaurantStatus]);
 
   useEffect(() => {
@@ -130,6 +139,7 @@ function CheckoutPageContent() {
         });
 
         if (!response.ok) {
+          console.error("Failed to fetch location data");
           return;
         }
 
@@ -144,7 +154,7 @@ function CheckoutPageContent() {
           }
         }
       } catch (error) {
-        // Error fetching location data
+        console.error("Error fetching location data:", error);
       }
     };
 
@@ -270,6 +280,7 @@ function CheckoutPageContent() {
         throw new Error("Invalid response format");
       }
     } catch (error) {
+      console.error("Error fetching menu item options:", error);
       toast.error("Δεν ήταν δυνατή η φόρτωση των επιλογών του προϊόντος");
       setIsMenuOptionsModalOpen(false);
       setEditingItem(null);
@@ -344,6 +355,7 @@ function CheckoutPageContent() {
         throw new Error(data.message || "Failed to update item");
       }
     } catch (error) {
+      console.error("Error updating cart item:", error);
       toast.error("Αποτυχία ενημέρωσης του προϊόντος");
     } finally {
       setIsUpdatingItem(false);
@@ -421,6 +433,7 @@ function CheckoutPageContent() {
 
       toast.success("Η διεύθυνση συμπληρώθηκε αυτόματα");
     } catch (error) {
+      console.error("Error autocompleting location:", error);
       toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -597,12 +610,16 @@ function CheckoutPageContent() {
             setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
           }
         } catch (deliveryError) {
-          // Error checking delivery availability
+          console.error(
+            "Error checking delivery availability for selected address:",
+            deliveryError
+          );
         }
       }
 
       toast.success("Η διεύθυνση συμπληρώθηκε");
     } catch (error) {
+      console.error("Error setting address from address book:", error);
       toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -682,7 +699,10 @@ function CheckoutPageContent() {
               );
             }
           } catch (deliveryError) {
-            // Error checking delivery availability
+            console.error(
+              "Error checking delivery availability for Google Places address:",
+              deliveryError
+            );
           }
         }
 
@@ -736,13 +756,17 @@ function CheckoutPageContent() {
               );
             }
           } catch (deliveryError) {
-            // Ignore delivery error
+            console.error(
+              "Error checking delivery availability for Google Places fallback address:",
+              deliveryError
+            );
           }
         }
 
         toast.success("Η διεύθυνση ορίστηκε");
       }
     } catch (error) {
+      console.error("Error setting location from Google Places:", error);
       toast.error("Σφάλμα κατά τον ορισμό της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -803,7 +827,10 @@ function CheckoutPageContent() {
           setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
         }
       } catch (error) {
-        // Error checking delivery availability
+        console.error(
+          "🛒 [CHECKOUT] Error checking delivery availability:",
+          error
+        );
       } finally {
         setIsCheckingDelivery(false);
       }
@@ -859,9 +886,10 @@ function CheckoutPageContent() {
     if (channel) {
       channel.bind("pusher:subscription_succeeded", () => {});
       channel.bind("pusher:subscription_error", (error: any) => {
-        // Failed to subscribe to channel
+        console.error(`❌ Failed to subscribe to ${channelName}:`, error);
       });
       channel.bind("orderStatusUpdated", (data: any) => {
+        console.log(`📦 Order ${orderId} status updated:`, data);
       });
     }
 
@@ -908,6 +936,15 @@ function CheckoutPageContent() {
     if (!isAuthenticated || !user) {
       alert("Παρακαλώ συνδεθείτε για να ολοκληρώσετε την παραγγελία.");
       return;
+    }
+
+    // Open payment window synchronously on user click (required for Safari)
+    let paymentWin: Window | null = null;
+    if (paymentMethod === "card") {
+      paymentWin = window.open("", "_blank");
+      if (paymentWin) {
+        setPaymentWindow(paymentWin);
+      }
     }
 
     const isRestaurantOpen =
@@ -993,6 +1030,7 @@ function CheckoutPageContent() {
         return;
       }
     } catch (error) {
+      console.error("Error checking restaurant status:", error);
       setIsSubmitting(false);
       toast.error(
         "Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά."
@@ -1131,7 +1169,7 @@ function CheckoutPageContent() {
             }
           }
         } catch (error) {
-          // Error saving address
+          console.error("⚠️ Error saving address:", error);
         }
       }
 
@@ -1164,9 +1202,11 @@ function CheckoutPageContent() {
       let orderId: number | null = null;
 
       if (contentType.includes("text/html")) {
+        // HTML response means card payment - extract order ID from response
         try {
           const paymentFormHtml = await response.text();
           
+          // Extract order ID from the form
           const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
           if (orderIdMatch) {
             orderId = parseInt(orderIdMatch[1]);
@@ -1174,40 +1214,18 @@ function CheckoutPageContent() {
             addActiveOrder(orderId, locationCart.locationName);
           }
 
-          const paymentWin = window.open("", "_blank", "width=800,height=600");
-          
-          if (!paymentWin) {
-            throw new Error("Popup blocked. Please allow popups for this site.");
+          clearLocationCart(locationCart.locationId);
+
+          // Redirect the already-opened window to payment redirect page with orderId
+          if (paymentWin && !paymentWin.closed) {
+            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId || ""}&lang=${currentLang}`;
+            paymentWin.location.href = redirectUrl;
+          } else {
+            throw new Error("Payment window was closed or blocked");
           }
 
-          setPaymentWindow(paymentWin);
-
-          paymentWin.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Πληρωμή</title>
-                <meta charset="UTF-8">
-              </head>
-              <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                <div style="text-align: center;">
-                  <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                  ${paymentFormHtml}
-                </div>
-                <script>
-                  window.onload = function() {
-                    var form = document.querySelector('form');
-                    if (form) {
-                      form.submit();
-                    }
-                  };
-                </script>
-              </body>
-            </html>
-          `);
-          paymentWin.document.close();
-
         } catch (paymentError) {
+          console.error("Error handling card payment:", paymentError);
           toast.error(
             "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
           );
@@ -1226,39 +1244,17 @@ function CheckoutPageContent() {
 
         clearLocationCart(locationCart.locationId);
 
-        if (paymentMethod === "card" && result.data?.payment_form) {
+        if (paymentMethod === "card") {
           try {
-            const paymentWindow = window.open("", "_blank", "width=800,height=600");
-            
-            if (!paymentWindow) {
-              throw new Error("Popup blocked. Please allow popups for this site.");
+            // Redirect the already-opened window to payment redirect page with orderId
+            if (paymentWin && !paymentWin.closed) {
+              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId || ""}&lang=${currentLang}`;
+              paymentWin.location.href = redirectUrl;
+            } else {
+              throw new Error("Payment window was closed or blocked");
             }
-
-            paymentWindow.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <title>Πληρωμή</title>
-                  <meta charset="UTF-8">
-                </head>
-                <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-                  <div style="text-align: center;">
-                    <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-                    ${result.data.payment_form}
-                  </div>
-                  <script>
-                    window.onload = function() {
-                      var form = document.querySelector('form');
-                      if (form) {
-                        form.submit();
-                      }
-                    };
-                  </script>
-                </body>
-              </html>
-            `);
-            paymentWindow.document.close();
           } catch (paymentError) {
+            console.error("Error opening payment form:", paymentError);
             toast.error(
               "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
@@ -1274,6 +1270,8 @@ function CheckoutPageContent() {
         );
       }
     } catch (error) {
+      console.error("Error submitting order:", error);
+
       let errorMessage =
         "Σφάλμα κατά την υποβολή της παραγγελίας. Παρακαλώ δοκιμάστε ξανά.";
 

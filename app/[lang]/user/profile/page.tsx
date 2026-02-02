@@ -46,6 +46,7 @@ export default function UserProfilePage() {
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const handleEdit = (field: string) => {
     setEditingField(field);
     setIsEditing(true);
@@ -138,6 +139,9 @@ export default function UserProfilePage() {
   };
 
   // Update form data when user data changes
+=======
+  // --- Redirect Logic ---
+>>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
 =======
   // --- Redirect Logic ---
 >>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b

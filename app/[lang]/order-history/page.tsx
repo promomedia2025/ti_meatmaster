@@ -52,8 +52,11 @@ export default function OrderHistoryPage() {
       const data = await response.json();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
       // Handle the specific API response structure
+=======
+>>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
 =======
 >>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
       if (data.success && data.data && Array.isArray(data.data)) {
@@ -64,7 +67,11 @@ export default function OrderHistoryPage() {
       }
     } catch (err) {
 <<<<<<< HEAD
+<<<<<<< HEAD
       setError("Failed to load orders");
+=======
+      setError("Σφάλμα κατά τη φόρτωση του ιστορικού");
+>>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
 =======
       setError("Σφάλμα κατά τη φόρτωση του ιστορικού");
 >>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
