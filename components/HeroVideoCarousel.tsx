@@ -2,15 +2,15 @@
 import { HeroVideoCarouselClient } from "./HeroVideoCarouselClient";
 
 const VIDEOS = [
-  "/1.mp4",
-  "/2.mp4",
-  "/3.mp4",
-  "/4.mp4",
-  "/5.mp4",
-  "/6.mp4",
-  "/7.mp4",
-  "/8.mp4",
-  "/9.mp4",
+  "/carousel_videos/1.mp4",
+  "/carousel_videos/2.mp4",
+  "/carousel_videos/3.mp4",
+  "/carousel_videos/4.mp4",
+  "/carousel_videos/5.mp4",
+  "/carousel_videos/6.mp4",
+  "/carousel_videos/7.mp4",
+  "/carousel_videos/8.mp4",
+  "/carousel_videos/9.mp4",
 ];
 
 export default function HeroVideoCarousel() {

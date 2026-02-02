@@ -1,6 +1,6 @@
 "use client";
 
-import { X, MapPin, Loader2, Navigation } from "lucide-react";
+import { X, MapPin, Loader2, Navigation, Home, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,16 +66,13 @@ export function LocationModal({
   // Load saved location when modal opens
   useEffect(() => {
     if (isOpen) {
-      // If initialAddress is provided, use it
       if (initialAddress) {
         setAddress(initialAddress);
         console.log("📍 Using initial address:", initialAddress);
       } else {
-        // Clear address if no initial address
         setAddress("");
       }
     } else {
-      // Clear address when modal closes
       setAddress("");
     }
   }, [isOpen, initialAddress]);
@@ -132,13 +129,10 @@ export function LocationModal({
     }
   };
 
-  // Handle address input change
   const handleAddressChange = (value: string) => {
     setAddress(value);
-    // Google Places autocomplete handles suggestions
   };
 
-  // Handle Google Places selection
   const handleGooglePlaceSelect = async (place: any) => {
     if (place.formatted_address && place.geometry?.location) {
       const address = place.formatted_address;
@@ -147,17 +141,12 @@ export function LocationModal({
 
       console.log("📍 Google Places selected:", { address, lat, lng });
 
-      // Update the address input
       setAddress(address);
-
-      // Hide saved addresses list
       setShowAddressList(false);
 
-      // Update coordinates in context
       const coordinates = { latitude: lat, longitude: lng };
       setCoordinates(coordinates);
 
-      // Parse Google Places address_components to extract address details
       const addressComponents = place.address_components || [];
       const street = addressComponents.find((c: any) =>
         c.types.includes("route")
@@ -178,7 +167,6 @@ export function LocationModal({
           ?.long_name ||
         "";
 
-      // Create formatted address for location context (similar to reverseGeocode format)
       const formattedAddress = {
         street: [street, houseNumber].filter(Boolean).join(" ") || address,
         area: city || "",
@@ -187,7 +175,6 @@ export function LocationModal({
       };
       setFormattedAddress(formattedAddress);
 
-      // Call the callback to update parent component with address data
       if (onLocationSet) {
         onLocationSet({
           coordinates,
@@ -201,14 +188,12 @@ export function LocationModal({
         });
       }
 
-      // Close the modal automatically
       setTimeout(() => {
         onClose();
       }, 300);
     }
   };
 
-  // Get current location and autocomplete address
   const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by this browser");
@@ -230,11 +215,9 @@ export function LocationModal({
       const { latitude, longitude } = position.coords;
       console.log("📍 Current coordinates:", { latitude, longitude });
 
-      // Set coordinates in context
       const coordinates = { latitude, longitude };
       setCoordinates(coordinates);
 
-      // Trigger reverse geocoding to get formatted address
       try {
         const formattedAddress = await reverseGeocode(
           latitude,
@@ -251,19 +234,16 @@ export function LocationModal({
         }
       } catch (error) {
         console.error("❌ Error during reverse geocoding:", error);
-        // Fallback to coordinates if geocoding fails
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
       }
 
-      // Call the callback to update parent component
       if (onLocationSet) {
         onLocationSet({ coordinates });
       }
 
-      // Close the modal automatically
       setTimeout(() => {
         onClose();
-      }, 500); // Small delay so user can see the address was filled
+      }, 500);
     } catch (error) {
       console.error("Error getting location:", error);
       alert("Failed to get your location");
@@ -272,7 +252,6 @@ export function LocationModal({
     }
   };
 
-  // Geocode address to get coordinates
   const geocodeAddress = async (address: string) => {
     try {
       const response = await fetch(
@@ -298,21 +277,17 @@ export function LocationModal({
   };
 
   const handleSavedAddressSelect = async (savedAddress: SavedAddress) => {
-    // Fill the input field with the selected address
     setAddress(savedAddress.address);
     setShowAddressList(false);
 
     console.log("📍 Selected saved address:", savedAddress.address);
 
-    // If the saved address has coordinates, use them directly
     if (savedAddress.coordinates) {
       const coordinates = savedAddress.coordinates;
       console.log("📍 Using saved address coordinates:", coordinates);
 
-      // Update coordinates in context
       setCoordinates(coordinates);
 
-      // Trigger reverse geocoding to get formatted address
       try {
         const formattedAddr = await reverseGeocode(
           coordinates.latitude,
@@ -320,7 +295,6 @@ export function LocationModal({
           lang
         );
         if (formattedAddr) {
-          // Include bell_name and floor in the formatted address
           const formattedAddressWithExtras = {
             ...formattedAddr,
             bell_name: savedAddress.bell_name || null,
@@ -336,25 +310,20 @@ export function LocationModal({
         console.error("❌ Error during reverse geocoding:", error);
       }
 
-      // Call the callback to update parent component
       if (onLocationSet) {
         onLocationSet({ coordinates });
       }
 
-      // Close the modal automatically
       setTimeout(() => {
         onClose();
       }, 300);
     } else {
-      // If no coordinates, geocode the address
       try {
         const coordinates = await geocodeAddress(savedAddress.address);
         console.log("📍 Geocoded saved address:", coordinates);
 
-        // Update coordinates in context
         setCoordinates(coordinates);
 
-        // Trigger reverse geocoding to get formatted address
         try {
           const formattedAddr = await reverseGeocode(
             coordinates.latitude,
@@ -362,7 +331,6 @@ export function LocationModal({
             lang
           );
           if (formattedAddr) {
-            // Include bell_name and floor in the formatted address
             const formattedAddressWithExtras = {
               ...formattedAddr,
               bell_name: savedAddress.bell_name || null,
@@ -378,12 +346,10 @@ export function LocationModal({
           console.error("❌ Error during reverse geocoding:", error);
         }
 
-        // Call the callback to update parent component
         if (onLocationSet) {
           onLocationSet({ coordinates });
         }
 
-        // Close the modal automatically
         setTimeout(() => {
           onClose();
         }, 300);
@@ -394,14 +360,12 @@ export function LocationModal({
     }
   };
 
-  // Handle continue button click
   const handleContinue = async () => {
     if (!address.trim()) {
       alert("Παρακαλώ εισάγετε μια διεύθυνση");
       return;
     }
 
-    // Validate that postal code is included (Greek format: 5 digits, optionally with space)
     const postalCodePattern = /\b\d{3}\s?\d{2}\b/;
     if (!postalCodePattern.test(address)) {
       alert(
@@ -415,23 +379,16 @@ export function LocationModal({
       const coordinates = await geocodeAddress(address);
       console.log("📍 Address coordinates:", coordinates);
 
-      // Update coordinates in context
       setCoordinates(coordinates);
 
-      // Create a custom formatted address from the typed address instead of reverse geocoding
-      // This preserves the user's exact input
-
-      // Extract postcode using regex (Greek format: 5 digits, optionally with space)
       const postalCodeMatch = address.match(/\b(\d{3}\s?\d{2})\b/);
       const postcode = postalCodeMatch ? postalCodeMatch[1] : "";
 
-      // Remove postcode from address to get street part
       const streetPart = address
         .replace(/\b\d{3}\s?\d{2}\b/, "")
         .replace(/,\s*$/, "")
         .trim();
 
-      // Extract city (everything after the last comma, or default to Athens)
       const addressParts = address.split(",").map((part) => part.trim());
       const cityPart =
         addressParts.length > 1
@@ -442,7 +399,7 @@ export function LocationModal({
         street: streetPart,
         area: cityPart,
         postcode: postcode,
-        fullAddress: address, // Use the original typed address
+        fullAddress: address,
       };
 
       setFormattedAddress(customFormattedAddress);
@@ -450,17 +407,11 @@ export function LocationModal({
         "📍 Using typed address as formatted address:",
         customFormattedAddress
       );
-      console.log(
-        "📍 Full address being set:",
-        customFormattedAddress.fullAddress
-      );
 
-      // Call the callback to update parent component
       if (onLocationSet) {
         onLocationSet({ coordinates });
       }
 
-      // Close modal
       onClose();
     } catch (error) {
       console.error("Error processing address:", error);
@@ -475,38 +426,38 @@ export function LocationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-[#1a1a1a] rounded-lg p-6 w-full max-w-md mx-4 text-white">
+      <div className="relative bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md mx-4 text-white shadow-2xl">
         {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg"
           onClick={onClose}
         >
           <X className="w-5 h-5" />
         </Button>
 
         {/* Title */}
-        <h2 className="text-xl font-semibold mb-6 text-white">
+        <h2 className="text-xl font-bold mb-6 text-white tracking-tight">
           {dict.locationModal.title}
         </h2>
 
         {/* Country dropdown */}
         <div className="mb-4">
-          <label className="block text-sm text-gray-400 mb-2">
+          <label className="block text-sm font-medium text-zinc-400 mb-2">
             {lang === "el" ? "Χώρα" : "Country"}
           </label>
           <Select defaultValue="greece">
-            <SelectTrigger className="w-full bg-[#2a2a2a] border-gray-600 text-white">
+            <SelectTrigger className="w-full bg-black border-zinc-700 text-white focus:ring-[#ff9328] focus:border-[#ff9328]">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#2a2a2a] border-gray-600">
-              <SelectItem value="greece" className="text-white">
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="greece" className="text-white hover:bg-zinc-800">
                 {lang === "el" ? "Ελλάδα" : "Greece"}
               </SelectItem>
             </SelectContent>
@@ -516,7 +467,7 @@ export function LocationModal({
         {/* Saved Addresses */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm text-gray-400">
+            <label className="block text-sm font-medium text-zinc-400">
               {dict.locationModal.savedAddresses}
             </label>
             <button
@@ -526,7 +477,7 @@ export function LocationModal({
                   loadSavedAddresses();
                 }
               }}
-              className="text-primary text-sm hover:text-primary/80 transition-colors"
+              className="text-[#ff9328] text-sm font-medium hover:text-[#a03036] transition-colors"
             >
               {showAddressList
                 ? lang === "el"
@@ -539,13 +490,13 @@ export function LocationModal({
           </div>
 
           {showAddressList && (
-            <div className="space-y-2 max-h-32 overflow-y-auto">
+            <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar bg-black/20 p-2 rounded-lg border border-zinc-800/50">
               {loadingAddresses ? (
-                <div className="space-y-2 py-2">
+                <div className="space-y-2">
                   {[...Array(2)].map((_, index) => (
-                    <div key={index} className="space-y-1">
-                      <div className="h-3 w-3/4 bg-muted animate-pulse rounded"></div>
-                      <div className="h-2 w-1/2 bg-muted animate-pulse rounded"></div>
+                    <div key={index} className="space-y-2 p-2">
+                      <div className="h-3 w-3/4 bg-zinc-800 animate-pulse rounded"></div>
+                      <div className="h-2 w-1/2 bg-zinc-800 animate-pulse rounded"></div>
                     </div>
                   ))}
                 </div>
@@ -554,34 +505,28 @@ export function LocationModal({
                   <div
                     key={savedAddress.id}
                     onClick={() => handleSavedAddressSelect(savedAddress)}
-                    className="flex items-center gap-3 p-3 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors"
+                    className="flex items-center gap-3 p-3 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 hover:border-[#ff9328]/50 border border-transparent transition-all group"
                   >
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <MapPin className="w-3 h-3 text-white" />
+                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328] transition-colors">
+                      <MapPin className="w-4 h-4 text-zinc-400 group-hover:text-[#ff9328]" />
                     </div>
-                    <div className="flex-1">
-                      <div className="text-white text-sm font-medium">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-sm font-bold truncate group-hover:text-[#ff9328] transition-colors">
                         {savedAddress.label}
                       </div>
-                      <div className="text-gray-400 text-xs">
+                      <div className="text-zinc-500 text-xs truncate">
                         {savedAddress.address}
                       </div>
                       {(savedAddress.bell_name || savedAddress.floor) && (
-                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-400">
+                        <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-zinc-500">
                           {savedAddress.bell_name && (
-                            <span>
-                              Κουδούνι:{" "}
-                              <span className="text-gray-300">
-                                {savedAddress.bell_name}
-                              </span>
+                            <span className="bg-black px-1.5 py-0.5 rounded border border-zinc-800">
+                               {savedAddress.bell_name}
                             </span>
                           )}
                           {savedAddress.floor && (
-                            <span>
-                              Όροφος:{" "}
-                              <span className="text-gray-300">
-                                {savedAddress.floor}
-                              </span>
+                            <span className="bg-black px-1.5 py-0.5 rounded border border-zinc-800">
+                               {savedAddress.floor}
                             </span>
                           )}
                         </div>
@@ -590,10 +535,13 @@ export function LocationModal({
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-gray-400 text-sm">
-                  {lang === "el"
+                <div className="text-center py-6 text-zinc-500 text-sm flex flex-col items-center gap-2">
+                  <Home className="w-8 h-8 opacity-20" />
+                  <span>
+                    {lang === "el"
                     ? "Δεν έχετε αποθηκευμένες διευθύνσεις"
                     : "No saved addresses"}
+                  </span>
                 </div>
               )}
             </div>
@@ -602,16 +550,16 @@ export function LocationModal({
 
         {/* Address input */}
         <div className="mb-6">
-          <label className="block text-sm text-gray-400 mb-2">
+          <label className="block text-sm font-medium text-zinc-400 mb-2">
             {dict.locationModal.enterAddress}{" "}
-            <span className="text-red-400">*</span>
+            <span className="text-[#ff9328]">*</span>
           </label>
-          <p className="text-xs text-gray-500 mb-2">
+          <p className="text-xs text-zinc-500 mb-2 italic">
             {lang === "el"
               ? "Συμπεριλάβετε τον ταχυδρομικό κώδικα (π.χ. 15342)"
               : "Include postal code (e.g. 15342)"}
           </p>
-          <div className="relative">
+          <div className="relative group">
             <GooglePlacesCustom
               value={address}
               onChange={handleAddressChange}
@@ -619,22 +567,21 @@ export function LocationModal({
               placeholder={
                 lang === "el" ? "π.χ. Υδρας 24, 15342" : "e.g. Ydras 24, 15342"
               }
-              className="pr-20"
+              className="pr-24 bg-black border-zinc-700 text-white placeholder-zinc-600 focus:border-[#ff9328] focus:ring-1 focus:ring-[#ff9328]"
             />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 bg-zinc-900 rounded-md p-0.5 border border-zinc-800">
               <button
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation}
-                className="p-1 hover:bg-gray-600 rounded transition-colors"
+                className="p-1.5 hover:bg-zinc-800 rounded transition-colors text-[#ff9328]"
                 title={dict.locationModal.useCurrentLocation}
               >
                 {isGettingLocation ? (
-                  <Skeleton className="w-4 h-4 rounded" />
+                  <Skeleton className="w-4 h-4 rounded-full bg-[#ff9328]/20" />
                 ) : (
-                  <Navigation className="w-4 h-4 text-primary" />
+                  <Navigation className="w-4 h-4 fill-current" />
                 )}
               </button>
-              <MapPin className="w-4 h-4 text-gray-400" />
             </div>
           </div>
         </div>
@@ -642,17 +589,12 @@ export function LocationModal({
         {/* Continue button */}
         <Button
           onClick={handleContinue}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3"
+          className="w-full bg-[#ff9328] hover:bg-[#915316] text-white font-bold py-6 rounded-xl shadow-lg shadow-red-900/20 active:scale-[0.98] transition-all"
         >
           {dict.common.confirm}
         </Button>
 
-        {/* Decorative illustration */}
-        <div className="mt-8 flex justify-center">
-          <div className="relative">
-
-          </div>
-        </div>
+        {/* Decorative illustration placeholder removed for cleaner look */}
       </div>
     </div>
   );

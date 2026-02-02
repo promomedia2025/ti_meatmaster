@@ -22,7 +22,7 @@ export function HeroVideoCarouselClient({
 
   // Generate placeholder image paths for each video
   const placeholderImages = videos.map(
-    (_, idx) => `/videoPlaceholder${idx + 1}.png`
+    (_, idx) => `/carousel_videos/videoPlaceholder${idx + 1}.png`
   );
 
   const autoplay = useRef(Autoplay({ delay: 8000, stopOnInteraction: false }));

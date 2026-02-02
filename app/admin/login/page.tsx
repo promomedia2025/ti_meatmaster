@@ -127,8 +127,8 @@ function AdminLoginContent() {
     <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] p-4">
       <div className="bg-[#2a2a2a] rounded-lg w-full max-w-md p-8 shadow-lg">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Login</h1>
-          <p className="text-gray-400">Please sign in to access the admin dashboard</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Σύνδεση</h1>
+          <p className="text-gray-400">Παρακαλώ συνδεθείτε για να αποκτήσετε πρόσβαση στον πίνακα διαχείρισης</p>
         </div>
 
         <form 
@@ -182,9 +182,9 @@ function AdminLoginContent() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#009DE0] hover:bg-[#0088CC] text-white h-12 disabled:opacity-50"
+            className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 disabled:opacity-50"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Σύνδεση..." : "Σύνδεση"}
           </Button>
         </form>
       </div>
@@ -196,7 +196,7 @@ export default function AdminLoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white">Φόρτωση...</div>
       </div>
     }>
       <AdminLoginContent />

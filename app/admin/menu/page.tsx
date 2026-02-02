@@ -383,7 +383,7 @@ export default function AdminMenuPage() {
                     placeholder="Search by name, category, or ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-[#2a2a2a] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff9328ff] focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 bg-[#2a2a2a] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff9328] focus:border-transparent"
                   />
                 </div>
               </div>
@@ -395,7 +395,7 @@ export default function AdminMenuPage() {
                 currentItems.map((item) => (
                   <div
                     key={item.menu_id}
-                    className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-[#ff9328ff] transition-colors"
+                    className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-[#ff9328] transition-colors"
                     onClick={() => handleMenuItemClick(item)}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -476,7 +476,7 @@ export default function AdminMenuPage() {
                             }}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff9328ff]"></div>
+                          <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff9328]"></div>
                         </label>
                       </div>
                     </div>
@@ -527,7 +527,7 @@ export default function AdminMenuPage() {
                             onClick={() => setCurrentPage(page)}
                             className={`px-3 py-2 rounded-lg transition-colors ${
                               currentPage === page
-                                ? "bg-[#ff9328ff] text-white"
+                                ? "bg-[#ff9328] text-white"
                                 : "bg-[#2a2a2a] border border-gray-700 text-white hover:bg-[#3a3a3a]"
                             }`}
                           >
@@ -684,7 +684,7 @@ export default function AdminMenuPage() {
                                       }
                                       className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff9328ff]"></div>
+                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ff9328]"></div>
                                   </label>
                                 </div>
                               </div>

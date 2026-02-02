@@ -76,13 +76,14 @@ export default function FeaturedMenuCarousel({
 
   return (
     <div className="w-full mb-8">
-      {/* Embla wrapper */}
-      <div className="embla overflow-hidden" ref={emblaRef}>
+      {/* Embla wrapper - px-1 prevents hover shadow clipping */}
+      <div className="embla overflow-hidden px-1" ref={emblaRef}>
         <div className="embla__container flex gap-4">
           {items.map((item) => (
             <div
               key={item.menu_id}
-              className="embla__slide min-w-[200px] max-w-[220px] cursor-pointer bg-gray-900 rounded-lg overflow-hidden border border-gray-700 hover:scale-[1.03] transition-transform"
+              // Restored max-w-[220px] to enforce consistent card width like the bottom row
+              className="embla__slide min-w-[200px] max-w-[200px] cursor-pointer bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-[#ff9328] hover:shadow-[0_0_15px_rgba(255,147,40,0.2)] hover:scale-[1.02] transition-all duration-300 group"
               onClick={() =>
                 router.push(
                   `/${locale}/location/${locationSlug}?select=${item.menu_id}`
@@ -98,16 +99,16 @@ export default function FeaturedMenuCarousel({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gray-800" />
+                  <div className="h-full w-full bg-zinc-800" />
                 )}
               </div>
 
               <div className="p-3">
-                <p className="text-white font-semibold text-sm line-clamp-2 h-10 overflow-hidden">
+                <p className="text-white font-semibold text-sm line-clamp-2 h-10 overflow-hidden" title={item.menu_name}>
                   {item.menu_name}
                 </p>
 
-                <p className="text-[#ff9328ff] font-bold mt-1 text-sm">
+                <p className="text-white font-bold mt-1 text-base">
                   {item.menu_price.toFixed(2)} {item.currency}
                 </p>
               </div>

@@ -96,7 +96,7 @@ export function AdminPrinterOptionsSidebar({
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
             <div className="flex items-center gap-2">
-              <Printer className="w-5 h-5 text-[#ff9328ff]" />
+              <Printer className="w-5 h-5 text-[#ff9328]" />
               <h2 className="text-xl font-bold text-white">
                 Επιλογές Εκτυπωτή
               </h2>
@@ -124,7 +124,7 @@ export function AdminPrinterOptionsSidebar({
                   onClick={() => handleSelectSize(size.id)}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                     selectedSize === size.id
-                      ? "border-[#ff9328ff] bg-[#ff9328ff]/10"
+                      ? "border-[#ff9328] bg-[#ff9328]/10"
                       : "border-gray-700 bg-[#1a1a1a] hover:border-gray-600"
                   }`}
                 >
@@ -133,7 +133,7 @@ export function AdminPrinterOptionsSidebar({
                       <h3
                         className={`text-lg font-semibold ${
                           selectedSize === size.id
-                            ? "text-[#ff9328ff]"
+                            ? "text-[#ff9328]"
                             : "text-white"
                         }`}
                       >
@@ -144,7 +144,7 @@ export function AdminPrinterOptionsSidebar({
                       </p>
                     </div>
                     {selectedSize === size.id && (
-                      <div className="w-5 h-5 rounded-full bg-[#ff9328ff] flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-[#ff9328] flex items-center justify-center">
                         <div className="w-2 h-2 rounded-full bg-white" />
                       </div>
                     )}
