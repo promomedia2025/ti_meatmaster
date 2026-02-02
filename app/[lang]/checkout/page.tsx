@@ -944,6 +944,56 @@ function CheckoutPageContent() {
       paymentWin = window.open("", "_blank");
       if (paymentWin) {
         setPaymentWindow(paymentWin);
+        // Show loading message immediately
+        paymentWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Πληρωμή</title>
+              <meta charset="UTF-8">
+              <style>
+                body {
+                  margin: 0;
+                  padding: 0;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  min-height: 100vh;
+                  background: #000;
+                  color: #fff;
+                }
+                .loading-container {
+                  text-align: center;
+                }
+                .spinner {
+                  border: 3px solid #333;
+                  border-top: 3px solid #ff9328;
+                  border-radius: 50%;
+                  width: 40px;
+                  height: 40px;
+                  animation: spin 1s linear infinite;
+                  margin: 0 auto 20px;
+                }
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                .message {
+                  font-size: 16px;
+                  color: #ccc;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="loading-container">
+                <div class="spinner"></div>
+                <div class="message">Προετοιμασία πληρωμής...</div>
+              </div>
+            </body>
+          </html>
+        `);
+        paymentWin.document.close();
       }
     }
 
