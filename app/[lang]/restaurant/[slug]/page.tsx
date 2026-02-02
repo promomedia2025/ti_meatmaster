@@ -19,14 +19,9 @@ function getLocationIdFromSlug(slug: string): number | null {
 // Server-side function to check favorite status
 async function getFavoriteStatus(locationId: number): Promise<boolean> {
   try {
-    console.log(
-      "🔍 [Server] Checking favorite status for location_id:",
-      locationId
-    );
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const url = `${baseUrl}/api/locations/${locationId}/is-favorite`;
-    console.log("📡 [Server] Making request to:", url);
 
     const response = await fetch(url, {
       method: "GET",
@@ -37,43 +32,22 @@ async function getFavoriteStatus(locationId: number): Promise<boolean> {
       next: { revalidate: 60 }, // Cache for 60 seconds
     });
 
-    console.log(
-      "📊 [Server] Response status:",
-      response.status,
-      response.statusText
-    );
+    
 
     if (response.ok) {
       // Log the raw response text first
       const responseText = await response.text();
-      console.log("📄 [Server] Raw response text:", responseText);
 
       // Parse the JSON
       const data = JSON.parse(responseText);
-      console.log("📦 [Server] Parsed API response:", JSON.stringify(data));
-      console.log("📦 [Server] Response type:", typeof data);
-      console.log("📦 [Server] Response keys:", Object.keys(data));
-      console.log(
-        "💖 [Server] Extracted is_favorite value:",
-        data.data?.is_favorite
-      );
+     
 
       const favoriteStatus = data.data?.is_favorite || false;
-      console.log("❤️ [Server] Setting favorite status to:", favoriteStatus);
       return favoriteStatus;
     } else {
-      console.error(
-        "❌ [Server] Failed to check favorite status:",
-        response.statusText
-      );
-      console.log("🔧 [Server] Setting favorite status to false due to error");
       return false;
     }
   } catch (error) {
-    console.error("💥 [Server] Error checking favorite status:", error);
-    console.log(
-      "🔧 [Server] Setting favorite status to false due to exception"
-    );
     return false;
   }
 }
@@ -144,53 +118,26 @@ interface RestaurantPageProps {
 }
 
 export default async function RestaurantPage({ params }: RestaurantPageProps) {
-  console.log("🏪 [Server] RestaurantPage params:", params);
 
   // Get location ID from the URL slug
   const locationId = getLocationIdFromSlug(params.slug);
-  console.log("📍 [Server] Extracted locationId from slug:", locationId);
 
   const restaurant = restaurants[params.slug as keyof typeof restaurants];
-  console.log("🏪 [Server] Found restaurant:", restaurant);
 
   if (!restaurant) {
-    console.log("❌ [Server] Restaurant not found, calling notFound()");
     notFound();
   }
 
   if (!locationId) {
-    console.log("❌ [Server] No locationId found in slug, calling notFound()");
     notFound();
   }
 
   // Fetch favorite status server-side
-  console.log(
-    "🚀 [Server] About to call getFavoriteStatus for location_id:",
-    locationId
-  );
   const isFavorite = await getFavoriteStatus(locationId);
-  console.log(
-    "✅ [Server] getFavoriteStatus returned:",
-    isFavorite,
-    "Type:",
-    typeof isFavorite
-  );
 
   // Ensure we always have a boolean value
   const favoriteStatus = Boolean(isFavorite);
-  console.log(
-    "🔧 [Server] Final favoriteStatus:",
-    favoriteStatus,
-    "Type:",
-    typeof favoriteStatus
-  );
 
-  console.log(
-    "🎨 [Server] Rendering RestaurantHeader with favoriteStatus:",
-    favoriteStatus,
-    "Type:",
-    typeof favoriteStatus
-  );
 
   return (
     <div className="min-h-screen bg-black">

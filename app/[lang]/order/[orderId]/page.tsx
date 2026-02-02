@@ -45,13 +45,11 @@ export default function OrderStatusPage() {
   useEffect(() => {
     const fetchOrderStatus = async () => {
       if (!user?.id || !orderId) {
-        console.log("⚠️ Missing user ID or order ID");
         setIsLoading(false);
         return;
       }
 
       try {
-        console.log(`🔍 Fetching order ${orderId} details...`);
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/user/${user.id}/orders/${orderId}`
         );
@@ -61,7 +59,6 @@ export default function OrderStatusPage() {
         }
 
         const data = await response.json();
-        console.log(`✅ Order ${orderId} fetched:`, data);
 
         if (data.success && data.data) {
           const orderData = data.data;
@@ -93,7 +90,7 @@ export default function OrderStatusPage() {
           setEstimatedDeliveryTime(estimatedTime);
         }
       } catch (error) {
-        console.error(`❌ Error fetching order ${orderId}:`, error);
+        // Error fetching order
       } finally {
         setIsLoading(false);
       }
@@ -104,35 +101,25 @@ export default function OrderStatusPage() {
 
   // Subscribe to order-specific channel
   useEffect(() => {
-    console.log("🔍 Order page - Pusher connection state:", {
-      isConnected,
-      orderId,
-    });
+    
 
-    if (!isConnected || !orderId) {
-      if (!isConnected) console.log("⚠️ Pusher not connected yet");
-      if (!orderId) console.log("⚠️ No order ID available");
-      return;
-    }
+   
 
     const channelName = `order.${orderId}`;
-    console.log(`📡 Attempting to subscribe to channel: ${channelName}`);
     const channel = subscribe(`${channelName}`);
 
     if (channel) {
       // Listen for successful subscription
       channel.bind("pusher:subscription_succeeded", () => {
-        console.log(`✅ Successfully subscribed to ${channelName}`);
       });
 
       // Listen for subscription errors
       channel.bind("pusher:subscription_error", (error: any) => {
-        console.error(`❌ Failed to subscribe to ${channelName}:`, error);
+        // Failed to subscribe
       });
 
       // Listen for order status updates
       channel.bind("orderStatusUpdated", (data: any) => {
-        console.log(`📦 Order ${orderId} status updated:`, data);
         setOrderStatus({
           status: data.status_id?.toString() || data.status || "",
           statusName: data.status_name || data.statusName || "Updated",
@@ -143,27 +130,7 @@ export default function OrderStatusPage() {
       // Listen for delivery time updates (server-broadcast event)
       // Server broadcasts: .orderEstimatedTime
       channel.bind("orderEstimatedTime", (event: any) => {
-        console.log(`⏱️ [ORDER PAGE] Order estimated time updated:`, {
-          orderId,
-          channelName,
-          event,
-          timestamp: new Date().toISOString(),
-        });
-        console.log(`⏱️ [ORDER PAGE] Event data structure:`, {
-          hasOrderId: !!event.order_id,
-          orderId: event.order_id,
-          hasEstimatedMinutes: event.estimated_minutes !== undefined,
-          estimatedMinutes: event.estimated_minutes,
-          hasNewBaseEstimatedTime: event.newBaseEstimatedTime !== undefined,
-          newBaseEstimatedTime: event.newBaseEstimatedTime,
-          hasNewEstimatedDeliveryTime:
-            event.newEstimatedDeliveryTime !== undefined,
-          newEstimatedDeliveryTime: event.newEstimatedDeliveryTime,
-          estimatedCompletionTime: event.estimated_completion_time || event.estimatedCompletionTime,
-          updatedAt: event.updated_at,
-          message: event.message,
-          fullData: JSON.stringify(event, null, 2),
-        });
+       
 
         // Handle new event format with oldBaseEstimatedTime, newBaseEstimatedTime, etc.
         if (
@@ -177,54 +144,28 @@ export default function OrderStatusPage() {
           const completionTime =
             event.estimated_completion_time || event.estimatedCompletionTime || null;
 
-          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time (new format):`, {
-            oldBaseEstimatedTime: baseEstimatedTime,
-            newBaseEstimatedTime: newBaseTime,
-            oldEstimatedDeliveryTime: estimatedDeliveryTime,
-            newEstimatedDeliveryTime: newDeliveryTime,
-            estimatedCompletionTime: completionTime,
-          });
 
           setBaseEstimatedTime(newBaseTime);
           setEstimatedDeliveryTime(newDeliveryTime);
           if (completionTime) {
             setEstimatedCompletionTime(completionTime);
           }
-          console.log(
-            `✅ [ORDER PAGE] Estimated delivery time updated successfully`
-          );
         } else if (event.estimated_minutes !== undefined) {
           // Fallback to old format with estimated_minutes
           const newEstimatedTime = event.estimated_minutes;
-          console.log(`🔄 [ORDER PAGE] Updating estimated delivery time (old format):`, {
-            oldBaseEstimatedTime: baseEstimatedTime,
-            newBaseEstimatedTime: newEstimatedTime,
-            oldEstimatedDeliveryTime: estimatedDeliveryTime,
-            newEstimatedDeliveryTime: newEstimatedTime,
-            estimatedCompletionTime: event.estimated_completion_time,
-          });
           setBaseEstimatedTime(newEstimatedTime);
           setEstimatedDeliveryTime(newEstimatedTime);
           if (event.estimated_completion_time) {
             setEstimatedCompletionTime(event.estimated_completion_time);
           }
-          console.log(
-            `✅ [ORDER PAGE] Estimated delivery time updated successfully`
-          );
-        } else {
-          console.warn(
-            `⚠️ [ORDER PAGE] Event received but no time information found`
-          );
         }
       });
 
-      console.log(`🔗 Channel ${channelName} binding complete`);
     } else {
-      console.error(`❌ Failed to create channel: ${channelName}`);
+      // Failed to create channel
     }
 
     return () => {
-      console.log(`🔌 Unsubscribing from ${channelName}`);
       unsubscribe(channelName);
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
@@ -397,7 +338,6 @@ export default function OrderStatusPage() {
 
         setTimeRemaining(remainingSeconds);
       } catch (error) {
-        console.error("Error calculating time remaining:", error);
         setTimeRemaining(null);
       }
     };

@@ -208,13 +208,6 @@ export default function AdminDashboardPage() {
     for (const cookieName of sessionCookieNames) {
       const cookieValue = getCookieExpiration(cookieName);
       if (cookieValue) {
-        console.log(`🍪 Found session cookie: ${cookieName}`);
-        console.log(
-          `💡 To see expiration: Open Dev Tools → Application → Cookies → Check "Expires / Max-Age" column`
-        );
-        console.log(
-          `💡 If it says "Session", it expires when browser closes. If it shows a date, that's when it expires.`
-        );
         break;
       }
     }
@@ -241,7 +234,6 @@ export default function AdminDashboardPage() {
           response.status === 401 ||
           response.status === 403
         ) {
-          console.error("Token check failed - redirecting to login");
           localStorage.removeItem("admin_token");
           router.replace("/admin/login");
           return;
@@ -253,12 +245,10 @@ export default function AdminDashboardPage() {
           setIsLoading(false);
         } else {
           // Other errors - redirect to login
-          console.error("Token check failed with status:", response.status);
           localStorage.removeItem("admin_token");
           router.replace("/admin/login");
         }
       } catch (error) {
-        console.error("Error checking token:", error);
         localStorage.removeItem("admin_token");
         router.replace("/admin/login");
       }
@@ -291,16 +281,12 @@ export default function AdminDashboardPage() {
 
       // Add delay if specified (useful when waiting for backend to process new orders)
       if (delay > 0) {
-        console.log(
-          `⏳ Frontend - Waiting ${delay}ms before fetching orders...`
-        );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
       try {
         setOrdersLoading(true);
         setOrdersError(null);
-        console.log("🔍 Frontend - Fetching orders from /api/admin/orders");
 
         const response = await fetch("/api/admin/orders", {
           method: "GET",
@@ -308,26 +294,8 @@ export default function AdminDashboardPage() {
           cache: "no-store",
         });
 
-        console.log("🔍 Frontend - Response status:", response.status);
-        console.log("🔍 Frontend - Response ok:", response.ok);
-        console.log(
-          "🔍 Frontend - Response headers:",
-          Object.fromEntries(response.headers.entries())
-        );
 
         const result = await response.json();
-        console.log("🔍 Frontend - Response data type:", typeof result);
-        console.log("🔍 Frontend - Response keys:", Object.keys(result || {}));
-        console.log(
-          "🔍 Frontend - Full response:",
-          JSON.stringify(result, null, 2)
-        );
-        console.log("🔍 Frontend - result.success:", result.success);
-        console.log("🔍 Frontend - result.data:", result.data);
-        console.log(
-          "🔍 Frontend - result.data is array:",
-          Array.isArray(result.data)
-        );
 
         if (result.success && result.data) {
           const ordersArray = Array.isArray(result.data) ? result.data : [];
@@ -337,42 +305,14 @@ export default function AdminDashboardPage() {
             const bId = b.order_id || 0;
             return bId - aId; // Descending order (newest first)
           });
-          console.log(
-            "✅ Frontend - Setting orders, count:",
-            sortedOrders.length
-          );
-          console.log(
-            "📊 Frontend - Order IDs (first 10):",
-            sortedOrders
-              .slice(0, 10)
-              .map((o) => o.order_id)
-              .join(", ")
-          );
-          console.log(
-            "📊 Frontend - Pending orders (first 5):",
-            sortedOrders
-              .filter((o) => o.status_id === 2)
-              .slice(0, 5)
-              .map((o) => o.order_id)
-              .join(", ")
-          );
           setOrders(sortedOrders);
         } else {
-          console.error("❌ Frontend - Invalid response structure");
-          console.error("❌ result.success:", result.success);
-          console.error("❌ result.data:", result.data);
-          console.error("❌ result.error:", result.error);
           setOrdersError(
             result.error ||
               "Failed to fetch orders - invalid response structure"
           );
         }
       } catch (error) {
-        console.error("❌ Frontend - Error fetching orders:", error);
-        if (error instanceof Error) {
-          console.error("❌ Frontend - Error message:", error.message);
-          console.error("❌ Frontend - Error stack:", error.stack);
-        }
         setOrdersError("An error occurred while fetching orders");
       } finally {
         setOrdersLoading(false);
@@ -403,7 +343,7 @@ export default function AdminDashboardPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching location status:", error);
+      // Error fetching location status
     } finally {
       setLocationStatusLoading(false);
     }
@@ -452,7 +392,6 @@ export default function AdminDashboardPage() {
         toast.error(result.error || "Σφάλμα κατά την ενημέρωση");
       }
     } catch (error) {
-      console.error("Error opening store:", error);
       // Rollback optimistic update on error
       if (previousStatus) {
         setLocationStatus(previousStatus);
@@ -492,7 +431,6 @@ export default function AdminDashboardPage() {
         toast.error(result.error || "Σφάλμα κατά την ενημέρωση");
       }
     } catch (error) {
-      console.error("Error closing store:", error);
       // Rollback optimistic update on error
       if (previousStatus) {
         setLocationStatus(previousStatus);
@@ -594,7 +532,6 @@ export default function AdminDashboardPage() {
     );
 
     if (!statusOption) {
-      console.warn("⚠️ Unknown status value selected:", statusValue);
       return;
     }
 
@@ -635,28 +572,11 @@ export default function AdminDashboardPage() {
 
     // Send POST request to update order status via server-side API (avoids CORS)
     const updateOrderStatus = async () => {
-      console.log("🔄 [CLIENT] handleStatusChange called:", {
-        orderId,
-        statusValue,
-        statusOption: {
-          label: statusOption.label,
-          value: statusOption.value,
-          statusId: statusOption.statusId,
-        },
-        options,
-      });
-
       try {
         const requestPayload = {
           order_id: orderId,
           status_id: statusOption.statusId,
         };
-
-        console.log("📤 [CLIENT] Preparing API request:", {
-          url: "/api/admin/orders/update-status",
-          method: "POST",
-          payload: requestPayload,
-        });
 
         const requestStartTime = Date.now();
         const response = await fetch("/api/admin/orders/update-status", {
@@ -665,35 +585,13 @@ export default function AdminDashboardPage() {
         });
 
         const requestDuration = Date.now() - requestStartTime;
-        console.log("📥 [CLIENT] API response received:", {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          duration: `${requestDuration}ms`,
-          headers: {
-            contentType: response.headers.get("content-type"),
-          },
-        });
 
         if (!response.ok) {
           let errorData;
           try {
             errorData = await response.json();
-            console.error("❌ [CLIENT] API request failed:", {
-              status: response.status,
-              statusText: response.statusText,
-              errorData,
-            });
           } catch (parseError) {
             const errorText = await response.text();
-            console.error(
-              "❌ [CLIENT] API request failed (non-JSON response):",
-              {
-                status: response.status,
-                statusText: response.statusText,
-                errorText: errorText.substring(0, 500),
-              }
-            );
             errorData = { error: errorText.substring(0, 200) };
           }
           throw new Error(
@@ -703,12 +601,6 @@ export default function AdminDashboardPage() {
         }
 
         const result = await response.json();
-        console.log("✅ [CLIENT] Order status updated successfully:", {
-          success: result.success,
-          data: result.data,
-          message: result.message,
-          fullResponse: result,
-        });
 
         if (!options?.silent) {
           toast.success("Ενημέρωση Κατάστασης", {
@@ -716,25 +608,8 @@ export default function AdminDashboardPage() {
           });
         }
       } catch (error) {
-        console.error("❌ [CLIENT] Error updating order status:", {
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-          orderId,
-          previousOrder: previousOrder
-            ? {
-                order_id: previousOrder.order_id,
-                status_id: previousOrder.status_id,
-                status_name: previousOrder.status_name,
-              }
-            : null,
-        });
-
         // Rollback optimistic update on error
         if (previousOrder) {
-          console.log("🔄 [CLIENT] Rolling back optimistic update:", {
-            orderId,
-            previousStatus: previousOrder.status_name,
-          });
           setOrders((prev) =>
             prev.map((order) =>
               order.order_id === orderId ? previousOrder : order
@@ -746,14 +621,11 @@ export default function AdminDashboardPage() {
     };
 
     // Call the update function
-    console.log("🚀 [CLIENT] Calling updateOrderStatus function");
     updateOrderStatus();
   };
 
   const handleAcceptOrder = async (orderId: number) => {
     try {
-      console.log("📤 [CLIENT] Accepting order:", orderId);
-
       const response = await fetch("/api/admin/orders/accept", {
         method: "POST",
         headers: {
@@ -791,7 +663,6 @@ export default function AdminDashboardPage() {
         });
       }
     } catch (error) {
-      console.error("❌ [CLIENT] Error accepting order:", error);
       toast.error("Σφάλμα", {
         description: "Αποτυχία αποδοχής παραγγελίας",
       });
@@ -803,11 +674,6 @@ export default function AdminDashboardPage() {
     estimatedTime: number
   ) => {
     try {
-      console.log("🕐 [ADMIN] handleUpdateDeliveryTime called:", {
-        orderId,
-        estimatedTime,
-      });
-
       // Call API endpoint to update delivery time (server will broadcast via Pusher)
       const response = await fetch("/api/admin/orders/update-delivery-time", {
         method: "POST",
@@ -823,22 +689,16 @@ export default function AdminDashboardPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        console.error("❌ [ADMIN] Failed to update delivery time:", result);
         toast.error("Σφάλμα", {
           description: result.error || "Αποτυχία ενημέρωσης χρόνου",
         });
         return;
       }
 
-      console.log(
-        `✅ [ADMIN] Delivery time updated successfully for order #${orderId}`
-      );
-
       toast.success("Ενημέρωση Χρόνου", {
         description: `Ο χρόνος παραγγελίας #${orderId} ενημερώθηκε σε ${estimatedTime} λεπτά`,
       });
     } catch (error) {
-      console.error("❌ [ADMIN] Error updating delivery time:", error);
       toast.error("Σφάλμα", {
         description: "Αποτυχία ενημέρωσης χρόνου",
       });
@@ -847,8 +707,6 @@ export default function AdminDashboardPage() {
 
   const handleRejectOrder = async (orderId: number) => {
     try {
-      console.log("📤 [CLIENT] Canceling order:", orderId);
-
       const response = await fetch("/api/admin/orders/cancel", {
         method: "POST",
         headers: {
@@ -873,7 +731,6 @@ export default function AdminDashboardPage() {
         });
       }
     } catch (error) {
-      console.error("❌ [CLIENT] Error canceling order:", error);
       toast.error("Σφάλμα", {
         description: "Αποτυχία απόρριψης παραγγελίας",
       });
@@ -883,65 +740,37 @@ export default function AdminDashboardPage() {
   // Subscribe to admin.orders channel for real-time updates
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log("⚠️ Admin: Not authenticated, skipping Pusher subscription");
       return;
     }
 
     if (!isConnected) {
-      console.log("⚠️ Admin: Pusher not connected yet, waiting...");
       return;
     }
 
     const channelName = "admin.orders";
-    console.log(`📡 Admin: Attempting to subscribe to channel: ${channelName}`);
-    console.log(
-      `📡 Admin: Connection state - isConnected: ${isConnected}, isAuthenticated: ${isAuthenticated}`
-    );
 
     const channel = subscribe(channelName);
 
     if (!channel) {
-      console.error(`❌ Admin: Failed to create channel: ${channelName}`);
       return;
     }
 
-    console.log(`✅ Admin: Channel object created for ${channelName}`);
-
     // Listen for successful subscription
     channel.bind("pusher:subscription_succeeded", () => {
-      console.log(`✅✅✅ Admin: Successfully subscribed to ${channelName}`);
-      console.log(
-        `📊 Admin: Channel state - subscribed: ${channel.subscribed}`
-      );
+      // Successfully subscribed
     });
 
     // Listen for subscription errors
     channel.bind("pusher:subscription_error", (error: any) => {
-      console.error(`❌ Admin: Failed to subscribe to ${channelName}:`, error);
-      console.error(`❌ Admin: Error details:`, JSON.stringify(error, null, 2));
+      // Failed to subscribe
     });
 
     const handleOrderCreated = (data: any) => {
-      console.log("📦📦📦 Admin: [order.created] Event received!");
-      console.log("📦 Admin: Full event data:", JSON.stringify(data, null, 2));
-      console.log("📦 Admin: Event timestamp:", new Date().toISOString());
-
       const order = data.order || data;
 
       if (!order || !order.order_id) {
-        console.warn(
-          "⚠️ Admin: [order.created] event received but no order data found"
-        );
-        console.warn("⚠️ Admin: Data structure:", Object.keys(data || {}));
         return;
       }
-
-      console.log("📦 Admin: Order data:", {
-        order_id: order.order_id,
-        status_id: order.status_id,
-        order_total: order.order_total,
-        location_name: order.location_name,
-      });
 
       // Show toast with order info from event
       // Note: Sound is handled by AdminGlobalNotifications component
@@ -950,13 +779,11 @@ export default function AdminDashboardPage() {
       // Clear any existing debounce timer
       if (orderCreatedDebounceTimerRef.current) {
         clearTimeout(orderCreatedDebounceTimerRef.current);
-        console.log(`⏱️ Admin: Previous debounce timer cleared, resetting...`);
       }
 
       // Set a new debounce timer - wait 2 seconds after the last order notification
       // This batches multiple orders that arrive quickly into a single fetch
       orderCreatedDebounceTimerRef.current = setTimeout(() => {
-        console.log(`📦 Admin: Debounce period ended, fetching all new orders`);
         orderCreatedDebounceTimerRef.current = null;
         // Add delay to ensure backend has processed all orders
         // This prevents race conditions where the API is called before orders are fully committed
@@ -970,26 +797,11 @@ export default function AdminDashboardPage() {
     );
 
     const handleOrderUpdated = (data: any) => {
-      console.log("🔄🔄🔄 Admin: [order.updated] Event received!");
-      console.log("🔄 Admin: Full event data:", JSON.stringify(data, null, 2));
-      console.log("🔄 Admin: Event timestamp:", new Date().toISOString());
-
       const order = data.order || data;
 
       if (!order || !order.order_id) {
-        console.warn(
-          "⚠️ Admin: [order.updated] event received but no order data found"
-        );
-        console.warn("⚠️ Admin: Data structure:", Object.keys(data || {}));
         return;
       }
-
-      console.log("🔄 Admin: Updating order #" + order.order_id);
-      console.log("🔄 Admin: Order update details:", {
-        order_id: order.order_id,
-        status_id: order.status_id,
-        status_name: order.status_name,
-      });
 
       // Refetch orders from API to get complete, up-to-date data
       fetchOrders();
@@ -998,24 +810,9 @@ export default function AdminDashboardPage() {
     channel.bind("order.updated", handleOrderUpdated);
 
     const handleOrderStatusChanged = (data: any) => {
-      console.log("🔄📊🔄 Admin: [order.status.changed] Event received!");
-      console.log("🔄 Admin: Full event data:", JSON.stringify(data, null, 2));
-      console.log("🔄 Admin: Event timestamp:", new Date().toISOString());
-
       if (!data.order_id) {
-        console.warn(
-          "⚠️ Admin: [order.status.changed] event received but missing order_id"
-        );
-        console.warn("⚠️ Admin: Data structure:", Object.keys(data || {}));
         return;
       }
-
-      console.log("🔄 Admin: Changing status for order #" + data.order_id);
-      console.log("🔄 Admin: Status change:", {
-        order_id: data.order_id,
-        new_status_id: data.status_id,
-        new_status_name: data.status_name,
-      });
 
       // Refetch orders from API to get complete, up-to-date data
       fetchOrders();
@@ -1024,22 +821,11 @@ export default function AdminDashboardPage() {
     channel.bind("order.status.changed", handleOrderStatusChanged);
 
     const handleOrderDeleted = (data: any) => {
-      console.log("🗑️🗑️🗑️ Admin: [order.deleted] Event received!");
-      console.log("🗑️ Admin: Full event data:", JSON.stringify(data, null, 2));
-      console.log("🗑️ Admin: Event timestamp:", new Date().toISOString());
-
       if (data.order_id) {
-        console.log("🗑️ Admin: Deleting order #" + data.order_id);
-
         setOrders((prev) => {
-          const beforeCount = prev.length;
           const filtered = prev.filter(
             (order) => order.order_id !== data.order_id
           );
-          console.log(
-            `📊 Admin: Orders before: ${beforeCount}, after: ${filtered.length}`
-          );
-          console.log(`✅ Admin: Order #${data.order_id} removed from list`);
           return filtered;
         });
 
@@ -1048,29 +834,15 @@ export default function AdminDashboardPage() {
           currentSelectedOrder &&
           currentSelectedOrder.order_id === data.order_id
         ) {
-          console.log("🗑️ Admin: Closing modal for deleted order");
           setIsModalOpen(false);
           setSelectedOrder(null);
         }
-      } else {
-        console.warn(
-          "⚠️ Admin: [order.deleted] event received but no order_id found"
-        );
-        console.warn("⚠️ Admin: Data structure:", Object.keys(data || {}));
       }
     };
 
     channel.bind("order.deleted", handleOrderDeleted);
 
-    console.log(`🔗 Admin: Channel ${channelName} binding complete`);
-    console.log(
-      `🔗 Admin: Listening for events: order.created, order.updated, order.status.changed, order.deleted`
-    );
-
     return () => {
-      console.log(`🔌 Admin: Unsubscribing from ${channelName}`);
-      console.log(`🔌 Admin: Cleaning up event listeners`);
-
       orderCreatedEvents.forEach((eventName) =>
         channel.unbind(eventName, handleOrderCreated)
       );

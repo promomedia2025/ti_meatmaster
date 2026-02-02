@@ -84,7 +84,6 @@ You can also test the helper functions in the browser console:
 
 // Get current paper size
 const size = localStorage.getItem('admin_printer_paper_size');
-console.log('Current paper size:', size);
 
 // Set a paper size manually
 localStorage.setItem('admin_printer_paper_size', 'A4');

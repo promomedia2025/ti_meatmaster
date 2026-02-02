@@ -21,13 +21,8 @@ export async function POST(request: NextRequest) {
     // For now, we'll accept any CSRF token since the current implementation
     // generates a new token on each request. In a production app, you'd want
     // to validate against a stored session token.
-    console.log("🔐 CSRF token received:", requestCsrfToken);
 
     const body = await request.json();
-    console.log(
-      "📥 Address creation request body:",
-      JSON.stringify(body, null, 2)
-    );
 
     const {
       customer_id,
@@ -68,20 +63,6 @@ export async function POST(request: NextRequest) {
 
     // Forward to external API
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/create`;
-    console.log("📝 Creating address via API:", apiUrl);
-    console.log("📤 Request body:", {
-      customer_id,
-      address_1,
-      city,
-      state: state || "",
-      postcode,
-      country,
-      bell_name: bell_name || "",
-      floor: floor || "",
-      is_default: is_default || false,
-      latitude,
-      longitude,
-    });
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -108,16 +89,13 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ External API error:", response.status, errorText);
       throw new Error(`External API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("✅ Address created successfully:", data);
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error creating address:", error);
     return NextResponse.json(
       {
         success: false,

@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     // Forward cookies from the client request
     const cookieHeader = request.headers.get("cookie") || "";
-    console.log(orderData);
     // Submit order to external API
     let response;
     try {
@@ -66,7 +65,6 @@ export async function POST(request: NextRequest) {
         }
       );
     } catch (fetchError) {
-      console.error("Network error calling external API:", fetchError);
       return NextResponse.json(
         {
           success: false,
@@ -116,7 +114,6 @@ export async function POST(request: NextRequest) {
     try {
       result = JSON.parse(responseText);
     } catch (parseError) {
-      console.error("Error parsing response:", parseError);
       return NextResponse.json(
         {
           success: false,
@@ -143,7 +140,6 @@ export async function POST(request: NextRequest) {
       data: result.data || result,
     });
   } catch (error) {
-    console.error("Error submitting order:", error);
     return NextResponse.json(
       {
         success: false,

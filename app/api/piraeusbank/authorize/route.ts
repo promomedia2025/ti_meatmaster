@@ -21,10 +21,6 @@ export async function POST(request: NextRequest) {
       parsedData = requestBody;
     }
 
-    console.log("💳 [PIRAEUS AUTHORIZE] Forwarding request to backend API");
-    console.log("💳 [PIRAEUS AUTHORIZE] Raw request body:", requestBody);
-    console.log("💳 [PIRAEUS AUTHORIZE] Parsed request data:", JSON.stringify(parsedData, null, 2));
-
     // Forward the request to the backend API exactly as received
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/piraeusbank/authorize`,
@@ -41,16 +37,9 @@ export async function POST(request: NextRequest) {
     const responseText = await response.text();
     const responseData = JSON.parse(responseText);
 
-    console.log("💳 [PIRAEUS AUTHORIZE] Backend API response:", {
-      status: response.status,
-      success: response.ok,
-      data: responseData,
-    });
-
     // Return the response from the backend API
     return NextResponse.json(responseData, { status: response.status });
   } catch (error) {
-    console.error("Error in Piraeus Bank authorize:", error);
     return NextResponse.json(
       {
         success: false,

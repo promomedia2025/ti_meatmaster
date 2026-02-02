@@ -33,10 +33,6 @@ async function getFavoriteStatus(
     // Add cookies if available
     if (cookieHeader) {
       headers["Cookie"] = cookieHeader;
-      console.log(
-        "❤️ [GET FAVORITE STATUS] Making request with cookies to:",
-        url
-      );
     } else {
       console.warn(
         "❤️ [GET FAVORITE STATUS] ⚠️ No cookies found for authentication"
@@ -49,24 +45,16 @@ async function getFavoriteStatus(
       cache: "no-store", // Don't cache - always fetch fresh favorite status
     });
 
-    console.log("❤️ [GET FAVORITE STATUS] Response status:", response.status);
-    console.log("❤️ [GET FAVORITE STATUS] Response OK:", response.ok);
 
     if (response.ok) {
       const responseText = await response.text();
       const data = JSON.parse(responseText);
       const favoriteStatus = data.data?.is_favorite || false;
-      console.log("❤️ [GET FAVORITE STATUS] Favorite status:", favoriteStatus);
       return favoriteStatus;
     } else {
-      console.error(
-        "❤️ [GET FAVORITE STATUS] ❌ Failed to get favorite status:",
-        response.status
-      );
       return false;
     }
   } catch (error) {
-    console.error("❤️ [GET FAVORITE STATUS] 💥 Exception:", error);
     return false;
   }
 }
@@ -159,8 +147,6 @@ async function getMenuData(locationId: number, categorySlug?: string) {
       },
     };
   } catch (error) {
-    console.error("Failed to fetch menu data:", error);
-
     return {
       success: false,
       data: {
@@ -208,10 +194,6 @@ export default async function LocationPage({
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join("; ");
 
-  console.log(
-    "❤️ [GET FAVORITE STATUS] Cookies available:",
-    cookieHeader ? "Yes" : "No"
-  );
 
   // Fetch favorite status server-side
   const isFavorite = await getFavoriteStatus(location.id, cookieHeader);

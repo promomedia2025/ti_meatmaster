@@ -54,14 +54,12 @@ export async function POST(request: NextRequest) {
       );
 
       if (!updateResponse.ok) {
-        console.error("Failed to update order payment status");
         return NextResponse.json(
           { success: false, error: "Failed to update order status" },
           { status: 500 }
         );
       }
     } catch (updateError) {
-      console.error("Error updating order payment status:", updateError);
       return NextResponse.json(
         { success: false, error: "Error updating order status" },
         { status: 500 }
@@ -73,7 +71,6 @@ export async function POST(request: NextRequest) {
       message: "Payment status updated successfully",
     });
   } catch (error) {
-    console.error("Error processing Piraeus payment webhook:", error);
     return NextResponse.json(
       {
         success: false,

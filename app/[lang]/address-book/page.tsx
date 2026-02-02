@@ -67,7 +67,6 @@ export default function AddressBookPage() {
         setError(data.message || "Failed to load addresses");
       }
     } catch (err) {
-      console.error("Error fetching addresses:", err);
       setError("Failed to load addresses");
       setAddresses([]); // Ensure addresses is always an array
     } finally {
@@ -114,11 +113,9 @@ export default function AddressBookPage() {
         // Refresh the addresses list
         fetchAddresses();
       } else {
-        console.error("❌ Failed to delete address:", result);
         alert(`Failed to delete address: ${result.message}`);
       }
     } catch (error) {
-      console.error("❌ Error deleting address:", error);
       alert("An error occurred while deleting the address");
     }
   };
@@ -152,16 +149,11 @@ export default function AddressBookPage() {
         fetchAddresses();
 
         // Refresh the default address in location context to update Wolt navbar
-        console.log(
-          "📍 [ADDRESS BOOK] Refreshing default address in location context"
-        );
         await refreshDefaultAddress();
       } else {
-        console.error("❌ Failed to set address as default:", result);
         alert(`Failed to set address as default: ${result.message}`);
       }
     } catch (error) {
-      console.error("❌ Error setting address as default:", error);
       alert("An error occurred while setting the address as default");
     }
   };

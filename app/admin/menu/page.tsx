@@ -71,13 +71,11 @@ export default function AdminMenuPage() {
 
         // Check if response is 500 - redirect to login
         if (response.status === 500) {
-          console.error("Categories API returned 500 - redirecting to login");
           router.push("/admin/login");
           return;
         }
 
         const result = await response.json();
-        console.log("Categories API result:", result);
 
         if (result.success && result.data) {
           // Handle different response formats
@@ -95,7 +93,7 @@ export default function AdminMenuPage() {
           setCategories(result.data);
         }
       } catch (err) {
-        console.error("Error fetching categories:", err);
+        // Error fetching categories
       } finally {
         setCategoriesLoading(false);
       }
@@ -116,7 +114,6 @@ export default function AdminMenuPage() {
         });
 
         const result = await response.json();
-        console.log("Menu items API result:", result);
 
         if (result.success && result.menuItems) {
           setMenuItems(result.menuItems);
@@ -124,7 +121,6 @@ export default function AdminMenuPage() {
           setError(result.error || "Failed to fetch menu items");
         }
       } catch (err) {
-        console.error("Error fetching menu items:", err);
         setError("An error occurred while fetching menu items");
       } finally {
         setIsLoading(false);
@@ -197,7 +193,6 @@ export default function AdminMenuPage() {
       );
 
       const result = await response.json();
-      console.log("Menu options API result:", result);
 
       // Handle different response formats
       // Menu options are in the options array of the API response
@@ -233,7 +228,7 @@ export default function AdminMenuPage() {
 
       setMenuOptions(options);
     } catch (err) {
-      console.error("Error fetching menu options:", err);
+      // Error fetching menu options
     } finally {
       setOptionsLoading(false);
     }
@@ -288,7 +283,6 @@ export default function AdminMenuPage() {
             ),
           }))
         );
-        console.error("Failed to toggle option value status:", result.error);
       }
     } catch (err) {
       // Rollback on error
@@ -302,7 +296,6 @@ export default function AdminMenuPage() {
           ),
         }))
       );
-      console.error("Error toggling option value status:", err);
     }
   };
 
@@ -475,22 +468,10 @@ export default function AdminMenuPage() {
                                 if (!result.success) {
                                   // Rollback on error
                                   setMenuItems(menuItems);
-                                  console.error(
-                                    "Failed to toggle menu status:",
-                                    result.error
-                                  );
-                                } else {
-                                  console.log(
-                                    `✅ Menu ${item.menu_id} status updated to ${newStatus}`
-                                  );
-                                }
+                                } 
                               } catch (err) {
                                 // Rollback on error
                                 setMenuItems(menuItems);
-                                console.error(
-                                  "Error toggling menu status:",
-                                  err
-                                );
                               }
                             }}
                             className="sr-only peer"

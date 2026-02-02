@@ -17,7 +17,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log("🔐 CSRF token received:", requestCsrfToken);
 
     // Get address_id from query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -36,7 +35,6 @@ export async function DELETE(request: NextRequest) {
 
     // Forward to external API
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/address/${addressId}`;
-    console.log("🗑️ Deleting address via API:", apiUrl);
 
     const response = await fetch(apiUrl, {
       method: "DELETE",
@@ -47,16 +45,13 @@ export async function DELETE(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ External API error:", response.status, errorText);
       throw new Error(`External API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("✅ Address deleted successfully:", data);
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error deleting address:", error);
     return NextResponse.json(
       {
         success: false,

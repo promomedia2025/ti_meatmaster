@@ -39,7 +39,6 @@ export default function FavoritesPage() {
       const response = await fetch("/api/user/favorites");
       const data = await response.json();
 
-      console.log("❤️ [FAVORITES PAGE] API Response:", data);
 
       if (data.success && data.data && data.data.favorites) {
         // API returns favorites as an array of objects with location property
@@ -58,7 +57,6 @@ export default function FavoritesPage() {
         setError(data.message || "Failed to load favorites");
       }
     } catch (err) {
-      console.error("Error fetching favorites:", err);
       setError("Failed to load favorites");
     } finally {
       setLoading(false);

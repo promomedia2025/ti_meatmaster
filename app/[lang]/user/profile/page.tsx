@@ -45,7 +45,6 @@ export default function UserProfilePage() {
 
   const handleSave = (field: string) => {
     // TODO: Implement save functionality
-    console.log(`Saving ${field}:`, formData[field as keyof UserProfile]);
     setEditingField(null);
     setIsEditing(false);
   };
@@ -119,7 +118,6 @@ export default function UserProfilePage() {
       setIsEditing(false);
       setEditingField(null);
     } catch (error) {
-      console.error("Error saving changes:", error);
       toast.error("Σφάλμα", {
         description:
           error instanceof Error

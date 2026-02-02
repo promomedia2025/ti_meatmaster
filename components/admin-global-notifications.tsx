@@ -44,10 +44,8 @@ export function AdminGlobalNotifications() {
    * Plays notification sound and focuses Electron window if available
    */
   const playNotificationSound = () => {
-    console.log("🔔 [GlobalNotifications] playNotificationSound: Function called");
 
     if (typeof window === "undefined") {
-      console.warn("⚠️ [GlobalNotifications] playNotificationSound: window is undefined");
       return;
     }
 
@@ -55,57 +53,31 @@ export function AdminGlobalNotifications() {
     const electronDetected = isElectron();
     const windowFocused = isWindowFocused();
 
-    console.log("🔔 [GlobalNotifications] playNotificationSound: Electron check", {
-      isElectron: electronDetected,
-      isWindowFocused: windowFocused,
-      hasWindowElectron: !!(typeof window !== "undefined" && window.electron),
-    });
 
     // Focus and restore Electron window when notification sound plays
     if (electronDetected) {
-      console.log(
-        "🔔 [GlobalNotifications] playNotificationSound: Electron detected, calling focusElectronWindow()"
-      );
       focusElectronWindow();
-    } else {
-      console.log(
-        "ℹ️ [GlobalNotifications] playNotificationSound: Electron not detected, skipping window focus"
-      );
     }
 
     // Try Electron API first, fallback to browser audio
     if (electronDetected && window.electron?.playNotificationSound) {
       try {
-        console.log("🔔 [GlobalNotifications] playNotificationSound: Using Electron API");
         window.electron.playNotificationSound();
-        console.log("✅ [GlobalNotifications] playNotificationSound: Electron audio playback started");
         return;
       } catch (error) {
-        console.warn(
-          "🔇 [GlobalNotifications] playNotificationSound: Electron API failed, falling back to browser",
-          error
-        );
+        // Electron API failed, falling back to browser
       }
     }
 
     // Fallback to browser audio
     try {
-      console.log("🔔 [GlobalNotifications] playNotificationSound: Playing browser audio");
       const audio = new Audio("/phone-ringtone-normal-444775.mp3");
       audio.volume = 0.7; // Set volume to 70%
-      audio
-        .play()
-        .then(() => {
-          console.log("✅ [GlobalNotifications] playNotificationSound: Browser audio playback started");
-        })
-        .catch((error) => {
-          console.warn(
-            "🔇 [GlobalNotifications] playNotificationSound: Failed to play notification sound",
-            error
-          );
-        });
+      audio.play().catch(() => {
+        // Failed to play notification sound
+      });
     } catch (error) {
-      console.warn("🔇 [GlobalNotifications] playNotificationSound: Error creating audio", error);
+      // Error creating audio
     }
   };
 
@@ -131,60 +103,36 @@ export function AdminGlobalNotifications() {
   // Subscribe to admin.orders channel for real-time updates
   useEffect(() => {
     if (!isConnected) {
-      console.log("⚠️ [GlobalNotifications] Pusher not connected yet, waiting...");
       return;
     }
 
     const channelName = "admin.orders";
-    console.log(`📡 [GlobalNotifications] Attempting to subscribe to channel: ${channelName}`);
-    console.log(
-      `📡 [GlobalNotifications] Connection state - isConnected: ${isConnected}`
-    );
 
     const channel = subscribe(channelName);
 
     if (!channel) {
-      console.error(`❌ [GlobalNotifications] Failed to create channel: ${channelName}`);
       return;
     }
 
-    console.log(`✅ [GlobalNotifications] Channel object created for ${channelName}`);
 
     // Listen for successful subscription
     channel.bind("pusher:subscription_succeeded", () => {
-      console.log(`✅✅✅ [GlobalNotifications] Successfully subscribed to ${channelName}`);
-      console.log(
-        `📊 [GlobalNotifications] Channel state - subscribed: ${channel.subscribed}`
-      );
+      // Successfully subscribed
     });
 
     // Listen for subscription errors
     channel.bind("pusher:subscription_error", (error: any) => {
-      console.error(`❌ [GlobalNotifications] Failed to subscribe to ${channelName}:`, error);
-      console.error(`❌ [GlobalNotifications] Error details:`, JSON.stringify(error, null, 2));
+      // Failed to subscribe
     });
 
     const handleOrderCreated = (data: any) => {
-      console.log("📦📦📦 [GlobalNotifications] [order.created] Event received!");
-      console.log("📦 [GlobalNotifications] Full event data:", JSON.stringify(data, null, 2));
-      console.log("📦 [GlobalNotifications] Event timestamp:", new Date().toISOString());
 
       const order = data.order || data;
 
       if (!order || !order.order_id) {
-        console.warn(
-          "⚠️ [GlobalNotifications] [order.created] event received but no order data found"
-        );
-        console.warn("⚠️ [GlobalNotifications] Data structure:", Object.keys(data || {}));
         return;
       }
 
-      console.log("📦 [GlobalNotifications] Order data:", {
-        order_id: order.order_id,
-        status_id: order.status_id,
-        order_total: order.order_total,
-        location_name: order.location_name,
-      });
 
       // Play sound and show toast with order info from event
       playNotificationSound();
@@ -207,20 +155,13 @@ export function AdminGlobalNotifications() {
     );
 
     const handleOrderUpdated = (data: any) => {
-      console.log("🔄🔄🔄 [GlobalNotifications] [order.updated] Event received!");
-      console.log("🔄 [GlobalNotifications] Full event data:", JSON.stringify(data, null, 2));
-      console.log("🔄 [GlobalNotifications] Event timestamp:", new Date().toISOString());
 
       const order = data.order || data;
 
       if (!order || !order.order_id) {
-        console.warn(
-          "⚠️ [GlobalNotifications] [order.updated] event received but no order data found"
-        );
         return;
       }
 
-      console.log("🔄 [GlobalNotifications] Updating order #" + order.order_id);
       
       // Emit custom event for pages that want to refresh their data
       if (typeof window !== "undefined") {
@@ -233,18 +174,11 @@ export function AdminGlobalNotifications() {
     channel.bind("order.updated", handleOrderUpdated);
 
     const handleOrderStatusChanged = (data: any) => {
-      console.log("🔄📊🔄 [GlobalNotifications] [order.status.changed] Event received!");
-      console.log("🔄 [GlobalNotifications] Full event data:", JSON.stringify(data, null, 2));
-      console.log("🔄 [GlobalNotifications] Event timestamp:", new Date().toISOString());
 
       if (!data.order_id) {
-        console.warn(
-          "⚠️ [GlobalNotifications] [order.status.changed] event received but missing order_id"
-        );
         return;
       }
 
-      console.log("🔄 [GlobalNotifications] Changing status for order #" + data.order_id);
       
       // Emit custom event for pages that want to refresh their data
       if (typeof window !== "undefined") {
@@ -257,12 +191,8 @@ export function AdminGlobalNotifications() {
     channel.bind("order.status.changed", handleOrderStatusChanged);
 
     const handleOrderDeleted = (data: any) => {
-      console.log("🗑️🗑️🗑️ [GlobalNotifications] [order.deleted] Event received!");
-      console.log("🗑️ [GlobalNotifications] Full event data:", JSON.stringify(data, null, 2));
-      console.log("🗑️ [GlobalNotifications] Event timestamp:", new Date().toISOString());
 
       if (data.order_id) {
-        console.log("🗑️ [GlobalNotifications] Deleting order #" + data.order_id);
         
         // Emit custom event for pages that want to refresh their data
         if (typeof window !== "undefined") {
@@ -270,23 +200,13 @@ export function AdminGlobalNotifications() {
             new CustomEvent("admin:order-deleted", { detail: data })
           );
         }
-      } else {
-        console.warn(
-          "⚠️ [GlobalNotifications] [order.deleted] event received but no order_id found"
-        );
       }
     };
 
     channel.bind("order.deleted", handleOrderDeleted);
 
-    console.log(`🔗 [GlobalNotifications] Channel ${channelName} binding complete`);
-    console.log(
-      `🔗 [GlobalNotifications] Listening for events: order.created, order.updated, order.status.changed, order.deleted`
-    );
 
     return () => {
-      console.log(`🔌 [GlobalNotifications] Unsubscribing from ${channelName}`);
-      console.log(`🔌 [GlobalNotifications] Cleaning up event listeners`);
 
       orderCreatedEvents.forEach((eventName) =>
         channel.unbind(eventName, handleOrderCreated)

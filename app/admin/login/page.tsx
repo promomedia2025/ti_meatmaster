@@ -41,7 +41,6 @@ function AdminLoginContent() {
           }
         } catch (error) {
           // Error checking, allow login
-          console.error("Auth check error:", error);
         }
       }
     };
@@ -56,16 +55,8 @@ function AdminLoginContent() {
       const electronUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME;
       const electronPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
-      console.log("🔐 Electron detected - Environment variables:", {
-        hasUsername: !!electronUsername,
-        hasPassword: !!electronPassword,
-        usernameLength: electronUsername?.length,
-        passwordLength: electronPassword?.length,
-        usernamePreview: electronUsername ? `${electronUsername.substring(0, 3)}...` : "undefined",
-      });
 
       if (electronUsername && electronPassword) {
-        console.log("🔐 Electron: Auto-filling credentials");
         setUsername(electronUsername);
         setPassword(electronPassword);
         
@@ -88,13 +79,7 @@ function AdminLoginContent() {
             passwordInput.dispatchEvent(new Event("change", { bubbles: true }));
           }
           
-          console.log("🔐 Electron: Input events triggered, values set:", {
-            usernameInputValue: usernameInput?.value,
-            passwordInputValue: passwordInput?.value ? "***" : "empty",
-          });
         }, 100);
-      } else {
-        console.warn("⚠️ Electron: Environment variables not found or empty");
       }
     }
   }, []);
@@ -105,13 +90,6 @@ function AdminLoginContent() {
     setIsLoading(true);
 
     // Log the values being sent for debugging
-    console.log("🔐 Login attempt:", {
-      username,
-      passwordLength: password?.length,
-      hasUsername: !!username,
-      hasPassword: !!password,
-    });
-
     try {
       const response = await fetch("/api/auth/admin/login", {
         method: "POST",
@@ -127,11 +105,6 @@ function AdminLoginContent() {
 
       const result = await response.json();
       
-      console.log("🔐 Login response:", {
-        success: result.success,
-        error: result.error,
-        status: response.status,
-      });
 
       if (result.success) {
         // Store a token or flag to indicate admin is logged in
@@ -144,7 +117,6 @@ function AdminLoginContent() {
         setError(result.error || "Login failed. Please check your credentials.");
       }
     } catch (error) {
-      console.error("Login error:", error);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

@@ -21,7 +21,6 @@ export async function GET(
     }
 
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/${customerId}`;
-    console.log("🔍 API URL:", apiUrl);
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -38,7 +37,6 @@ export async function GET(
     // Coordinates are already in the response from external API, just pass through
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching address book:", error);
     return NextResponse.json(
       {
         success: false,
@@ -68,7 +66,6 @@ export async function PUT(
       );
     }
 
-    console.log("🔐 CSRF token received:", requestCsrfToken);
 
     const addressId = params.id;
     if (!addressId) {
@@ -83,10 +80,6 @@ export async function PUT(
     }
 
     const body = await request.json();
-    console.log(
-      "📥 Address update request body:",
-      JSON.stringify(body, null, 2)
-    );
 
     const {
       customer_id,
@@ -127,20 +120,6 @@ export async function PUT(
 
     // Forward to external API
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/${addressId}`;
-    console.log("📝 Updating address via API:", apiUrl);
-    console.log("📤 Request body:", {
-      customer_id,
-      address_1,
-      city,
-      state: state || "",
-      postcode,
-      country,
-      bell_name: bell_name || "",
-      floor: floor || "",
-      is_default: is_default || false,
-      latitude,
-      longitude,
-    });
 
     const response = await fetch(apiUrl, {
       method: "PUT",
@@ -167,16 +146,13 @@ export async function PUT(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ External API error:", response.status, errorText);
       throw new Error(`External API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("✅ Address updated successfully:", data);
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error updating address:", error);
     return NextResponse.json(
       {
         success: false,

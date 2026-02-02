@@ -49,7 +49,6 @@ export default function OrderHistoryPage() {
       const response = await fetch(`/api/orders?user_id=${user?.id}`);
       const data = await response.json();
 
-      console.log("Orders API response:", data);
 
       // Handle the specific API response structure
       if (data.success && data.data && Array.isArray(data.data)) {
@@ -59,7 +58,6 @@ export default function OrderHistoryPage() {
         setError(data.message || "Failed to load orders");
       }
     } catch (err) {
-      console.error("Error fetching orders:", err);
       setError("Failed to load orders");
       setOrders([]);
     } finally {

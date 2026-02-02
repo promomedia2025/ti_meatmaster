@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
     }
 
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/address-book/${customerId}`;
-    console.log("🔍 API URL:", apiUrl);
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -36,7 +35,6 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching address book:", error);
     return NextResponse.json(
       {
         success: false,

@@ -14,9 +14,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Log the incoming request body
-    console.log("💳 [PIRAEUS INITIATE] Incoming request body:", JSON.stringify(body, null, 2));
-    
     const {
       orderId,
       amount,
@@ -76,7 +73,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!paymentRequest.success) {
-      console.error("💳 [PIRAEUS INITIATE] Payment request failed:", paymentRequest.error);
       return NextResponse.json(
         {
           success: false,
@@ -86,19 +82,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log the response being sent back (mask password for security)
-    const formDataForLog = paymentRequest.formData ? { ...paymentRequest.formData } : {};
-    if (formDataForLog.Password) {
-      formDataForLog.Password = "***MASKED***";
-    }
-    
-    console.log("💳 [PIRAEUS INITIATE] Response being sent:", {
-      success: true,
-      gatewayUrl: paymentRequest.gatewayUrl,
-      transactionId: paymentRequest.transactionId,
-      formData: formDataForLog,
-    });
-
     // Return form data for POST submission
     return NextResponse.json({
       success: true,
@@ -107,7 +90,6 @@ export async function POST(request: NextRequest) {
       transactionId: paymentRequest.transactionId,
     });
   } catch (error) {
-    console.error("Error initiating Piraeus payment:", error);
     return NextResponse.json(
       {
         success: false,

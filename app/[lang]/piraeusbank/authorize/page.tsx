@@ -25,7 +25,6 @@ export default function PiraeusBankAuthorizePage() {
           params[key] = value;
         });
 
-        console.log("💳 [AUTHORIZE PAGE] Calling authorize API with params:", params);
         
         // Store params for later use (for redirect)
         const locationId = params.locationId || params.orderId || "";
@@ -40,13 +39,11 @@ export default function PiraeusBankAuthorizePage() {
         });
 
         const result = await response.json();
-        console.log("💳 [AUTHORIZE PAGE] Authorize API response:", result);
 
         // Extract payment_verified from response structure
         // Response structure: { success: boolean, data: { payment_verified: boolean, ... } }
         const paymentVerified = result?.data?.payment_verified;
         
-        console.log("💳 [AUTHORIZE PAGE] Payment verified:", paymentVerified);
 
         // Check payment_verified from response
         if (paymentVerified === true) {
@@ -58,7 +55,6 @@ export default function PiraeusBankAuthorizePage() {
               type: "PAYMENT_STATUS",
               paymentVerified: true,
             }, window.location.origin);
-            console.log("💳 [AUTHORIZE PAGE] Sent success message to parent window");
           }
           
           // Close window after a short delay
@@ -74,7 +70,6 @@ export default function PiraeusBankAuthorizePage() {
               type: "PAYMENT_STATUS",
               paymentVerified: false,
             }, window.location.origin);
-            console.log("💳 [AUTHORIZE PAGE] Sent failure message to parent window");
           }
           
           // Close window and redirect parent (checkout page) back to checkout after a delay
@@ -92,7 +87,6 @@ export default function PiraeusBankAuthorizePage() {
           }, 3000);
         }
       } catch (error) {
-        console.error("💳 [AUTHORIZE PAGE] Error calling authorize API:", error);
         setIsFailure(true);
       } finally {
         setIsLoading(false);

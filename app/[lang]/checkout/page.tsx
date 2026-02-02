@@ -120,19 +120,7 @@ function CheckoutPageContent() {
   const { status: restaurantStatus, isLoading: isLoadingRestaurantStatus } =
     useRestaurantStatus(locationId ? parseInt(locationId) : null);
 
-  // Log restaurant status when it loads or changes
-  useEffect(() => {
-    console.log("🍽️ [CHECKOUT] Restaurant Status:", {
-      locationId: locationId ? parseInt(locationId) : null,
-      isLoading: isLoadingRestaurantStatus,
-      restaurantStatus,
-      isOpen: restaurantStatus?.is_open,
-      pickupAvailable: restaurantStatus?.pickup_available,
-      deliveryAvailable: restaurantStatus?.delivery_available,
-      statusMessage: restaurantStatus?.status_message,
-      nextOpeningTime: restaurantStatus?.next_opening_time,
-    });
-  }, [locationId, restaurantStatus, isLoadingRestaurantStatus]);
+
 
   // Fetch location data to get intervals
   useEffect(() => {
@@ -149,7 +137,6 @@ function CheckoutPageContent() {
         });
 
         if (!response.ok) {
-          console.error("Failed to fetch location data");
           return;
         }
 
@@ -164,7 +151,7 @@ function CheckoutPageContent() {
           }
         }
       } catch (error) {
-        console.error("Error fetching location data:", error);
+        // Error fetching location data
       }
     };
 
@@ -299,7 +286,6 @@ function CheckoutPageContent() {
         throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error("Error fetching menu item options:", error);
       toast.error("Δεν ήταν δυνατή η φόρτωση των επιλογών του προϊόντος");
       setIsMenuOptionsModalOpen(false);
       setEditingItem(null);
@@ -379,7 +365,6 @@ function CheckoutPageContent() {
         throw new Error(data.message || "Failed to update item");
       }
     } catch (error) {
-      console.error("Error updating cart item:", error);
       toast.error("Αποτυχία ενημέρωσης του προϊόντος");
     } finally {
       setIsUpdatingItem(false);
@@ -464,7 +449,6 @@ function CheckoutPageContent() {
 
       toast.success("Η διεύθυνση συμπληρώθηκε αυτόματα");
     } catch (error) {
-      console.error("Error autocompleting location:", error);
       toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -499,25 +483,7 @@ function CheckoutPageContent() {
           : address.coordinates.longitude;
     }
 
-    // Log longitude and latitude specifically
-    console.log("📍 [CHECKOUT] Address selected from address book:", {
-      address,
-      hasCoordinates: latitude !== undefined && longitude !== undefined,
-      latitude,
-      longitude,
-    });
 
-    if (latitude !== undefined && longitude !== undefined) {
-      console.log("📍 [CHECKOUT] Address coordinates (latitude, longitude):", {
-        latitude,
-        longitude,
-      });
-      console.log(
-        `📍 [CHECKOUT] Latitude: ${latitude}, Longitude: ${longitude}`
-      );
-    } else {
-      console.log("📍 [CHECKOUT] No coordinates found in address");
-    }
 
     setIsLoadingLocation(true);
     try {
@@ -529,10 +495,6 @@ function CheckoutPageContent() {
 
       // If address has coordinates, use them
       if (latitude !== undefined && longitude !== undefined) {
-        console.log("📍 [CHECKOUT] Using address coordinates:", {
-          latitude,
-          longitude,
-        });
         const geocoded = await reverseGeocode(latitude, longitude, currentLang);
 
         if (geocoded && !hasApiFields) {
@@ -647,14 +609,7 @@ function CheckoutPageContent() {
         longitude !== undefined &&
         locationCart?.locationId
       ) {
-        console.log(
-          "🛒 [CHECKOUT] Checking delivery availability for selected address:",
-          {
-            locationId: locationCart.locationId,
-            latitude,
-            longitude,
-          }
-        );
+        
 
         try {
           const deliveryResponse = await fetch(
@@ -673,17 +628,7 @@ function CheckoutPageContent() {
 
           const deliveryData = await deliveryResponse.json();
 
-          console.log(
-            "🛒 [CHECKOUT] Delivery availability response for selected address:",
-            {
-              success: deliveryData.success,
-              data: deliveryData.data,
-              isDeliveryAvailable: deliveryData.data?.is_delivery_available,
-              isWithinDeliveryArea: deliveryData.data?.is_within_delivery_area,
-              deliveryEnabled: deliveryData.data?.delivery_enabled,
-            }
-          );
-
+          
           if (deliveryData.success && deliveryData.data) {
             // Store delivery data in context
             const deliveryAvailabilityData = {
@@ -695,33 +640,18 @@ function CheckoutPageContent() {
             };
 
             setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
-            console.log(
-              "🛒 [CHECKOUT] Delivery data stored in context for selected address",
-              {
-                locationId: locationCart.locationId,
-                isDeliveryAvailable: deliveryData.data.is_delivery_available,
-                isWithinDeliveryArea: deliveryData.data.is_within_delivery_area,
-                isDeliveryBlocked:
-                  !deliveryData.data.is_delivery_available ||
-                  !deliveryData.data.is_within_delivery_area,
-              }
-            );
+          
 
             // Don't show toast or switch to pickup automatically - button will be disabled and message shown
             // User can manually switch to pickup if they want
           }
         } catch (deliveryError) {
-          console.error(
-            "Error checking delivery availability for selected address:",
-            deliveryError
-          );
-          // Don't show error toast, just log it
+          // Don't show error toast, just ignore it
         }
       }
 
       toast.success("Η διεύθυνση συμπληρώθηκε");
     } catch (error) {
-      console.error("Error setting address from address book:", error);
       toast.error("Σφάλμα κατά τη συμπλήρωση της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -774,15 +704,7 @@ function CheckoutPageContent() {
 
         // Check delivery availability when address is selected with coordinates
         if (locationCart?.locationId) {
-          console.log(
-            "🛒 [CHECKOUT] Checking delivery availability for Google Places address:",
-            {
-              locationId: locationCart.locationId,
-              latitude: lat,
-              longitude: lng,
-            }
-          );
-
+        
           try {
             const deliveryResponse = await fetch(
               `/api/locations/${locationCart.locationId}/delivery-availability`,
@@ -800,17 +722,7 @@ function CheckoutPageContent() {
 
             const deliveryData = await deliveryResponse.json();
 
-            console.log(
-              "🛒 [CHECKOUT] Delivery availability response for Google Places address:",
-              {
-                success: deliveryData.success,
-                data: deliveryData.data,
-                isDeliveryAvailable: deliveryData.data?.is_delivery_available,
-                isWithinDeliveryArea:
-                  deliveryData.data?.is_within_delivery_area,
-                deliveryEnabled: deliveryData.data?.delivery_enabled,
-              }
-            );
+          
 
             if (deliveryData.success && deliveryData.data) {
               // Store delivery data in context
@@ -826,28 +738,13 @@ function CheckoutPageContent() {
                 locationCart.locationId,
                 deliveryAvailabilityData
               );
-              console.log(
-                "🛒 [CHECKOUT] Delivery data stored in context for Google Places address",
-                {
-                  locationId: locationCart.locationId,
-                  isDeliveryAvailable: deliveryData.data.is_delivery_available,
-                  isWithinDeliveryArea:
-                    deliveryData.data.is_within_delivery_area,
-                  isDeliveryBlocked:
-                    !deliveryData.data.is_delivery_available ||
-                    !deliveryData.data.is_within_delivery_area,
-                }
-              );
+           
 
               // Don't show toast or switch to pickup automatically - button will be disabled and message shown
               // User can manually switch to pickup if they want
             }
           } catch (deliveryError) {
-            console.error(
-              "Error checking delivery availability for Google Places address:",
-              deliveryError
-            );
-            // Don't show error toast, just log it
+            // Don't show error toast, just ignore it
           }
         }
 
@@ -871,14 +768,7 @@ function CheckoutPageContent() {
 
         // Check delivery availability for fallback address too
         if (locationCart?.locationId) {
-          console.log(
-            "🛒 [CHECKOUT] Checking delivery availability for Google Places fallback address:",
-            {
-              locationId: locationCart.locationId,
-              latitude: lat,
-              longitude: lng,
-            }
-          );
+       
 
           try {
             const deliveryResponse = await fetch(
@@ -915,17 +805,13 @@ function CheckoutPageContent() {
               // User can manually switch to pickup if they want
             }
           } catch (deliveryError) {
-            console.error(
-              "Error checking delivery availability for Google Places fallback address:",
-              deliveryError
-            );
+            // Ignore delivery error
           }
         }
 
         toast.success("Η διεύθυνση ορίστηκε");
       }
     } catch (error) {
-      console.error("Error setting location from Google Places:", error);
       toast.error("Σφάλμα κατά τον ορισμό της διεύθυνσης");
     } finally {
       setIsLoadingLocation(false);
@@ -935,15 +821,7 @@ function CheckoutPageContent() {
   // Check delivery availability when locationId, coordinates, and orderType change
   useEffect(() => {
     const checkDeliveryAvailability = async () => {
-      console.log("🛒 [CHECKOUT] Delivery availability check triggered", {
-        locationId: locationCart?.locationId,
-        hasCoordinates: !!coordinates,
-        coordinates: coordinates
-          ? { lat: coordinates.latitude, lng: coordinates.longitude }
-          : null,
-        orderType,
-        isCheckingDelivery,
-      });
+ 
 
       // Check if delivery is available from restaurant status (use hook status first)
       const isDeliveryAvailable =
@@ -958,25 +836,11 @@ function CheckoutPageContent() {
         isCheckingDelivery ||
         !isDeliveryAvailable
       ) {
-        console.log("🛒 [CHECKOUT] Skipping delivery check:", {
-          reason: !locationCart?.locationId
-            ? "No location cart"
-            : !coordinates
-            ? "No coordinates"
-            : orderType !== "delivery"
-            ? "Not delivery order"
-            : !isDeliveryAvailable
-            ? "Delivery not available"
-            : "Already checking",
-        });
+       
         return;
       }
 
-      console.log("🛒 [CHECKOUT] Starting delivery availability check", {
-        locationId: locationCart.locationId,
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
-      });
+      
 
       setIsCheckingDelivery(true);
 
@@ -997,14 +861,7 @@ function CheckoutPageContent() {
 
         const data = await response.json();
 
-        console.log("🛒 [CHECKOUT] Delivery availability response:", {
-          success: data.success,
-          data: data.data,
-          fullResponse: JSON.stringify(data, null, 2),
-          isDeliveryAvailable: data.data?.is_delivery_available,
-          isWithinDeliveryArea: data.data?.is_within_delivery_area,
-          deliveryEnabled: data.data?.delivery_enabled,
-        });
+      
 
         if (data.success && data.data) {
           // Store delivery data in context - map the response structure
@@ -1016,27 +873,15 @@ function CheckoutPageContent() {
           };
 
           setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
-          console.log("🛒 [CHECKOUT] Delivery data stored in context", {
-            locationId: locationCart.locationId,
-            isDeliveryAvailable: data.data.is_delivery_available,
-            isWithinDeliveryArea: data.data.is_within_delivery_area,
-            deliveryEnabled: data.data.delivery_enabled,
-            isDeliveryBlocked:
-              !data.data.is_delivery_available ||
-              !data.data.is_within_delivery_area,
-          });
+          
 
           // Don't switch to pickup automatically - let user choose delivery option
           // Submit button will be disabled with message if address is outside delivery area
         }
       } catch (error) {
-        console.error(
-          "🛒 [CHECKOUT] Error checking delivery availability:",
-          error
-        );
+        // Error checking delivery availability
       } finally {
         setIsCheckingDelivery(false);
-        console.log("🛒 [CHECKOUT] Delivery availability check completed");
       }
     };
 
@@ -1086,48 +931,37 @@ function CheckoutPageContent() {
 
   // Listen to specific order channel for order status updates
   useEffect(() => {
-    console.log("🔍 Pusher connection state:", {
-      isConnected,
-      orderId,
-    });
 
     if (!isConnected) {
-      console.log("⚠️ Pusher not connected yet");
       return;
     }
 
     if (!orderId) {
-      console.log("⚠️ No order ID available yet");
       return;
     }
 
     const channelName = `order.${orderId}`;
-    console.log(`📡 Attempting to subscribe to channel: ${channelName}`);
     const channel = subscribe(channelName);
 
     if (channel) {
       // Listen for successful subscription
       channel.bind("pusher:subscription_succeeded", () => {
-        console.log(`✅ Successfully subscribed to ${channelName}`);
       });
 
       // Listen for subscription errors
       channel.bind("pusher:subscription_error", (error: any) => {
-        console.error(`❌ Failed to subscribe to ${channelName}:`, error);
+        // Failed to subscribe to channel
       });
 
       // Listen for order status updates
       channel.bind("orderStatusUpdated", (data: any) => {
-        console.log(`📦 Order ${orderId} status updated:`, data);
       });
 
-      console.log(`🔗 Channel ${channelName} binding complete`);
     } else {
-      console.error(`❌ Failed to create channel: ${channelName}`);
+      // Failed to create channel
     }
 
     return () => {
-      console.log(`🔌 Unsubscribing from ${channelName}`);
       unsubscribe(channelName);
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
@@ -1139,13 +973,11 @@ function CheckoutPageContent() {
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "PAYMENT_STATUS") {
-        console.log("💳 [CHECKOUT] Received payment status:", event.data);
         
         if (event.data.paymentVerified === true) {
           // Payment successful - clear cart and redirect
           if (locationCart) {
             clearLocationCart(locationCart.locationId);
-            console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
           }
           
           toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
@@ -1301,7 +1133,6 @@ function CheckoutPageContent() {
         return;
       }
     } catch (error) {
-      console.error("Error checking restaurant status:", error);
       setIsSubmitting(false);
       toast.error(
         "Σφάλμα κατά τον έλεγχο κατάστασης. Παρακαλώ δοκιμάστε ξανά."
@@ -1459,23 +1290,16 @@ function CheckoutPageContent() {
 
             if (addressResponse.ok) {
               const addressResult = await addressResponse.json();
-              console.log("✅ Address saved to address book:", addressResult);
               toast.success("Η διεύθυνση αποθηκεύτηκε στο βιβλίο διευθύνσεων");
             } else {
-              console.error(
-                "⚠️ Failed to save address:",
-                await addressResponse.json()
-              );
               // Don't fail the order if address save fails
             }
           }
         } catch (error) {
-          console.error("⚠️ Error saving address:", error);
           // Don't fail the order if address save fails
         }
       }
 
-      console.log("📦 Submitting order with data:", orderData);
 
       // Submit order via server-side API route (Safari-safe)
       // IMPORTANT: Using /api/orders/submit to avoid CORS issues in Safari
@@ -1511,14 +1335,12 @@ function CheckoutPageContent() {
       if (contentType.includes("text/html")) {
         // Card payment - backend returns HTML form directly
         try {
-          console.log("💳 Card payment - received HTML form");
           const paymentFormHtml = await response.text();
           
           // Extract order ID from the form (MerchantReference field)
           const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
           if (orderIdMatch) {
             orderId = parseInt(orderIdMatch[1]);
-            console.log(`🆔 Extracted order ID from payment form: ${orderId}`);
             setOrderId(orderId);
             addActiveOrder(orderId, locationCart.locationName);
           } else {
@@ -1537,7 +1359,6 @@ function CheckoutPageContent() {
             window.open(redirectUrl, "_blank");
           }
         } catch (paymentError) {
-          console.error("Error handling card payment:", paymentError);
           toast.error(
             "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
           );
@@ -1547,13 +1368,11 @@ function CheckoutPageContent() {
 
       // Non-card payment - handle JSON response
       const result = await response.json();
-      console.log("✅ Order created successfully:", result);
 
       // Set the order ID and save to active orders
       orderId =
         result.data?.order_id || result.data?.id || result.order_id;
       if (orderId) {
-        console.log(`🆔 Setting order ID: ${orderId}`);
         setOrderId(orderId);
 
         // Save to active orders for tracking
@@ -1561,12 +1380,10 @@ function CheckoutPageContent() {
 
         // Clear the cart for this specific location
         clearLocationCart(locationCart.locationId);
-        console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
 
         // Handle payment form if present in JSON response (fallback)
         if (paymentMethod === "card" && result.data?.payment_form) {
           try {
-            console.log("💳 Opening payment form in new window (from JSON)");
             
             // Extract order ID from the payment form HTML
             const tempDiv = document.createElement('div');
@@ -1596,7 +1413,6 @@ function CheckoutPageContent() {
               window.open(redirectUrl, "_blank");
             }
           } catch (paymentError) {
-            console.error("Error opening payment form:", paymentError);
             toast.error(
               "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
@@ -1610,14 +1426,11 @@ function CheckoutPageContent() {
           }
         }
       } else {
-        console.warn("⚠️ No orderId found in API response:", result);
         alert(
           "Η παραγγελία υποβλήθηκε αλλά δεν μπορέσαμε να λάβουμε το αναγνωριστικό."
         );
       }
     } catch (error) {
-      console.error("Error submitting order:", error);
-
       // Safari-specific error handling
       let errorMessage =
         "Σφάλμα κατά την υποβολή της παραγγελίας. Παρακαλώ δοκιμάστε ξανά.";
