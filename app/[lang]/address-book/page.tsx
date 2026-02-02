@@ -70,18 +70,8 @@ export default function AddressBookPage() {
         if (!data.success) setError(data.message || "Αποτυχία φόρτωσης διευθύνσεων");
       }
     } catch (err) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-      setError("Failed to load addresses");
-      setAddresses([]); // Ensure addresses is always an array
-=======
       setError("Σφάλμα κατά τη σύνδεση");
       setAddresses([]);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
-=======
-      setError("Σφάλμα κατά τη σύνδεση");
-      setAddresses([]);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
     } finally {
       setIsLoadingAddresses(false);
     }
@@ -99,27 +89,9 @@ export default function AddressBookPage() {
         headers: { "Content-Type": "application/json", "x-csrf-token": csrfData.csrfToken },
       });
       const result = await response.json();
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-      if (result.success) {
-        // Refresh the addresses list
-        fetchAddresses();
-      } else {
-        alert(`Failed to delete address: ${result.message}`);
-      }
-    } catch (error) {
-      alert("An error occurred while deleting the address");
-=======
       if (result.success) fetchAddresses();
     } catch (error) {
       console.error(error);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
-=======
-      if (result.success) fetchAddresses();
-    } catch (error) {
-      console.error(error);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
     }
   };
 
@@ -134,28 +106,10 @@ export default function AddressBookPage() {
       const result = await response.json();
       if (result.success) {
         fetchAddresses();
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-        // Refresh the default address in location context to update Wolt navbar
-        await refreshDefaultAddress();
-      } else {
-        alert(`Failed to set address as default: ${result.message}`);
-      }
-    } catch (error) {
-      alert("An error occurred while setting the address as default");
-=======
         await refreshDefaultAddress();
       }
     } catch (error) {
       console.error(error);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
-=======
-        await refreshDefaultAddress();
-      }
-    } catch (error) {
-      console.error(error);
->>>>>>> d247a5fbfbf81f219b33b9d15b7e0ba36a940c8b
     }
   };
 
