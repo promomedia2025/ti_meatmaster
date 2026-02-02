@@ -101,23 +101,23 @@ function ForgotPasswordForm() {
   // Show reset password form if code is present
   if (code) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-8">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           {/* Back button */}
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Επιστροφή</span>
           </Link>
 
           {/* Reset Password Form Card */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-8">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-white mb-2">
               Ορίστε Νέο Κωδικό
             </h1>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-zinc-400 text-sm mb-6">
               Εισάγετε τον νέο σας κωδικό πρόσβασης.
             </p>
 
@@ -129,7 +129,7 @@ function ForgotPasswordForm() {
                 </p>
                 <div className="mt-4">
                   <Link href="/">
-                    <Button className="w-full h-12 bg-[#ff9328] hover:bg-[#ff9328]/90 text-white">
+                    <Button className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98]">
                       Σύνδεση
                     </Button>
                   </Link>
@@ -144,7 +144,7 @@ function ForgotPasswordForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                     disabled={isResetting}
                     minLength={8}
                   />
@@ -157,7 +157,7 @@ function ForgotPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                     disabled={isResetting}
                     minLength={8}
                   />
@@ -172,7 +172,7 @@ function ForgotPasswordForm() {
                 <Button
                   type="submit"
                   disabled={isResetting}
-                  className="w-full h-12 bg-[#ff9328] hover:bg-[#ff9328]/90 text-white"
+                  className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                 >
                   {isResetting ? "Ενημέρωση..." : "Ενημέρωση Κωδικού"}
                 </Button>
@@ -186,23 +186,23 @@ function ForgotPasswordForm() {
 
   // Show email form if no code is present
   return (
-    <div className="h-[70vh] bg-gray-950 flex top-[200px] items-center justify-center px-4 py-8">
+    <div className="h-[70vh] bg-black flex top-[200px] items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Back button */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Επιστροφή</span>
         </Link>
 
         {/* Email Form Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl">
           <h1 className="text-2xl font-bold text-white mb-2">
             Επαναφορά Κωδικού
           </h1>
-          <p className="text-gray-400 text-sm mb-6">
+          <p className="text-zinc-400 text-sm mb-6">
             Εισάγετε το email σας και θα σας στείλουμε οδηγίες για την επαναφορά
             του κωδικού πρόσβασης.
           </p>
@@ -222,7 +222,7 @@ function ForgotPasswordForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-[#2a2a2a] border-gray-600 text-white placeholder:text-gray-500 h-12"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
                   disabled={isSubmitting}
                 />
               </div>
@@ -236,7 +236,7 @@ function ForgotPasswordForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 bg-[#ff9328] hover:bg-[#ff9328]/90 text-white"
+                className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
               >
                 {isSubmitting ? "Αποστολή..." : "Αποστολή"}
               </Button>
@@ -246,7 +246,7 @@ function ForgotPasswordForm() {
           <div className="mt-6 text-center">
             <Link
               href="/"
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              className="text-sm text-zinc-400 hover:text-white transition-colors hover:underline"
             >
               Θυμάστε τον κωδικό σας; Σύνδεση
             </Link>
@@ -261,10 +261,10 @@ export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-md">
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-8">
-              <div className="text-center text-gray-400">Φόρτωση...</div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+              <div className="text-center text-zinc-400 animate-pulse">Φόρτωση...</div>
             </div>
           </div>
         </div>
