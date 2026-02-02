@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Home, Plus, Edit3 } from "lucide-react";
+import { X, Home, Plus, Edit3, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -51,17 +51,9 @@ export function AddressBookModal({
 
       // First, try to fetch addresses from the API
       try {
-        // Get user ID from localStorage, sessionStorage, or auth context
         let userData = null;
         const storedUser =
           localStorage.getItem("user") || sessionStorage.getItem("user");
-        console.log("🔍 User from localStorage:", localStorage.getItem("user"));
-        console.log(
-          "🔍 User from sessionStorage:",
-          sessionStorage.getItem("user")
-        );
-        console.log("🔍 User from auth context:", user);
-        console.log("🔍 Is authenticated:", isAuthenticated);
 
         if (storedUser) {
           userData = JSON.parse(storedUser);
@@ -69,14 +61,9 @@ export function AddressBookModal({
           userData = user;
         }
 
-        console.log("🔍 Final user data:", userData);
-
         if (userData && userData.id) {
-          console.log("🔍 User ID:", userData.id);
-
           const apiUrl = `/api/address-book/${userData.id}`;
-          console.log("🔍 Making API request to:", apiUrl);
-
+          
           const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
@@ -84,27 +71,20 @@ export function AddressBookModal({
             },
           });
 
-          console.log("🔍 API Response status:", response.status);
-          console.log("🔍 API Response ok:", response.ok);
-
           if (response.ok) {
             const data = await response.json();
-            console.log("📚 Fetched addresses from API:", data);
-
+            
             if (data.success && data.data && data.data.addresses) {
-              console.log("📚 Found addresses:", data.data.addresses);
               // Transform API addresses to our format
               addressList = data.data.addresses.map((apiAddress: any) => {
-                // Handle coordinates - can be direct properties or nested in coordinates object
+                // Handle coordinates
                 let coordinates: { latitude: number; longitude: number } | undefined;
                 if (apiAddress.latitude !== undefined && apiAddress.longitude !== undefined) {
-                  // Direct properties (from API response)
                   coordinates = {
                     latitude: parseFloat(apiAddress.latitude),
                     longitude: parseFloat(apiAddress.longitude),
                   };
                 } else if (apiAddress.coordinates) {
-                  // Nested in coordinates object (legacy format)
                   coordinates = {
                     latitude: parseFloat(apiAddress.coordinates.latitude),
                     longitude: parseFloat(apiAddress.coordinates.longitude),
@@ -127,23 +107,12 @@ export function AddressBookModal({
                   address_1: apiAddress.address_1 || null,
                   city: apiAddress.city || null,
                   postcode: apiAddress.postcode || null,
-                  // Also include direct latitude/longitude for compatibility
                   latitude: apiAddress.latitude,
                   longitude: apiAddress.longitude,
                 };
               });
-              console.log("📚 Transformed address list:", addressList);
-            } else {
-              console.log(
-                "📚 No addresses found in API response or invalid format"
-              );
             }
-          } else {
-            const errorText = await response.text();
-            console.error("📚 API Error:", response.status, errorText);
           }
-        } else {
-          console.log("📚 No user found in localStorage");
         }
       } catch (apiError) {
         console.error("Error fetching addresses from API:", apiError);
@@ -166,7 +135,7 @@ export function AddressBookModal({
         if (!existingAddress) {
           addressList.unshift({
             id: "current-location",
-            label: "Σπίτι",
+            label: "Τρέχουσα Τοποθεσία",
             address: currentLocation.fullAddress,
             isDefault: true,
             coordinates: currentLocation.coordinates,
@@ -174,7 +143,6 @@ export function AddressBookModal({
         }
       }
 
-      console.log("📚 Final address list to display:", addressList);
       setAddresses(addressList);
     } catch (error) {
       console.error("Error loading addresses:", error);
@@ -184,19 +152,6 @@ export function AddressBookModal({
   };
 
   const handleAddressSelect = async (address: Address) => {
-    console.log("📍 [ADDRESS-BOOK-MODAL] Address selected:", {
-      addressId: address.id,
-      addressLabel: address.label,
-      addressText: address.address,
-      hasCoordinates: !!address.coordinates,
-      coordinates: address.coordinates
-        ? {
-            latitude: address.coordinates.latitude,
-            longitude: address.coordinates.longitude,
-          }
-        : "No coordinates",
-    });
-
     if (onAddressSelect) {
       onAddressSelect(address);
     }
@@ -205,13 +160,10 @@ export function AddressBookModal({
     try {
       const user = localStorage.getItem("user");
       if (user) {
-        const userData = JSON.parse(user);
         const finalCoordinates = address.coordinates || {
           latitude: 37.9755,
           longitude: 23.7348,
         }; // Default Athens coordinates
-        
-        console.log("📍 [ADDRESS-BOOK-MODAL] Saving coordinates to localStorage:", finalCoordinates);
         
         const locationData = {
           city:
@@ -228,20 +180,12 @@ export function AddressBookModal({
           },
         };
         localStorage.setItem("userLocation", JSON.stringify(locationData));
-
-        console.log("📍 [ADDRESS-BOOK-MODAL] Address selected and saved:", address);
       }
     } catch (error) {
       console.error("Error saving selected address:", error);
     }
 
     onClose();
-  };
-
-  const handleEditAddress = (address: Address) => {
-    if (onEditAddress) {
-      onEditAddress(address);
-    }
   };
 
   const handleAddNewAddress = () => {
@@ -259,23 +203,22 @@ export function AddressBookModal({
         dangerouslySetInnerHTML={{
           __html: `
             .address-modal-scroll::-webkit-scrollbar {
-              width: 8px;
+              width: 6px;
             }
             .address-modal-scroll::-webkit-scrollbar-track {
-              background: #1a1a1a;
-              border-radius: 10px;
+              background: #18181b; /* zinc-900 */
+              border-radius: 4px;
             }
             .address-modal-scroll::-webkit-scrollbar-thumb {
-              background: #4a4a4a;
-              border-radius: 10px;
-              border: 2px solid #1a1a1a;
+              background: #3f3f46; /* zinc-700 */
+              border-radius: 4px;
             }
             .address-modal-scroll::-webkit-scrollbar-thumb:hover {
-              background: #5a5a5a;
+              background: #52525b; /* zinc-600 */
             }
             .address-modal-scroll {
               scrollbar-width: thin;
-              scrollbar-color: #4a4a4a #1a1a1a;
+              scrollbar-color: #3f3f46 #18181b;
             }
           `,
         }}
@@ -283,116 +226,116 @@ export function AddressBookModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-        <div className="relative bg-[#1a1a1a] rounded-xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl border border-gray-800 text-white">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
-          <h2 className="text-2xl font-bold text-white">Πού;</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"
-            onClick={onClose}
-          >
-            <X className="w-6 h-6" />
-          </Button>
-        </div>
+        <div className="relative bg-zinc-900 rounded-xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl border border-zinc-800 text-zinc-200">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-zinc-800 flex-shrink-0 bg-zinc-900 rounded-t-xl">
+            <h2 className="text-xl font-bold text-white">Επιλογή Διεύθυνσης</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg"
+              onClick={onClose}
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
 
-        {/* Content - Scrollable */}
-        <div className="p-6 overflow-y-auto flex-1 min-h-0 address-modal-scroll">
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 bg-[#2a2a2a] rounded-lg border border-gray-700/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="w-8 h-8 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-32 mb-2" />
-                      <Skeleton className="h-3 w-48" />
+          {/* Content - Scrollable */}
+          <div className="p-4 overflow-y-auto flex-1 min-h-0 address-modal-scroll bg-black/20">
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-zinc-800"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="w-10 h-10 rounded-full bg-zinc-800" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32 bg-zinc-800" />
+                        <Skeleton className="h-3 w-48 bg-zinc-800" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Current/Default Address */}
-              {addresses.length > 0 && (
-                <div className="space-y-4">
-                  {addresses.map((address, index) => (
-                    <div key={address.id} className="space-y-4">
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {addresses.length > 0 && (
+                  <div className="space-y-3">
+                    {addresses.map((address) => (
                       <div
-                        className="flex items-center justify-between p-4 bg-[#2a2a2a] rounded-lg cursor-pointer hover:bg-[#3a3a3a] transition-colors border border-gray-700/50"
+                        key={address.id}
+                        className="group flex items-start gap-4 p-4 bg-black rounded-xl cursor-pointer hover:border-[#ff9328] border border-zinc-800 transition-all duration-200 relative overflow-hidden"
                         onClick={() => handleAddressSelect(address)}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <Home className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-blue-400 font-medium">
-                              {address.label}
-                            </div>
-                            <div className="text-gray-300 text-sm">
-                              {address.address}
-                            </div>
-                            {(address.bell_name || address.floor) && (
-                              <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-300">
-                                {address.bell_name && (
-                                  <div>
-                                    <span className="text-gray-500">Κουδούνι:</span>{" "}
-                                    <span className="font-medium">
-                                      {address.bell_name}
-                                    </span>
-                                  </div>
-                                )}
-                                {address.floor && (
-                                  <div>
-                                    <span className="text-gray-500">Όροφος:</span>{" "}
-                                    <span className="font-medium">{address.floor}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                         {/* Hover highlight effect */}
+                         <div className="absolute inset-0 bg-[#ff9328]/0 group-hover:bg-[#ff9328]/5 transition-colors pointer-events-none" />
+
+                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328]/30 transition-colors shrink-0 z-10">
+                          <MapPin className="w-5 h-5 text-zinc-400 group-hover:text-[#ff9328] transition-colors" />
                         </div>
+                        
+                        <div className="flex-1 min-w-0 z-10">
+                          <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-white font-bold text-sm group-hover:text-[#ff9328] transition-colors">
+                                {address.label}
+                              </span>
+                          </div>
+                          <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed line-clamp-2">
+                            {address.address}
+                          </p>
+                          
+                          {(address.bell_name || address.floor) && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {address.bell_name && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800">
+                                 {address.bell_name}
+                                </span>
+                              )}
+                              {address.floor && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800">
+                                  {address.floor}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Chevron/Select indicator */}
+                        <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-200">
 
+                        </div>
                       </div>
-
-                      {/* Separator line */}
-                      {index < addresses.length - 1 && (
-                        <div className="border-t border-gray-700"></div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-
-              {/* Empty State */}
-              {addresses.length === 0 && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Home className="w-8 h-8 text-gray-400" />
+                    ))}
                   </div>
-                  <p className="text-gray-400 mb-4">
-                    Δεν έχετε αποθηκευμένες διευθύνσεις
-                  </p>
-                  <Button
-                    onClick={handleAddNewAddress}
-                    className="bg-[#915316] hover:bg-[#915316] text-white"
-                  >
-                    Προσθήκη πρώτης διεύθυνσης
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+
+                {/* Empty State */}
+                {addresses.length === 0 && (
+                  <div className="text-center py-12 flex flex-col items-center">
+                    <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-zinc-800">
+                      <Home className="w-8 h-8 text-zinc-600" />
+                    </div>
+                    <p className="text-zinc-400 mb-6 font-medium">
+                      Δεν έχετε αποθηκευμένες διευθύνσεις
+                    </p>
+                    <Button
+                      onClick={handleAddNewAddress}
+                      className="bg-[#ff9328] hover:bg-[#915316] text-white shadow-lg shadow-red-900/20"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Προσθήκη πρώτης διεύθυνσης
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
-    </div>
     </>
   );
 }

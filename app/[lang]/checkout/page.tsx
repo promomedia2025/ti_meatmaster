@@ -73,11 +73,9 @@ function CheckoutPageContent() {
   // Extract current language from pathname (first segment)
   const currentLang = useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
-    // Check if first segment is a language code (el, en)
     if (segments[0] === "el" || segments[0] === "en") {
       return segments[0];
     }
-    // Default to Greek if no language found
     return "el";
   }, [pathname]);
 
@@ -88,39 +86,32 @@ function CheckoutPageContent() {
 
   // Redirect to main page if there's no cart
   useEffect(() => {
-    // If no locationId in URL, redirect immediately
     if (!locationId) {
       router.push(`/${currentLang}`);
       return;
     }
 
-    // Wait for cart to finish loading before checking
     if (isCartLoading) {
-      return; // Don't redirect while cart is still loading
+      return;
     }
 
-    // If locationId exists but no cart after loading is complete, redirect
     if (locationId && !locationCart) {
       const timer = setTimeout(() => {
-        // Double-check that cart still doesn't exist after delay
         const currentCart = getLocationCart(parseInt(locationId));
         if (!currentCart) {
           router.push(`/${currentLang}`);
         }
-      }, 1000); // 1 second delay to ensure cart has been fetched
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
   }, [locationCart, locationId, currentLang, router, isCartLoading, getLocationCart]);
 
-  // State for location data (needed for minimum order checks)
   const [locationData, setLocationData] = useState<Location | null>(null);
 
-  // Fetch restaurant status using the custom hook
   const { status: restaurantStatus, isLoading: isLoadingRestaurantStatus } =
     useRestaurantStatus(locationId ? parseInt(locationId) : null);
 
-  // Log restaurant status when it loads or changes
   useEffect(() => {
     console.log("🍽️ [CHECKOUT] Restaurant Status:", {
       locationId: locationId ? parseInt(locationId) : null,
@@ -134,7 +125,6 @@ function CheckoutPageContent() {
     });
   }, [locationId, restaurantStatus, isLoadingRestaurantStatus]);
 
-  // Fetch location data to get intervals
   useEffect(() => {
     const fetchLocationData = async () => {
       if (!locationId) {
@@ -173,7 +163,6 @@ function CheckoutPageContent() {
 
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("delivery");
 
-  // Auto-switch order type if current selection doesn't meet minimum order
   useEffect(() => {
     if (!locationCart || !locationData) return;
 
@@ -189,8 +178,6 @@ function CheckoutPageContent() {
       deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
     const pickupMeetsMin = pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
 
-    // If current order type doesn't meet minimum, switch to the one that does
-    // Don't switch based on delivery availability - let user choose delivery option
     if (orderType === "delivery") {
       if (!deliveryMeetsMin && pickupMeetsMin) {
         setOrderType("pickup");
@@ -220,33 +207,28 @@ function CheckoutPageContent() {
   const [isLoadingMenuItem, setIsLoadingMenuItem] = useState(false);
   const [isUpdatingItem, setIsUpdatingItem] = useState(false);
 
-  // Handle remove item
   const handleRemoveItem = async (item: CartItem) => {
     if (!locationCart) return;
     const success = await removeItem(locationCart.locationId, item.rowId);
     if (success && locationCart.items.length === 1) {
-      // If this was the last item, redirect to main page
       router.push(`/${currentLang}`);
     }
   };
 
-  // Handle quantity update
   const handleQuantityChange = async (item: CartItem, newQuantity: number) => {
     if (!locationCart || newQuantity < 1) return;
     await updateQuantity(locationCart.locationId, item.rowId, newQuantity);
   };
 
-  // Handle item click - open menu options modal
   const handleItemClick = async (item: CartItem) => {
     if (!locationCart) return;
 
     setIsLoadingMenuItem(true);
     setEditingItem(item);
     setIsMenuOptionsModalOpen(true);
-    setMenuItemForEdit(null); // Clear previous data
+    setMenuItemForEdit(null);
 
     try {
-      // Fetch menu item options using the new endpoint
       const response = await fetch(`/api/menu-items/${item.id}/options`);
 
       if (!response.ok) {
@@ -256,7 +238,6 @@ function CheckoutPageContent() {
       const data = await response.json();
       
       if (data.success && data.data && data.data.options) {
-        // Transform the response to match MenuOptionsModal's expected format
         const menuItem = {
           menu_id: data.data.menu_id,
           menu_name: data.data.menu_name,
@@ -308,7 +289,6 @@ function CheckoutPageContent() {
     }
   };
 
-  // Handle menu options submit (update item)
   const handleMenuOptionsSubmit = async (
     menuItem: any,
     optionValues: any[],
@@ -320,8 +300,6 @@ function CheckoutPageContent() {
     setIsUpdatingItem(true);
 
     try {
-      // Transform optionValues from flat array to grouped format required by API
-      // Same transformation as cart-sidebar
       const transformedOptions = (optionValues || []).reduce(
         (acc: any[], optionValue: any) => {
           const existingOption = acc.find(
@@ -350,7 +328,6 @@ function CheckoutPageContent() {
         []
       );
 
-      // Update everything (quantity, options, comment) in a single API call
       const response = await fetch("/api/cart/update", {
         method: "PUT",
         headers: {
@@ -369,7 +346,6 @@ function CheckoutPageContent() {
       const data = await response.json();
 
       if (data.success) {
-        // Refresh the cart to get updated data from server
         await refreshCart();
         toast.success("Το προϊόν ενημερώθηκε");
         setIsMenuOptionsModalOpen(false);
@@ -386,18 +362,15 @@ function CheckoutPageContent() {
     }
   };
 
-  // Function to reset address form
   const handleResetAddress = () => {
     setUserLocation(null);
     setBellName("");
     setFloor("");
     setAddressInput("");
     setSaveAddress(false);
-    // Delivery availability data will be cleared/updated when a new address is selected
     toast.success("Η διεύθυνση διαγράφηκε");
   };
 
-  // Function to autocomplete location from navbar
   const handleAutocompleteFromNavbar = async () => {
     if (!coordinates) {
       toast.error("Δεν υπάρχει τοποθεσία στην γραμμή πλοήγησης");
@@ -406,7 +379,6 @@ function CheckoutPageContent() {
 
     setIsLoadingLocation(true);
     try {
-      // If we have formattedAddress from context, use it
       let addressInfo;
       if (formattedAddress) {
         addressInfo = {
@@ -419,7 +391,6 @@ function CheckoutPageContent() {
           },
         };
       } else {
-        // Otherwise, reverse geocode the coordinates
         const geocoded = await reverseGeocode(
           coordinates.latitude,
           coordinates.longitude,
@@ -446,15 +417,13 @@ function CheckoutPageContent() {
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
         },
-        // Include bell_name and floor from formattedAddress if available
         bell_name: formattedAddress?.bell_name || null,
         floor: formattedAddress?.floor || null,
-        addressId: null, // Not a saved address
+        addressId: null,
       };
 
       setUserLocation(location);
 
-      // Autofill bell_name and floor fields if they exist in formattedAddress
       if (formattedAddress?.bell_name) {
         setBellName(formattedAddress.bell_name);
       }
@@ -471,14 +440,11 @@ function CheckoutPageContent() {
     }
   };
 
-  // Handle address selection from address book
   const handleAddressBookSelect = async (address: any) => {
-    // Extract coordinates - handle both direct properties and nested coordinates object
     let latitude: number | undefined;
     let longitude: number | undefined;
 
     if (address.latitude !== undefined && address.longitude !== undefined) {
-      // Direct properties (from API response)
       latitude =
         typeof address.latitude === "string"
           ? parseFloat(address.latitude)
@@ -488,7 +454,6 @@ function CheckoutPageContent() {
           ? parseFloat(address.longitude)
           : address.longitude;
     } else if (address.coordinates) {
-      // Nested in coordinates object (legacy format)
       latitude =
         typeof address.coordinates.latitude === "string"
           ? parseFloat(address.coordinates.latitude)
@@ -499,44 +464,17 @@ function CheckoutPageContent() {
           : address.coordinates.longitude;
     }
 
-    // Log longitude and latitude specifically
-    console.log("📍 [CHECKOUT] Address selected from address book:", {
-      address,
-      hasCoordinates: latitude !== undefined && longitude !== undefined,
-      latitude,
-      longitude,
-    });
-
-    if (latitude !== undefined && longitude !== undefined) {
-      console.log("📍 [CHECKOUT] Address coordinates (latitude, longitude):", {
-        latitude,
-        longitude,
-      });
-      console.log(
-        `📍 [CHECKOUT] Latitude: ${latitude}, Longitude: ${longitude}`
-      );
-    } else {
-      console.log("📍 [CHECKOUT] No coordinates found in address");
-    }
-
     setIsLoadingLocation(true);
     try {
       let location: UserLocation;
 
-      // Use API fields directly if available (address_1, city, postcode)
       const hasApiFields =
         address.address_1 && address.city && address.postcode;
 
-      // If address has coordinates, use them
       if (latitude !== undefined && longitude !== undefined) {
-        console.log("📍 [CHECKOUT] Using address coordinates:", {
-          latitude,
-          longitude,
-        });
         const geocoded = await reverseGeocode(latitude, longitude, currentLang);
 
         if (geocoded && !hasApiFields) {
-          // Use geocoded data only if we don't have API fields
           location = {
             city:
               geocoded.area ||
@@ -570,7 +508,6 @@ function CheckoutPageContent() {
             addressId: address.id || null,
           };
         } else {
-          // Use API fields directly
           location = {
             city:
               address.city ||
@@ -605,7 +542,6 @@ function CheckoutPageContent() {
           };
         }
       } else {
-        // If no coordinates, use API fields or parse the address string
         location = {
           city:
             address.city ||
@@ -614,7 +550,7 @@ function CheckoutPageContent() {
             "Unknown Location",
           fullAddress: address.address,
           coordinates: {
-            latitude: 37.9755, // Default Athens coordinates
+            latitude: 37.9755,
             longitude: 23.7348,
           },
           addressDetails: {
@@ -633,7 +569,6 @@ function CheckoutPageContent() {
 
       setUserLocation(location);
 
-      // Set bell_name and floor if they exist
       if (address.bell_name) {
         setBellName(address.bell_name);
       }
@@ -641,21 +576,11 @@ function CheckoutPageContent() {
         setFloor(address.floor);
       }
 
-      // Check delivery availability when address is selected with coordinates
       if (
         latitude !== undefined &&
         longitude !== undefined &&
         locationCart?.locationId
       ) {
-        console.log(
-          "🛒 [CHECKOUT] Checking delivery availability for selected address:",
-          {
-            locationId: locationCart.locationId,
-            latitude,
-            longitude,
-          }
-        );
-
         try {
           const deliveryResponse = await fetch(
             `/api/locations/${locationCart.locationId}/delivery-availability`,
@@ -673,19 +598,7 @@ function CheckoutPageContent() {
 
           const deliveryData = await deliveryResponse.json();
 
-          console.log(
-            "🛒 [CHECKOUT] Delivery availability response for selected address:",
-            {
-              success: deliveryData.success,
-              data: deliveryData.data,
-              isDeliveryAvailable: deliveryData.data?.is_delivery_available,
-              isWithinDeliveryArea: deliveryData.data?.is_within_delivery_area,
-              deliveryEnabled: deliveryData.data?.delivery_enabled,
-            }
-          );
-
           if (deliveryData.success && deliveryData.data) {
-            // Store delivery data in context
             const deliveryAvailabilityData = {
               is_delivery_available: deliveryData.data.is_delivery_available,
               is_within_delivery_area:
@@ -695,27 +608,12 @@ function CheckoutPageContent() {
             };
 
             setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
-            console.log(
-              "🛒 [CHECKOUT] Delivery data stored in context for selected address",
-              {
-                locationId: locationCart.locationId,
-                isDeliveryAvailable: deliveryData.data.is_delivery_available,
-                isWithinDeliveryArea: deliveryData.data.is_within_delivery_area,
-                isDeliveryBlocked:
-                  !deliveryData.data.is_delivery_available ||
-                  !deliveryData.data.is_within_delivery_area,
-              }
-            );
-
-            // Don't show toast or switch to pickup automatically - button will be disabled and message shown
-            // User can manually switch to pickup if they want
           }
         } catch (deliveryError) {
           console.error(
             "Error checking delivery availability for selected address:",
             deliveryError
           );
-          // Don't show error toast, just log it
         }
       }
 
@@ -728,7 +626,6 @@ function CheckoutPageContent() {
     }
   };
 
-  // Handle Google Places address selection
   const handleGooglePlaceSelect = async (place: any) => {
     if (!place.formatted_address || !place.geometry?.location) {
       toast.error("Παρακαλώ επιλέξτε μια έγκυρη διεύθυνση");
@@ -740,7 +637,6 @@ function CheckoutPageContent() {
 
     setIsLoadingLocation(true);
     try {
-      // Reverse geocode to get formatted address details
       const geocoded = await reverseGeocode(lat, lng, currentLang);
 
       if (geocoded) {
@@ -756,33 +652,21 @@ function CheckoutPageContent() {
             postalCode: geocoded.postcode || "",
             locality: geocoded.area || "",
           },
-          // Include bell_name and floor from formattedAddress if available
           bell_name: geocoded.bell_name || null,
           floor: geocoded.floor || null,
-          addressId: null, // Not a saved address
+          addressId: null,
         };
 
         setUserLocation(location);
-        // Autofill bell_name and floor if they exist
         if (geocoded.bell_name) {
           setBellName(geocoded.bell_name);
         }
         if (geocoded.floor) {
           setFloor(geocoded.floor);
         }
-        setAddressInput(""); // Clear the input after selection
+        setAddressInput("");
 
-        // Check delivery availability when address is selected with coordinates
         if (locationCart?.locationId) {
-          console.log(
-            "🛒 [CHECKOUT] Checking delivery availability for Google Places address:",
-            {
-              locationId: locationCart.locationId,
-              latitude: lat,
-              longitude: lng,
-            }
-          );
-
           try {
             const deliveryResponse = await fetch(
               `/api/locations/${locationCart.locationId}/delivery-availability`,
@@ -800,20 +684,7 @@ function CheckoutPageContent() {
 
             const deliveryData = await deliveryResponse.json();
 
-            console.log(
-              "🛒 [CHECKOUT] Delivery availability response for Google Places address:",
-              {
-                success: deliveryData.success,
-                data: deliveryData.data,
-                isDeliveryAvailable: deliveryData.data?.is_delivery_available,
-                isWithinDeliveryArea:
-                  deliveryData.data?.is_within_delivery_area,
-                deliveryEnabled: deliveryData.data?.delivery_enabled,
-              }
-            );
-
             if (deliveryData.success && deliveryData.data) {
-              // Store delivery data in context
               const deliveryAvailabilityData = {
                 is_delivery_available: deliveryData.data.is_delivery_available,
                 is_within_delivery_area:
@@ -826,34 +697,17 @@ function CheckoutPageContent() {
                 locationCart.locationId,
                 deliveryAvailabilityData
               );
-              console.log(
-                "🛒 [CHECKOUT] Delivery data stored in context for Google Places address",
-                {
-                  locationId: locationCart.locationId,
-                  isDeliveryAvailable: deliveryData.data.is_delivery_available,
-                  isWithinDeliveryArea:
-                    deliveryData.data.is_within_delivery_area,
-                  isDeliveryBlocked:
-                    !deliveryData.data.is_delivery_available ||
-                    !deliveryData.data.is_within_delivery_area,
-                }
-              );
-
-              // Don't show toast or switch to pickup automatically - button will be disabled and message shown
-              // User can manually switch to pickup if they want
             }
           } catch (deliveryError) {
             console.error(
               "Error checking delivery availability for Google Places address:",
               deliveryError
             );
-            // Don't show error toast, just log it
           }
         }
 
         toast.success("Η διεύθυνση ορίστηκε");
       } else {
-        // Fallback to basic address if reverse geocoding fails
         const location: UserLocation = {
           city: "Unknown Location",
           fullAddress: place.formatted_address,
@@ -864,22 +718,12 @@ function CheckoutPageContent() {
           addressDetails: {},
           bell_name: null,
           floor: null,
-          addressId: null, // Not a saved address
+          addressId: null,
         };
         setUserLocation(location);
-        setAddressInput(""); // Clear the input after selection
+        setAddressInput("");
 
-        // Check delivery availability for fallback address too
         if (locationCart?.locationId) {
-          console.log(
-            "🛒 [CHECKOUT] Checking delivery availability for Google Places fallback address:",
-            {
-              locationId: locationCart.locationId,
-              latitude: lat,
-              longitude: lng,
-            }
-          );
-
           try {
             const deliveryResponse = await fetch(
               `/api/locations/${locationCart.locationId}/delivery-availability`,
@@ -910,9 +754,6 @@ function CheckoutPageContent() {
                 locationCart.locationId,
                 deliveryAvailabilityData
               );
-
-              // Don't show toast or switch to pickup automatically - button will be disabled and message shown
-              // User can manually switch to pickup if they want
             }
           } catch (deliveryError) {
             console.error(
@@ -932,20 +773,15 @@ function CheckoutPageContent() {
     }
   };
 
-  // Check delivery availability when locationId, coordinates, and orderType change
+  useEffect(() => {
+    if (orderType === "delivery" && coordinates && !userLocation) {
+      handleAutocompleteFromNavbar();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderType, coordinates]);
+
   useEffect(() => {
     const checkDeliveryAvailability = async () => {
-      console.log("🛒 [CHECKOUT] Delivery availability check triggered", {
-        locationId: locationCart?.locationId,
-        hasCoordinates: !!coordinates,
-        coordinates: coordinates
-          ? { lat: coordinates.latitude, lng: coordinates.longitude }
-          : null,
-        orderType,
-        isCheckingDelivery,
-      });
-
-      // Check if delivery is available from restaurant status (use hook status first)
       const isDeliveryAvailable =
         restaurantStatus?.delivery_available ??
         locationCart?.restaurantStatus?.deliveryAvailable ??
@@ -958,25 +794,8 @@ function CheckoutPageContent() {
         isCheckingDelivery ||
         !isDeliveryAvailable
       ) {
-        console.log("🛒 [CHECKOUT] Skipping delivery check:", {
-          reason: !locationCart?.locationId
-            ? "No location cart"
-            : !coordinates
-            ? "No coordinates"
-            : orderType !== "delivery"
-            ? "Not delivery order"
-            : !isDeliveryAvailable
-            ? "Delivery not available"
-            : "Already checking",
-        });
         return;
       }
-
-      console.log("🛒 [CHECKOUT] Starting delivery availability check", {
-        locationId: locationCart.locationId,
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
-      });
 
       setIsCheckingDelivery(true);
 
@@ -997,17 +816,7 @@ function CheckoutPageContent() {
 
         const data = await response.json();
 
-        console.log("🛒 [CHECKOUT] Delivery availability response:", {
-          success: data.success,
-          data: data.data,
-          fullResponse: JSON.stringify(data, null, 2),
-          isDeliveryAvailable: data.data?.is_delivery_available,
-          isWithinDeliveryArea: data.data?.is_within_delivery_area,
-          deliveryEnabled: data.data?.delivery_enabled,
-        });
-
         if (data.success && data.data) {
-          // Store delivery data in context - map the response structure
           const deliveryAvailabilityData = {
             is_delivery_available: data.data.is_delivery_available,
             is_within_delivery_area: data.data.is_within_delivery_area,
@@ -1016,18 +825,6 @@ function CheckoutPageContent() {
           };
 
           setDeliveryData(locationCart.locationId, deliveryAvailabilityData);
-          console.log("🛒 [CHECKOUT] Delivery data stored in context", {
-            locationId: locationCart.locationId,
-            isDeliveryAvailable: data.data.is_delivery_available,
-            isWithinDeliveryArea: data.data.is_within_delivery_area,
-            deliveryEnabled: data.data.delivery_enabled,
-            isDeliveryBlocked:
-              !data.data.is_delivery_available ||
-              !data.data.is_within_delivery_area,
-          });
-
-          // Don't switch to pickup automatically - let user choose delivery option
-          // Submit button will be disabled with message if address is outside delivery area
         }
       } catch (error) {
         console.error(
@@ -1036,7 +833,6 @@ function CheckoutPageContent() {
         );
       } finally {
         setIsCheckingDelivery(false);
-        console.log("🛒 [CHECKOUT] Delivery availability check completed");
       }
     };
 
@@ -1049,10 +845,8 @@ function CheckoutPageContent() {
     orderType,
   ]);
 
-  // Load bell_name and floor from formattedAddress when it changes or on mount
   useEffect(() => {
     if (formattedAddress) {
-      // Only update if values exist - don't clear if not present (user might have typed manually)
       if (
         formattedAddress.bell_name !== undefined &&
         formattedAddress.bell_name !== null
@@ -1068,10 +862,8 @@ function CheckoutPageContent() {
     }
   }, [formattedAddress]);
 
-  // Load bell_name and floor from userLocation when it changes
   useEffect(() => {
     if (userLocation) {
-      // Only update if values exist
       if (
         userLocation.bell_name !== undefined &&
         userLocation.bell_name !== null
@@ -1084,77 +876,42 @@ function CheckoutPageContent() {
     }
   }, [userLocation]);
 
-  // Listen to specific order channel for order status updates
   useEffect(() => {
-    console.log("🔍 Pusher connection state:", {
-      isConnected,
-      orderId,
-    });
-
-    if (!isConnected) {
-      console.log("⚠️ Pusher not connected yet");
-      return;
-    }
-
-    if (!orderId) {
-      console.log("⚠️ No order ID available yet");
-      return;
-    }
+    if (!isConnected) return;
+    if (!orderId) return;
 
     const channelName = `order.${orderId}`;
-    console.log(`📡 Attempting to subscribe to channel: ${channelName}`);
     const channel = subscribe(channelName);
 
     if (channel) {
-      // Listen for successful subscription
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log(`✅ Successfully subscribed to ${channelName}`);
-      });
-
-      // Listen for subscription errors
+      channel.bind("pusher:subscription_succeeded", () => {});
       channel.bind("pusher:subscription_error", (error: any) => {
         console.error(`❌ Failed to subscribe to ${channelName}:`, error);
       });
-
-      // Listen for order status updates
       channel.bind("orderStatusUpdated", (data: any) => {
         console.log(`📦 Order ${orderId} status updated:`, data);
       });
-
-      console.log(`🔗 Channel ${channelName} binding complete`);
-    } else {
-      console.error(`❌ Failed to create channel: ${channelName}`);
     }
 
     return () => {
-      console.log(`🔌 Unsubscribing from ${channelName}`);
       unsubscribe(channelName);
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
-  // Listen for payment status messages from authorize page
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Verify message is from authorize page (check origin for security)
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "PAYMENT_STATUS") {
-        console.log("💳 [CHECKOUT] Received payment status:", event.data);
-        
         if (event.data.paymentVerified === true) {
-          // Payment successful - clear cart and redirect
           if (locationCart) {
             clearLocationCart(locationCart.locationId);
-            console.log(`🛒 Cleared cart for location ${locationCart.locationId} after payment verification`);
           }
-          
           toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
-          
           if (orderId) {
             router.push(`/${currentLang}/order/${orderId}`);
           }
         } else {
-          // Payment failed - stay on checkout page
           toast.error("Η πληρωμή απέτυχε. Μπορείτε να δοκιμάσετε ξανά.");
           setIsSubmitting(false);
         }
@@ -1176,13 +933,11 @@ function CheckoutPageContent() {
   }
 
   const handleSubmitOrder = async () => {
-    // Check if user is authenticated
     if (!isAuthenticated || !user) {
       alert("Παρακαλώ συνδεθείτε για να ολοκληρώσετε την παραγγελία.");
       return;
     }
 
-    // Check if restaurant is closed using the hook status (most up-to-date)
     const isRestaurantOpen =
       restaurantStatus?.is_open ??
       locationCart?.restaurantStatus?.isOpen ??
@@ -1197,9 +952,7 @@ function CheckoutPageContent() {
       return;
     }
 
-    // Check if delivery is blocked for delivery orders
     if (orderType === "delivery" && locationCart) {
-      // Check if user has set a delivery address
       if (!userLocation) {
         toast.error(
           "Παρακαλώ ορίστε διεύθυνση παράδοσης για παραγγελίες παράδοσης."
@@ -1220,45 +973,14 @@ function CheckoutPageContent() {
       }
     }
 
-    // Fetch current restaurant status right before submitting order
     if (!locationId || !locationCart) {
       toast.error("Σφάλμα: Δεν βρέθηκε τοποθεσία");
       return;
     }
 
-    // IMPORTANT: For Safari compatibility, open payment window IMMEDIATELY 
-    // in the user-initiated event handler (before any async operations)
-    // This window will be redirected to the payment page after the fetch completes
-    let paymentWindow: Window | null = null;
-    if (paymentMethod === "card") {
-      paymentWindow = window.open("", "_blank");
-      if (paymentWindow) {
-        // Write a loading page immediately
-        paymentWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Πληρωμή</title>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
-              <div style="text-align: center;">
-                <p style="font-size: 18px; color: #333;">Παρακαλώ περιμένετε...</p>
-                <p style="font-size: 14px; color: #666; margin-top: 10px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
-              </div>
-            </body>
-          </html>
-        `);
-        paymentWindow.document.close();
-        setPaymentWindow(paymentWindow);
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Fetch fresh restaurant status before submitting
       const statusResponse = await fetch("/api/locations", {
         method: "GET",
         cache: "no-store",
@@ -1282,7 +1004,6 @@ function CheckoutPageContent() {
         return;
       }
 
-      // Find the location with matching ID
       const location = statusData.data.locations.find(
         (loc: any) => loc.id === parseInt(locationId)
       );
@@ -1293,7 +1014,6 @@ function CheckoutPageContent() {
         return;
       }
 
-      // Check if restaurant is open
       const currentRestaurantStatus = location.restaurant_status;
       if (!currentRestaurantStatus || !currentRestaurantStatus.is_open) {
         setIsSubmitting(false);
@@ -1310,10 +1030,7 @@ function CheckoutPageContent() {
     }
 
     try {
-      // Transform cart items to match the expected API format
       const formattedItems = locationCart.items.map((item) => {
-        // Transform options array to option_values array for API
-        // Each option has: menu_option_id, option_name, and values array
         const optionValues = item.options
           ? item.options.flatMap((opt) =>
               opt.values.map((val) => ({
@@ -1337,7 +1054,6 @@ function CheckoutPageContent() {
         };
       });
 
-      // Prepare order data in the expected API format
       const orderData: any = {
         locationId: locationCart.locationId,
         locationName: locationCart.locationName,
@@ -1349,46 +1065,34 @@ function CheckoutPageContent() {
         user: {
           id: user.id,
           email: user.email,
+          telephone: user?.telephone || user?.phone || "",
           name:
             user.name ||
             `${user.first_name || ""} ${user.last_name || ""}`.trim(),
         },
       };
 
-      // Add address_id as top-level property if a saved address is selected
-      // Only set it once to avoid any potential duplicates
       if (orderType === "delivery" && userLocation?.addressId && !orderData.address_id) {
         orderData.address_id = userLocation.addressId;
       }
 
-      // Add deliveryAddress for delivery orders
       if (orderType === "delivery" && userLocation) {
-        // Parse fullAddress to extract address_1 and postalCode
-        // Example: 'Σχολείου 3, Αγ. Παρασκευή 153 42'
-        // address_1: 'Σχολειου 3', postalCode: '15342'
         let address_1 = userLocation.addressDetails?.street || "";
         let postalCode = userLocation.addressDetails?.postalCode || "";
 
-        // If addressDetails are not available, parse from fullAddress
         if (!address_1 || !postalCode) {
           const fullAddr = userLocation.fullAddress || "";
           
-          // Extract postal code (numbers at the end, remove spaces)
-          // Pattern: find numbers at the end like "153 42" or "15342"
           const postalCodeMatch = fullAddr.match(/(\d+\s+\d+|\d{5,})(?=\s*$)/);
           if (postalCodeMatch) {
-            postalCode = postalCodeMatch[0].replace(/\s+/g, ""); // Remove spaces
+            postalCode = postalCodeMatch[0].replace(/\s+/g, "");
           }
 
-          // Extract address_1 (everything before the comma)
-          // Remove the postal code and city from the end
           let addressPart = fullAddr;
           if (postalCodeMatch && postalCodeMatch.index !== undefined) {
-            // Remove postal code and everything after it
             addressPart = fullAddr.substring(0, postalCodeMatch.index).trim();
           }
           
-          // Remove city name if it appears at the end (after comma)
           const commaIndex = addressPart.lastIndexOf(",");
           if (commaIndex !== -1) {
             address_1 = addressPart.substring(0, commaIndex).trim();
@@ -1396,7 +1100,6 @@ function CheckoutPageContent() {
             address_1 = addressPart.trim();
           }
 
-          // Fallback: if we still don't have address_1, use the full address without postal code
           if (!address_1) {
             address_1 = addressPart || fullAddr;
           }
@@ -1416,8 +1119,6 @@ function CheckoutPageContent() {
         };
       }
 
-      // Save address to address book ONLY if checkbox is explicitly checked
-      // Do NOT save if checkbox is not checked
       if (
         saveAddress === true &&
         isAuthenticated &&
@@ -1426,12 +1127,10 @@ function CheckoutPageContent() {
         userLocation
       ) {
         try {
-          // Get CSRF token
           const csrfResponse = await fetch("/api/csrf");
           const csrfData = await csrfResponse.json();
 
           if (csrfData.csrfToken) {
-            // Construct address payload
             const addressPayload = {
               customer_id: user.id,
               address_1:
@@ -1447,7 +1146,6 @@ function CheckoutPageContent() {
               is_default: false,
             };
 
-            // Save address to address book (only once, before order submission)
             const addressResponse = await fetch("/api/address-book/create", {
               method: "POST",
               headers: {
@@ -1458,27 +1156,14 @@ function CheckoutPageContent() {
             });
 
             if (addressResponse.ok) {
-              const addressResult = await addressResponse.json();
-              console.log("✅ Address saved to address book:", addressResult);
               toast.success("Η διεύθυνση αποθηκεύτηκε στο βιβλίο διευθύνσεων");
-            } else {
-              console.error(
-                "⚠️ Failed to save address:",
-                await addressResponse.json()
-              );
-              // Don't fail the order if address save fails
             }
           }
         } catch (error) {
           console.error("⚠️ Error saving address:", error);
-          // Don't fail the order if address save fails
         }
       }
 
-      console.log("📦 Submitting order with data:", orderData);
-
-      // Submit order via server-side API route (Safari-safe)
-      // IMPORTANT: Using /api/orders/submit to avoid CORS issues in Safari
       const response = await fetch("/api/orders/submit", {
         method: "POST",
         credentials: "include",
@@ -1504,113 +1189,113 @@ function CheckoutPageContent() {
         }
       }
 
-      // Check content type to handle both HTML (card payment) and JSON responses
       const contentType = response.headers.get("content-type") || "";
       let orderId: number | null = null;
 
       if (contentType.includes("text/html")) {
-        // Card payment - backend returns HTML form directly
         try {
-          console.log("💳 Card payment - received HTML form");
           const paymentFormHtml = await response.text();
           
-          // Extract order ID from the form (MerchantReference field)
           const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
           if (orderIdMatch) {
             orderId = parseInt(orderIdMatch[1]);
-            console.log(`🆔 Extracted order ID from payment form: ${orderId}`);
             setOrderId(orderId);
             addActiveOrder(orderId, locationCart.locationName);
-          } else {
-            throw new Error("Could not extract order ID from payment form");
           }
 
-          // Don't clear cart yet - wait for payment verification
-
-          // Redirect the pre-opened window to the payment redirect page
-          if (paymentWindow && !paymentWindow.closed) {
-            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
-            paymentWindow.location.href = redirectUrl;
-          } else {
-            // Window was blocked, open it now (may be blocked by Safari)
-            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId}&lang=${currentLang}`;
-            window.open(redirectUrl, "_blank");
+          const paymentWin = window.open("", "_blank", "width=800,height=600");
+          
+          if (!paymentWin) {
+            throw new Error("Popup blocked. Please allow popups for this site.");
           }
+
+          setPaymentWindow(paymentWin);
+
+          paymentWin.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Πληρωμή</title>
+                <meta charset="UTF-8">
+              </head>
+              <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                <div style="text-align: center;">
+                  <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                  ${paymentFormHtml}
+                </div>
+                <script>
+                  window.onload = function() {
+                    var form = document.querySelector('form');
+                    if (form) {
+                      form.submit();
+                    }
+                  };
+                </script>
+              </body>
+            </html>
+          `);
+          paymentWin.document.close();
+
         } catch (paymentError) {
           console.error("Error handling card payment:", paymentError);
           toast.error(
             "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
           );
         }
-        return; // Exit early for card payments
+        return;
       }
 
-      // Non-card payment - handle JSON response
       const result = await response.json();
-      console.log("✅ Order created successfully:", result);
 
-      // Set the order ID and save to active orders
       orderId =
         result.data?.order_id || result.data?.id || result.order_id;
       if (orderId) {
-        console.log(`🆔 Setting order ID: ${orderId}`);
         setOrderId(orderId);
 
-        // Save to active orders for tracking
         addActiveOrder(orderId, locationCart.locationName);
 
-        // Clear the cart for this specific location
         clearLocationCart(locationCart.locationId);
-        console.log(`🛒 Cleared cart for location ${locationCart.locationId}`);
 
-        // Handle payment form if present in JSON response (fallback)
         if (paymentMethod === "card" && result.data?.payment_form) {
           try {
-            console.log("💳 Opening payment form in new window (from JSON)");
+            const paymentWindow = window.open("", "_blank", "width=800,height=600");
             
-            // Extract order ID from the payment form HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = result.data.payment_form;
-            const form = tempDiv.querySelector('form');
-            
-            if (!form) {
-              throw new Error("Could not find payment form in response");
+            if (!paymentWindow) {
+              throw new Error("Popup blocked. Please allow popups for this site.");
             }
 
-            // Extract order ID from MerchantReference field
-            const merchantRefInput = form.querySelector('input[name="MerchantReference"]') as HTMLInputElement;
-            const extractedOrderId = merchantRefInput?.value ? parseInt(merchantRefInput.value) : orderId;
-            
-            if (extractedOrderId && extractedOrderId !== orderId) {
-              setOrderId(extractedOrderId);
-              addActiveOrder(extractedOrderId, locationCart.locationName);
-            }
-
-            // Redirect the pre-opened window to the payment redirect page
-            if (paymentWindow && !paymentWindow.closed) {
-              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
-              paymentWindow.location.href = redirectUrl;
-            } else {
-              // Window was blocked, open it now (may be blocked by Safari)
-              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${extractedOrderId || orderId}&lang=${currentLang}`;
-              window.open(redirectUrl, "_blank");
-            }
+            paymentWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Πληρωμή</title>
+                  <meta charset="UTF-8">
+                </head>
+                <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+                  <div style="text-align: center;">
+                    <p style="margin-bottom: 20px;">Ανακατεύθυνση στην πύλη πληρωμής...</p>
+                    ${result.data.payment_form}
+                  </div>
+                  <script>
+                    window.onload = function() {
+                      var form = document.querySelector('form');
+                      if (form) {
+                        form.submit();
+                      }
+                    };
+                  </script>
+                </body>
+              </html>
+            `);
+            paymentWindow.document.close();
           } catch (paymentError) {
             console.error("Error opening payment form:", paymentError);
             toast.error(
               "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
           }
-        } else {
-          // For cash on delivery orders, redirect to order tracking page
-          if (orderId) {
-            router.push(`/${currentLang}/order/${orderId}`);
-          } else {
-            router.push(`/${currentLang}`);
-          }
         }
       } else {
-        console.warn("⚠️ No orderId found in API response:", result);
         alert(
           "Η παραγγελία υποβλήθηκε αλλά δεν μπορέσαμε να λάβουμε το αναγνωριστικό."
         );
@@ -1618,7 +1303,6 @@ function CheckoutPageContent() {
     } catch (error) {
       console.error("Error submitting order:", error);
 
-      // Safari-specific error handling
       let errorMessage =
         "Σφάλμα κατά την υποβολή της παραγγελίας. Παρακαλώ δοκιμάστε ξανά.";
 
@@ -1635,7 +1319,6 @@ function CheckoutPageContent() {
             "Σφάλμα υποβολής. Παρακαλώ ανανεώστε τη σελίδα και δοκιμάστε ξανά.";
         }
       } else if (error instanceof Error) {
-        // Check for CORS-related errors
         if (
           error.message.includes("access control") ||
           error.message.includes("CORS") ||
@@ -1655,14 +1338,14 @@ function CheckoutPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="min-h-screen bg-black flex flex-col font-sans">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 flex-shrink-0">
+      <div className="bg-zinc-900 border-b border-zinc-800 flex-shrink-0 sticky top-0 z-20">
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-1.5 sm:p-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+              className="p-1.5 sm:p-2 rounded-full bg-black border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -1675,18 +1358,345 @@ function CheckoutPageContent() {
 
       {/* Main Content - Grid Layout */}
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-6 lg:gap-8">
             {/* Left Column - Form */}
-            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-              {/* Customer Info */}
-              <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
+            <div className="lg:col-span-2 space-y-3 sm:space-y-6">
+              {/* Delivery Address (only if delivery is selected) */}
+              {orderType === "delivery" && (
+                <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-[#ff9328]" />
+                    Διεύθυνση παράδοσης
+                  </h3>
+                  {userLocation ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        {isAuthenticated && (
+                          <Button
+                            onClick={() => setIsAddressBookModalOpen(true)}
+                            className="flex-1 bg-zinc-800 text-white hover:bg-zinc-700 h-10 text-xs sm:text-sm border border-zinc-700"
+                          >
+                            <span className="truncate">
+                              Επιλέξτε αποθηκευμένες
+                            </span>
+                          </Button>
+                        )}
+                        <Button
+                          onClick={handleResetAddress}
+                          variant="outline"
+                          className={`bg-black border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white h-10 ${
+                            isAuthenticated ? "px-3 sm:px-4" : "flex-1"
+                          }`}
+                          title="Επαναφορά διεύθυνσης"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          <span className="text-xs sm:text-sm">Επαναφορά</span>
+                        </Button>
+                      </div>
+                      <div>
+                        <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                          Διεύθυνση
+                        </label>
+                        <Input
+                          value={`${
+                            userLocation.addressDetails.street || ""
+                          }`.trim()}
+                          readOnly
+                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                            Πόλη
+                          </label>
+                          <Input
+                            value={userLocation.city}
+                            readOnly
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                            Τ.Κ.
+                          </label>
+                          <Input
+                            value={userLocation.addressDetails.postalCode || ""}
+                            readOnly
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                            Κουδούνι
+                          </label>
+                          <Input
+                            value={bellName}
+                            onChange={(e) => setBellName(e.target.value)}
+                            placeholder="π.χ. Παππάς"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                            Όροφος
+                          </label>
+                          <Input
+                            value={floor}
+                            onChange={(e) => setFloor(e.target.value)}
+                            placeholder="π.χ. 3"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          />
+                        </div>
+                      </div>
+                      {isAuthenticated && (
+                        <div className="flex items-center space-x-2 pt-1">
+                          
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-zinc-500 text-sm">
+                        Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
+                        εισάγετε μια νέα διεύθυνση
+                      </p>
+                      {isAuthenticated && (
+                        <Button
+                          onClick={() => setIsAddressBookModalOpen(true)}
+                          disabled={isLoadingLocation}
+                          className="w-full bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed h-10 text-sm border border-zinc-700"
+                        >
+                          <span className="truncate">
+                            Επιλέξτε αποθηκευμένες
+                          </span>
+                        </Button>
+                      )}
+                      <Button
+                        onClick={handleAutocompleteFromNavbar}
+                        disabled={!coordinates || isLoadingLocation}
+                        className="w-full bg-[#ff9328] text-white hover:bg-[#915316] disabled:opacity-50 disabled:cursor-not-allowed h-10 text-sm"
+                      >
+                        {isLoadingLocation ? (
+                          <>
+                            <div className="w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                            Φόρτωση...
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="w-4 h-4 mr-2" />
+                            <span className="truncate">
+                              Χρησιμοποίησε τοποθεσία
+                            </span>
+                          </>
+                        )}
+                      </Button>
+                      <div>
+                        <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                          Ή εισάγετε διεύθυνση
+                        </label>
+                        <GooglePlacesCustom
+                          onPlaceSelect={handleGooglePlaceSelect}
+                          value={addressInput}
+                          onChange={setAddressInput}
+                          placeholder="Εισάγετε διεύθυνση παράδοσης..."
+                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              
+              {/* Order Comments */}
+              <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                  Σχόλια παραγγελίας
+                </h3>
+                <textarea
+                  value={orderComments}
+                  onChange={(e) => setOrderComments(e.target.value)}
+                  placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
+                  className="w-full h-24 bg-black border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[#ff9328] focus:ring-1 focus:ring-[#ff9328] text-sm transition-all"
+                />
+              </Card>
+
+              {/* Delivery / Pickup Toggle */}
+              <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                  Τρόπος παραλαβής
+                </h3>
+                <div className="space-y-4">
+                  {(() => {
+                    const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
+                      ? parseFloat(locationData.options.delivery_min_order_amount)
+                      : 0;
+                    const cartTotal = locationCart?.summary.total || 0;
+                    const isDeliveryDisabledByMinOrder =
+                      deliveryMinOrder > 0 && cartTotal < deliveryMinOrder;
+                    const isDeliveryDisabled = isDeliveryDisabledByMinOrder;
+
+                    const deliveryInterval =
+                      locationData?.options?.delivery_time_interval || 0;
+
+                    return (
+                      <label
+                        className={`flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all ${
+                          isDeliveryDisabled
+                            ? "cursor-not-allowed opacity-50 bg-black/50"
+                            : "cursor-pointer hover:bg-black hover:border-zinc-800"
+                        } ${orderType === "delivery" ? "bg-black border-zinc-800 ring-1 ring-[#ff9328]" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value="delivery"
+                          checked={orderType === "delivery"}
+                          onChange={(e) =>
+                            setOrderType(e.target.value as "delivery")
+                          }
+                          disabled={isDeliveryDisabled}
+                          className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                        />
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className={`p-2 rounded-full ${orderType === "delivery" ? "bg-[#ff9328]/20 text-[#ff9328]" : "bg-zinc-800 text-zinc-400"}`}>
+                             <MapPin className="w-4 h-4" />
+                          </div>
+                          <span className="text-white font-medium">Παράδοση</span>
+                          {!isDeliveryDisabled && deliveryInterval > 0 && (
+                            <span className="text-zinc-500 text-xs sm:text-sm ml-auto">
+                              ~{deliveryInterval} λεπτά
+                            </span>
+                          )}
+                          {isDeliveryDisabledByMinOrder && (
+                            <span className="text-red-400 text-xs ml-auto">
+                              Ελάχιστη: {deliveryMinOrder.toFixed(2)} €
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })()}
+                  
+                  {(() => {
+                    const pickupMinOrder = locationData?.options?.collection_min_order_amount
+                      ? parseFloat(locationData.options.collection_min_order_amount)
+                      : 0;
+                    const cartTotal = locationCart?.summary.total || 0;
+                    const isPickupDisabledByMinOrder =
+                      pickupMinOrder > 0 && cartTotal < pickupMinOrder;
+
+                    return (
+                      <label
+                        className={`flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all ${
+                          isPickupDisabledByMinOrder
+                            ? "cursor-not-allowed opacity-50 bg-black/50"
+                            : "cursor-pointer hover:bg-black hover:border-zinc-800"
+                        } ${orderType === "pickup" ? "bg-black border-zinc-800 ring-1 ring-[#ff9328]" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value="pickup"
+                          checked={orderType === "pickup"}
+                          onChange={(e) =>
+                            setOrderType(e.target.value as "pickup")
+                          }
+                          disabled={isPickupDisabledByMinOrder}
+                          className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                        />
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className={`p-2 rounded-full ${orderType === "pickup" ? "bg-[#ff9328]/20 text-[#ff9328]" : "bg-zinc-800 text-zinc-400"}`}>
+                             <Package className="w-4 h-4" />
+                          </div>
+                          <span className="text-white font-medium">
+                            Παραλαβή
+                          </span>
+                          {!isPickupDisabledByMinOrder &&
+                            locationData?.options?.collection_time_interval && (
+                              <span className="text-zinc-500 text-xs sm:text-sm ml-auto">
+                                ~{locationData.options.collection_time_interval}{" "}
+                                λεπτά
+                              </span>
+                            )}
+                          {isPickupDisabledByMinOrder && (
+                            <span className="text-red-400 text-xs ml-auto">
+                              Ελάχιστη: {pickupMinOrder.toFixed(2)}€
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })()}
+                </div>
+              </Card>
+            </div>
+
+            {/* Right Column - Order Summary */}
+            <div className="lg:col-span-3 space-y-4">
+                {/* Payment Method */}
+                <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                    Τρόπος πληρωμής
+                  </h3>
+                  <div className="space-y-3">
+                  {/* Cash Payment Option */}
+                  <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "cash"
+                      ? "bg-zinc-900 border-[#ff9328] ring-1 ring-[#ff9328]"
+                      : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
+                    }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cash"
+                      checked={paymentMethod === "cash"}
+                      onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
+                      className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                    />
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 ${paymentMethod === "cash" ? "text-[#ff9328]" : "text-zinc-500"}`} />
+                      <span className="text-white font-medium text-sm">
+                        Πληρωμή στην παράδοση/παραλαβή
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Card Payment Option */}
+                  <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "card"
+                      ? "bg-zinc-900 border-[#ff9328] ring-1 ring-[#ff9328]"
+                      : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
+                    }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={paymentMethod === "card"}
+                      onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
+                      className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                    />
+                    <div className="flex items-center gap-2">
+                      <CreditCard className={`w-4 h-4 ${paymentMethod === "card" ? "text-[#ff9328]" : "text-zinc-500"}`} />
+                      <span className="text-white font-medium text-sm sm:text-base">
+                        Πληρωμή με κάρτα (ePay)
+                      </span>
+                    </div>
+                  </label>
+
+                  </div>
+                </Card>
+                  
+                {/* User Info */}
+                <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                <h3 className="text-base sm:text-lg font-bold text-white mb-4">
                   Στοιχεία πελάτη
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                    <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
                       Όνομα
                     </label>
                     <Input
@@ -1698,576 +1708,256 @@ function CheckoutPageContent() {
                         ""
                       }
                       readOnly
-                      className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
                       placeholder="Όνομα"
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 text-xs sm:text-sm mb-1">
+                    <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
                       Email
                     </label>
                     <Input
                       value={user?.email || ""}
                       readOnly
-                      className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
                       placeholder="Email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                      Τηλέφωνο
+                    </label>
+                    <Input
+                      value={user?.telephone || user?.phone || ""}
+                      readOnly
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                      placeholder="Τηλέφωνο"
                     />
                   </div>
                 </div>
               </Card>
 
-              {/* Order Type */}
-              <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
-                  Τρόπος παραλαβής
+              {/* Order Summary Items */}
+              <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl sticky top-4">
+                <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                  Σύνοψη παραγγελίας
                 </h3>
-                <div className="space-y-2">
-                  {(() => {
-                    // Check minimum order for delivery
-                    const deliveryMinOrder = locationData?.options
-                      ?.delivery_min_order_amount
-                      ? parseFloat(
-                          locationData.options.delivery_min_order_amount
-                        )
-                      : 0;
-                    const cartTotal = locationCart?.summary.total || 0;
-                    const isDeliveryDisabledByMinOrder =
-                      deliveryMinOrder > 0 && cartTotal < deliveryMinOrder;
-                    // Don't disable delivery option based on availability - only based on minimum order
-                    const isDeliveryDisabled = isDeliveryDisabledByMinOrder;
-
-                    const deliveryInterval =
-                      locationData?.options?.delivery_time_interval || 0;
-
-                    return (
-                      <label
-                        className={`flex items-center gap-3 ${
-                          isDeliveryDisabled
-                            ? "cursor-not-allowed opacity-50"
-                            : "cursor-pointer"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="orderType"
-                          value="delivery"
-                          checked={orderType === "delivery"}
-                          onChange={(e) =>
-                            setOrderType(e.target.value as "delivery")
-                          }
-                          disabled={isDeliveryDisabled}
-                          className="w-4 h-4 text-primary disabled:cursor-not-allowed"
-                        />
-                        <div className="flex items-center gap-2 flex-1">
-                          <MapPin className="w-4 h-4 text-blue-400" />
-                          <span className="text-white">Παράδοση</span>
-                          {!isDeliveryDisabled && deliveryInterval > 0 && (
-                            <span className="text-gray-400 text-xs sm:text-sm ml-auto">
-                              Εκτιμώμενος χρόνος: {deliveryInterval} λεπτά
-                            </span>
-                          )}
-                          {isDeliveryDisabledByMinOrder && (
-                            <span className="text-red-400 text-sm ml-auto">
-                              Ελάχιστη παραγγελία: {deliveryMinOrder.toFixed(2)}
-                              €
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })()}
-                  {(() => {
-                    // Check minimum order for pickup
-                    const pickupMinOrder = locationData?.options
-                      ?.collection_min_order_amount
-                      ? parseFloat(
-                          locationData.options.collection_min_order_amount
-                        )
-                      : 0;
-                    const cartTotal = locationCart?.summary.total || 0;
-                    const isPickupDisabledByMinOrder =
-                      pickupMinOrder > 0 && cartTotal < pickupMinOrder;
-
-                    return (
-                      <label
-                        className={`flex items-center gap-2 sm:gap-3 ${
-                          isPickupDisabledByMinOrder
-                            ? "cursor-not-allowed opacity-50"
-                            : "cursor-pointer"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="orderType"
-                          value="pickup"
-                          checked={orderType === "pickup"}
-                          onChange={(e) =>
-                            setOrderType(e.target.value as "pickup")
-                          }
-                          disabled={isPickupDisabledByMinOrder}
-                          className="w-4 h-4 text-primary disabled:cursor-not-allowed"
-                        />
-                        <div className="flex items-center gap-2 flex-1">
-                          <Package className="w-4 h-4 text-green-400" />
-                          <span className="text-white text-sm sm:text-base">
-                            Παραλαβή
+                <div className="space-y-4 max-h-[calc(100vh-350px)] overflow-y-auto custom-scrollbar pr-1">
+                  {locationCart.items.map((item) => (
+                    <div
+                      key={item.rowId}
+                      onClick={() => handleItemClick(item)}
+                      className="border-b border-zinc-800 pb-4 last:border-b-0 cursor-pointer hover:bg-black/40 rounded-lg p-2 transition-colors -mx-2"
+                    >
+                      {/* Title Row with Controls */}
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <span className="text-white text-base font-bold leading-tight">
+                            {item.name}
                           </span>
-                          {!isPickupDisabledByMinOrder &&
-                            locationData?.options?.collection_time_interval && (
-                              <span className="text-gray-400 text-xs sm:text-sm ml-auto">
-                                Εκτιμώμενος χρόνος:{" "}
-                                {locationData.options.collection_time_interval}{" "}
-                                λεπτά
-                              </span>
-                            )}
-                          {isPickupDisabledByMinOrder && (
-                            <span className="text-red-400 text-sm ml-auto">
-                              Ελάχιστη παραγγελία: {pickupMinOrder.toFixed(2)}€
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })()}
-                </div>
-              </Card>
-
-              {/* Delivery Address (only if delivery is selected) */}
-              {orderType === "delivery" && (
-                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
-                    Διεύθυνση παράδοσης
-                  </h3>
-                  {userLocation ? (
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex gap-2">
-                        {isAuthenticated && (
-                          <Button
-                            onClick={() => setIsAddressBookModalOpen(true)}
-                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 h-9 sm:h-10 text-xs sm:text-sm"
-                          >
-                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                            <span className="truncate">
-                              Επιλεξτε αποθηκευμένες
-                            </span>
-                          </Button>
-                        )}
-                        <Button
-                          onClick={handleResetAddress}
-                          variant="outline"
-                          className={`bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white h-9 sm:h-10 ${
-                            isAuthenticated ? "px-3 sm:px-4" : "flex-1"
-                          }`}
-                          title="Επαναφορά διεύθυνσης"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          <span className="text-xs sm:text-sm">Επαναφορά</span>
-                        </Button>
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                          Διεύθυνση
-                        </label>
-                        <Input
-                          value={`${
-                            userLocation.addressDetails.street || ""
-                          }`.trim()}
-                          readOnly
-                          className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                        <div>
-                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                            Πόλη
-                          </label>
-                          <Input
-                            value={userLocation.city}
-                            readOnly
-                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                            Τ.Κ.
-                          </label>
-                          <Input
-                            value={userLocation.addressDetails.postalCode || ""}
-                            readOnly
-                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                        <div>
-                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                            Κουδούνι
-                          </label>
-                          <Input
-                            value={bellName}
-                            onChange={(e) => setBellName(e.target.value)}
-                            placeholder="π.χ. Παππάς"
-                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                            Όροφος
-                          </label>
-                          <Input
-                            value={floor}
-                            onChange={(e) => setFloor(e.target.value)}
-                            placeholder="π.χ. 3"
-                            className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                          />
-                        </div>
-                      </div>
-                      {isAuthenticated && (
-                        <div className="flex items-center space-x-2 pt-1">
                           
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2 sm:space-y-3">
-                      <p className="text-gray-400 text-xs sm:text-sm">
-                        Χρησιμοποιήστε την τοποθεσία από τη γραμμή πλοήγησης ή
-                        εισάγετε μια νέα διεύθυνση
-                      </p>
-                      {isAuthenticated && (
-                        <Button
-                          onClick={() => setIsAddressBookModalOpen(true)}
-                          disabled={isLoadingLocation}
-                          className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed h-9 sm:h-10 text-xs sm:text-sm"
-                        >
-                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                          <span className="truncate">
-                            Επιλεξτε αποθηκευμένες
-                          </span>
-                        </Button>
-                      )}
-                      <Button
-                        onClick={handleAutocompleteFromNavbar}
-                        disabled={!coordinates || isLoadingLocation}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed h-9 sm:h-10 text-xs sm:text-sm"
-                      >
-                        {isLoadingLocation ? (
-                          <>
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 mr-2 rounded bg-muted animate-pulse"></div>
-                            Φόρτωση...
-                          </>
-                        ) : (
-                          <>
-                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                            <span className="truncate">
-                              Χρησιμοποίησε τοποθεσία
-                            </span>
-                          </>
-                        )}
-                      </Button>
-                      <div>
-                        <label className="block text-gray-300 text-xs sm:text-sm mb-1">
-                          Ή εισάγετε διεύθυνση
-                        </label>
-                        <GooglePlacesCustom
-                          onPlaceSelect={handleGooglePlaceSelect}
-                          value={addressInput}
-                          onChange={setAddressInput}
-                          placeholder="Εισάγετε διεύθυνση παράδοσης..."
-                          className="bg-gray-800 border-gray-700 text-white h-9 sm:h-10 text-sm"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              )}
-            </div>
-
-            {/* Right Column - Order Summary (Sticky on desktop) */}
-            <div className="lg:col-span-3">
-              <div className="lg:sticky lg:top-4 space-y-3 sm:space-y-4">
-                {/* Payment Method */}
-                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
-                    Τρόπος πληρωμής
-                  </h3>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cash"
-                        checked={paymentMethod === "cash"}
-                        onChange={(e) =>
-                          setPaymentMethod(e.target.value as "cash" | "card")
-                        }
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-sm sm:text-base">
-                          Πληρωμή στην παράδοση/παραλαβή
-                        </span>
-                      </div>
-                    </label>
-                    <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={paymentMethod === "card"}
-                        onChange={(e) =>
-                          setPaymentMethod(e.target.value as "cash" | "card")
-                        }
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-blue-400" />
-                        <span className="text-white text-sm sm:text-base">
-                          Πληρωμή με κάρτα
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                </Card>
-
-                {/* Order Comments */}
-                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
-                    Σχόλια παραγγελίας
-                  </h3>
-                  <textarea
-                    value={orderComments}
-                    onChange={(e) => setOrderComments(e.target.value)}
-                    placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
-                    className="w-full h-20 sm:h-24 bg-gray-800 border border-gray-700 rounded-lg p-2 sm:p-3 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  />
-                </Card>
-
-                {/* Order Summary */}
-                <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-3">
-                    Σύνοψη παραγγελίας
-                  </h3>
-                  <div className="space-y-2 sm:space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
-                    {locationCart.items.map((item) => (
-                      <div
-                        key={item.rowId}
-                        onClick={() => handleItemClick(item)}
-                        className="border-b border-gray-700 pb-3 last:border-b-0 cursor-pointer hover:bg-gray-800/50 rounded-lg p-2 transition-colors"
-                      >
-                        {/* Title Row with Controls */}
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2 flex-1">
-                            <span className="text-gray-300 text-[15px] font-medium">
-                              {item.name}
-                            </span>
-                            
-                            {/* Quantity Controls */}
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuantityChange(item, item.qty - 1);
-                                }}
-                                disabled={item.qty <= 1}
-                                className="p-2 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                title="Μείωση ποσότητας"
-                              >
-                                <Minus className="w-4 h-4 text-white" />
-                              </button>
-                              <span className="text-white text-sm font-medium min-w-[1.5rem] text-center">
-                                {item.qty}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuantityChange(item, item.qty + 1);
-                                }}
-                                className="p-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
-                                title="Αύξηση ποσότητας"
-                              >
-                                <Plus className="w-4 h-4 text-white" />
-                              </button>
+                          {/* Display menu options if any */}
+                          {item.options && item.options.length > 0 && (
+                            <div className="text-xs text-zinc-400 space-y-0.5">
+                              {item.options.flatMap((opt) =>
+                                opt.values.map((val, index) => (
+                                  <div
+                                    key={`${item.rowId}-${opt.menu_option_id}-${val.menu_option_value_id}-${index}`}
+                                    className="flex justify-between items-center"
+                                  >
+                                    <span>
+                                      + {val.option_value_name}
+                                      {val.price > 0 && ` (€${val.price.toFixed(2)})`}
+                                    </span>
+                                  </div>
+                                ))
+                              )}
                             </div>
+                          )}
 
-                            {/* Remove Button */}
+                          {/* Display item comment if any */}
+                          {item.comment && (
+                            <div className="text-zinc-500 text-xs italic mt-1">
+                              "{item.comment}"
+                            </div>
+                          )}
+                        </div>
+                        
+                        <span className="text-white font-bold text-sm whitespace-nowrap">
+                          €{item.subtotal.toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* Controls Row */}
+                      <div className="flex items-center justify-end gap-3 mt-3">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-1 bg-black rounded-lg p-1 border border-zinc-800">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRemoveItem(item);
+                                handleQuantityChange(item, item.qty - 1);
                               }}
-                              className="p-2 rounded bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 transition-colors"
-                              title="Αφαίρεση"
+                              disabled={item.qty <= 1}
+                              className="w-7 h-7 rounded flex items-center justify-center bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-white text-sm font-bold min-w-[1.5rem] text-center">
+                              {item.qty}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(item, item.qty + 1);
+                              }}
+                              className="w-7 h-7 rounded flex items-center justify-center bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
                             </button>
                           </div>
-                          <span className="text-white font-medium text-sm whitespace-nowrap">
-                            €{item.subtotal.toFixed(2)}
-                          </span>
-                        </div>
 
-                        {/* Display menu options if any */}
-                        {item.options && item.options.length > 0 && (
-                          <div className="ml-2 sm:ml-4 mt-1 space-y-0.5 sm:space-y-1 mb-2">
-                            {item.options.flatMap((opt) =>
-                              opt.values.map((val, index) => (
-                                <div
-                                  key={`${item.rowId}-${opt.menu_option_id}-${val.menu_option_value_id}-${index}`}
-                                  className="flex justify-between items-center text-xs sm:text-sm"
-                                >
-                                  <span className="text-gray-400">
-                                    + {val.option_value_name}
-                                    {val.price > 0 &&
-                                      ` (€${val.price.toFixed(2)})`}
-                                  </span>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-
-                        {/* Display item comment if any */}
-                        {item.comment && (
-                          <div className="ml-2 sm:ml-4 mt-1 mb-2">
-                            <span className="text-gray-400 text-xs sm:text-sm italic">
-                              "{item.comment}"
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <div className="border-t border-gray-700 pt-2 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-white font-semibold text-sm sm:text-base">
-                          Σύνολο
-                        </span>
-                        <span className="text-white font-bold text-base sm:text-lg">
-                          €{locationCart.summary.total.toFixed(2)}
-                        </span>
+                          {/* Remove Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveItem(item);
+                            }}
+                            className="p-1.5 rounded bg-zinc-900 border border-zinc-800 hover:border-red-900/50 hover:bg-red-900/10 text-zinc-500 hover:text-red-400 transition-colors group"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                       </div>
                     </div>
+                  ))}
+                  
+                  <div className="border-t border-zinc-800 pt-4 mt-2 space-y-2">
+                    <div className="flex justify-between items-center text-zinc-400 text-sm">
+                        <span>Υποσύνολο</span>
+                        <span>€{locationCart.summary.total.toFixed(2)}</span>
+                    </div>
+                    {/* Add delivery fee logic here if needed */}
+                    <div className="flex justify-between items-center pt-2 border-t border-zinc-800">
+                      <span className="text-white font-bold text-lg">
+                        Σύνολο
+                      </span>
+                      <span className="text-[#ff9328] font-bold text-xl">
+                        €{locationCart.summary.total.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Submit Button - Moved to summary card */}
-                  {(() => {
-                    const deliveryData = locationCart
-                      ? getDeliveryData(locationCart.locationId)
-                      : null;
-                    const isOutsideDeliveryArea =
-                      orderType === "delivery" &&
-                      deliveryData &&
-                      !deliveryData.is_within_delivery_area;
+                {/* Submit Button */}
+                {(() => {
+                  const deliveryData = locationCart
+                    ? getDeliveryData(locationCart.locationId)
+                    : null;
+                  const isOutsideDeliveryArea =
+                    orderType === "delivery" &&
+                    deliveryData &&
+                    !deliveryData.is_within_delivery_area;
 
-                    // Use hook status first (most up-to-date), fallback to locationCart status
-                    const isRestaurantOpen =
-                      restaurantStatus?.is_open ??
-                      locationCart?.restaurantStatus?.isOpen ??
-                      true;
-                    const isRestaurantClosed = !isRestaurantOpen;
+                  const isRestaurantOpen =
+                    restaurantStatus?.is_open ??
+                    locationCart?.restaurantStatus?.isOpen ??
+                    true;
+                  const isRestaurantClosed = !isRestaurantOpen;
 
-                    // Get status message from hook first, then fallback to locationCart
-                    const statusMessage =
-                      restaurantStatus?.status_message ||
-                      locationCart?.restaurantStatus?.statusMessage ||
-                      "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
+                  const statusMessage =
+                    restaurantStatus?.status_message ||
+                    locationCart?.restaurantStatus?.statusMessage ||
+                    "Το εστιατόριο είναι κλειστό. Δεν μπορείτε να υποβάλετε παραγγελία.";
 
-                    // Check minimum order requirements
-                    const deliveryMinOrder = locationData?.options
-                      ?.delivery_min_order_amount
-                      ? parseFloat(
-                          locationData.options.delivery_min_order_amount
-                        )
-                      : 0;
-                    const pickupMinOrder = locationData?.options
-                      ?.collection_min_order_amount
-                      ? parseFloat(
-                          locationData.options.collection_min_order_amount
-                        )
-                      : 0;
-                    const cartTotal = locationCart?.summary.total || 0;
+                  const deliveryMinOrder = locationData?.options?.delivery_min_order_amount
+                    ? parseFloat(locationData.options.delivery_min_order_amount)
+                    : 0;
+                  const pickupMinOrder = locationData?.options?.collection_min_order_amount
+                    ? parseFloat(locationData.options.collection_min_order_amount)
+                    : 0;
+                  const cartTotal = locationCart?.summary.total || 0;
 
-                    const deliveryMeetsMin =
-                      deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
-                    const pickupMeetsMin =
-                      pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
+                  const deliveryMeetsMin =
+                    deliveryMinOrder === 0 || cartTotal >= deliveryMinOrder;
+                  const pickupMeetsMin =
+                    pickupMinOrder === 0 || cartTotal >= pickupMinOrder;
 
-                    // Check if current order type meets minimum
-                    // Don't check delivery availability here - delivery option stays enabled
-                    const currentOrderTypeMeetsMin =
-                      orderType === "delivery"
-                        ? deliveryMeetsMin
-                        : pickupMeetsMin;
+                  const currentOrderTypeMeetsMin =
+                    orderType === "delivery"
+                      ? deliveryMeetsMin
+                      : pickupMeetsMin;
 
-                    // Block checkout if neither option meets minimum
-                    const isBlockedByMinOrder =
-                      !deliveryMeetsMin && !pickupMeetsMin;
+                  const isBlockedByMinOrder =
+                    !deliveryMeetsMin && !pickupMeetsMin;
 
-                    // Check if delivery is blocked
-                    const isDeliveryBlockedForCheckout =
-                      orderType === "delivery" &&
-                      locationCart &&
-                      isDeliveryBlocked(locationCart.locationId);
+                  const isDeliveryBlockedForCheckout =
+                    orderType === "delivery" &&
+                    locationCart &&
+                    isDeliveryBlocked(locationCart.locationId);
 
-                    return (
-                      <div className="space-y-2 mt-4">
-                        <Button
-                          onClick={handleSubmitOrder}
-                          disabled={
-                            isSubmitting ||
-                            isLoadingRestaurantStatus ||
-                            isRestaurantClosed ||
-                            isBlockedByMinOrder ||
-                            isDeliveryBlockedForCheckout ||
-                            !currentOrderTypeMeetsMin
-                          }
-                          className={`w-full py-2.5 sm:py-3 text-sm sm:text-base font-medium transition-all duration-200 ${
-                            isRestaurantClosed ||
-                            isBlockedByMinOrder ||
-                            isDeliveryBlockedForCheckout ||
-                            !currentOrderTypeMeetsMin
-                              ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                          }`}
-                        >
-                          {isSubmitting
-                            ? "Υποβολή..."
-                            : isLoadingRestaurantStatus
-                            ? "Ελέγχοντας..."
-                            : isRestaurantClosed
-                            ? "Το εστιατόριο είναι κλειστό"
-                            : isBlockedByMinOrder
-                            ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
-                            : isDeliveryBlockedForCheckout
-                            ? "Διεύθυνση εκτός εύρους"
-                            : !currentOrderTypeMeetsMin
-                            ? "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
-                            : "Υποβολή παραγγελίας"}
-                        </Button>
-                        {isRestaurantClosed && !isLoadingRestaurantStatus && (
-                          <p className="text-red-400 text-xs sm:text-sm text-center">
-                            {statusMessage}
+                  return (
+                    <div className="space-y-3 mt-6">
+                      <Button
+                        onClick={handleSubmitOrder}
+                        disabled={
+                          isSubmitting ||
+                          isLoadingRestaurantStatus ||
+                          isRestaurantClosed ||
+                          isBlockedByMinOrder ||
+                          isDeliveryBlockedForCheckout ||
+                          !currentOrderTypeMeetsMin
+                        }
+                        className={`w-full py-6 text-base font-bold shadow-lg transition-all duration-200 ${
+                          isRestaurantClosed ||
+                          isBlockedByMinOrder ||
+                          isDeliveryBlockedForCheckout ||
+                          !currentOrderTypeMeetsMin
+                            ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
+                            : "bg-[#ff9328] text-white hover:bg-[#915316] border border-transparent shadow-red-900/20 active:scale-[0.98]"
+                        }`}
+                      >
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                Υποβολή...
+                            </>
+                        ) : isLoadingRestaurantStatus ? (
+                          "Ελέγχοντας..."
+                        ) : isRestaurantClosed ? (
+                          "Το εστιατόριο είναι κλειστό"
+                        ) : isBlockedByMinOrder ? (
+                          "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
+                        ) : isDeliveryBlockedForCheckout ? (
+                          "Διεύθυνση εκτός εύρους"
+                        ) : !currentOrderTypeMeetsMin ? (
+                          "Ελάχιστη παραγγελία δεν έχει συμπληρωθεί"
+                        ) : (
+                          "Υποβολή παραγγελίας"
+                        )}
+                      </Button>
+                      
+                      {isRestaurantClosed && !isLoadingRestaurantStatus && (
+                        <p className="text-red-400 text-xs text-center font-medium bg-red-900/10 p-2 rounded border border-red-900/30">
+                          {statusMessage}
+                        </p>
+                      )}
+                      {isBlockedByMinOrder && !isRestaurantClosed && (
+                        <p className="text-red-400 text-xs text-center font-medium">
+                          Ελάχιστη παραγγελία δεν έχει συμπληρωθεί
+                        </p>
+                      )}
+                      {isDeliveryBlockedForCheckout &&
+                        !isRestaurantClosed &&
+                        !isBlockedByMinOrder && (
+                          <p className="text-red-400 text-xs text-center font-medium bg-red-900/10 p-2 rounded border border-red-900/30">
+                            Το κατάστημα δεν εξυπηρετεί την συγκεκριμένη
+                            διεύθυνση. Παρακαλώ επιλέξτε διαφορετική διεύθυνση
+                            ή την επιλογή παραλαβή
                           </p>
                         )}
-                        {isBlockedByMinOrder && !isRestaurantClosed && (
-                          <p className="text-red-400 text-xs sm:text-sm text-center">
-                            Ελάχιστη παραγγελία δεν έχει συμπληρωθεί
-                          </p>
-                        )}
-                        {isDeliveryBlockedForCheckout &&
-                          !isRestaurantClosed &&
-                          !isBlockedByMinOrder && (
-                            <p className="text-red-400 text-xs sm:text-sm text-center">
-                              Το κατάστημα δεν εξυπηρετεί την συγκεκριμένη
-                              διεύθυνση. Παρακαλώ επιλέξτε διαφορετική διεύθυνση
-                              ή την επιλογή παραλαβή
-                            </p>
-                          )}
-                      </div>
-                    );
-                  })()}
-                </Card>
-              </div>
+                    </div>
+                  );
+                })()}
+              </Card>
             </div>
           </div>
         </div>
@@ -2320,7 +2010,8 @@ export default function CheckoutPage() {
       fallback={
         <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <div className="text-white text-lg mb-2">Loading...</div>
+            <Loader2 className="w-10 h-10 text-[#ff9328] animate-spin mx-auto mb-4" />
+            <div className="text-white text-lg font-medium">Φόρτωση...</div>
           </div>
         </div>
       }
