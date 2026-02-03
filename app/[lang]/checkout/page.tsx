@@ -1264,7 +1264,8 @@ function CheckoutPageContent() {
             addActiveOrder(orderId, locationCart.locationName);
           }
 
-          clearLocationCart(locationCart.locationId);
+          // Don't clear cart yet - wait for payment confirmation
+          // Cart will be cleared when payment status is received
 
           // Redirect the already-opened window to payment redirect page with orderId
           if (paymentWin && !paymentWin.closed) {
@@ -1292,9 +1293,9 @@ function CheckoutPageContent() {
 
         addActiveOrder(orderId, locationCart.locationName);
 
-        clearLocationCart(locationCart.locationId);
-
         if (paymentMethod === "card") {
+          // Don't clear cart yet - wait for payment confirmation
+          // Cart will be cleared when payment status is received
           try {
             // Redirect the already-opened window to payment redirect page with orderId
             if (paymentWin && !paymentWin.closed) {
@@ -1310,7 +1311,8 @@ function CheckoutPageContent() {
             );
           }
         } else if (paymentMethod === "cash") {
-          // Redirect to order page for COD orders
+          // For cash payments, clear cart immediately since there's no payment gateway
+          clearLocationCart(locationCart.locationId);
           toast.success("Η παραγγελία υποβλήθηκε επιτυχώς!");
           router.push(`/${currentLang}/order/${orderId}`);
         }
