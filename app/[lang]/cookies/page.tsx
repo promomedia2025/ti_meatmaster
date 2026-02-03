@@ -8,7 +8,7 @@ export default function CookiesPolicyPage() {
     <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[#ff9328]/30">
       
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+      <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
           <Link
             href="/"

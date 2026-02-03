@@ -20,10 +20,10 @@ import { User, Bike, Car } from "lucide-react";
 import Image from "next/image";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useTranslations } from "@/lib/i18n/translations-provider";
-import { WoltNavbar } from "@/components/ui/woltcopies/woltnavbar";
+import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 
 const featuredMenuIds = [112, 101, 177, 406, 92, 176, 184, 196];
-const featuredDiscountIds = [553, 554, 555, 556, 557, 558, 559, 563];
+const featuredDiscountIds = [553, 561, 562, 564, 566];
 
 export default function HomePage() {
   const { dict, lang } = useTranslations();

@@ -21,12 +21,12 @@ import { User, X, Package } from "lucide-react";
 import Link from "next/link";
 import LocationCartCTA from "@/components/LocationCartCTA";
 
-interface WoltNavbarProps {
+interface BetterNavbarProps {
   lang: Locale;
   dict: any;
 }
 
-export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
+export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { globalSummary, getLocationCart } = useServerCart();
@@ -348,9 +348,9 @@ export function WoltNavbar({ lang, dict }: WoltNavbarProps) {
             {/* User Profile Button & Dropdown */}
             <div className="relative">
               <button
-                data-profile-button
-                onClick={isAuthenticated ? handleProfileClick : handleAuthClick}
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors focus-visible:outline-none
+                  data-profile-button
+                  onClick={isAuthenticated ? handleProfileClick : handleAuthClick}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors focus-visible:outline-none
                   ${isAuthenticated
                     ? "bg-[#ff9328] border-[#ff9328] hover:bg-[#915316]"
                     : "bg-background border-border hover:bg-muted"
