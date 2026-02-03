@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ArrowLeft, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -97,59 +97,90 @@ export default function PiraeusBankAuthorizePage() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-gray-900 rounded-lg p-8 text-center">
-        {isLoading ? (
-          <>
-            <Loader2 className="w-20 h-20 text-blue-500 mx-auto mb-6 animate-spin" />
-            <h1 className="text-2xl font-bold text-white mb-4">
-              Επεξεργασία πληρωμής...
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Παρακαλώ περιμένετε ενώ επεξεργαζόμαστε την πληρωμή σας.
-            </p>
-          </>
-        ) : isSuccess ? (
-          <>
-            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-white mb-4">
-              Η πληρωμή ολοκληρώθηκε επιτυχώς!
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Η πληρωμή σας έχει επιβεβαιωθεί με επιτυχία.
-            </p>
-          </>
-        ) : isFailure ? (
-          <>
-            <XCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-white mb-4">
-              Η πληρωμή απέτυχε
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Δυστυχώς, η πληρωμή δεν μπόρεσε να ολοκληρωθεί.
-            </p>
-          </>
-        ) : null}
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 font-sans selection:bg-[#ff9328]/40">
+      <div className="max-w-md w-full">
+        {/* Main Card */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 text-center shadow-2xl relative overflow-hidden">
 
-        <div className="space-y-3">
-          {isSuccess ? (
-            <Link href={`/${lang}`}>
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                Επιστροφή στην Αρχική
-              </Button>
-            </Link>
-          ) : isFailure ? (
-            <Link href={`/${lang}/checkout${searchParams.get("locationId") ? `?locationId=${searchParams.get("locationId")}` : ""}`}>
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                Επιστροφή στο Checkout
-              </Button>
-            </Link>
-          ) : (
-            <Link href={`/${lang}`}>
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                Επιστροφή στην Αρχική
-              </Button>
-            </Link>
+          {isLoading && (
+            <div className="animate-in fade-in duration-500">
+              <div className="relative mb-6 inline-block">
+                <div className="absolute inset-0 bg-[#ff9328]/20 blur-xl rounded-full animate-pulse" />
+                <Loader2 className="w-20 h-20 text-[#E54B53] relative z-10 animate-spin" />
+              </div>
+              <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                Επεξεργασία πληρωμής...
+              </h1>
+              <p className="text-zinc-400 text-sm leading-relaxed px-4 mb-8">
+                Παρακαλώ περιμένετε ενώ επιβεβαιώνουμε τη συναλλαγή σας με τη <span className="text-white font-medium">Viva.com</span>.
+              </p>
+            </div>
+          )}
+
+          {isSuccess && (
+            <div className="animate-in zoom-in-95 duration-500">
+              <div className="relative mb-6 inline-block">
+                <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full" />
+                <CheckCircle className="w-20 h-20 text-green-500 relative z-10" />
+              </div>
+              <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                Η πληρωμή ολοκληρώθηκε!
+              </h1>
+              <p className="text-zinc-400 text-sm leading-relaxed px-4 mb-8">
+                Η πληρωμή σας επιβεβαιώθηκε με επιτυχία. Η παραγγελία σας ετοιμάζεται!
+              </p>
+            </div>
+          )}
+
+          {isFailure && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <div className="relative mb-6 inline-block">
+                <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full" />
+                <XCircle className="w-20 h-20 text-red-500 relative z-10" />
+              </div>
+              <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                Η πληρωμή απέτυχε
+              </h1>
+              <p className="text-zinc-400 text-sm leading-relaxed px-4 mb-8">
+                Δυστυχώς, η πληρωμή δεν μπόρεσε να ολοκληρωθεί. Παρακαλώ δοκιμάστε ξανά.
+              </p>
+            </div>
+          )}
+
+          {/* Dynamic Buttons Stack */}
+          <div className="space-y-4">
+            {isFailure ? (
+              <Link href={`/${lang}/checkout${searchParams.get("locationId") ? `?locationId=${searchParams.get("locationId")}` : ""}`} className="block">
+                <Button className="w-full bg-[#ff9328] hover:bg-[#915316] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#ff9328]/20 flex items-center justify-center gap-2 text-lg font-bold">
+                  <ArrowLeft className="w-5 h-5" />
+                  Επιστροφή στο Checkout
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/${lang}`} className="block">
+                <Button className="w-full bg-[#ff9328] hover:bg-[#915316] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#ff9328]/20 flex items-center justify-center gap-2 text-lg font-bold">
+                  {isSuccess ? "Συνέχεια στην Αρχική" : "Επιστροφή στην Αρχική"}
+                </Button>
+              </Link>
+            )}
+
+            {!isLoading && (
+              <div className="flex justify-center">
+                <Link href={`/${lang}`}>
+                  <Button variant="ghost" className="text-zinc-400 hover:text-white hover:bg-zinc-800/40 px-8 py-6 rounded-xl flex items-center gap-2 transition-colors text-base">
+                    <Home className="w-5 h-5" />
+                    Αρχική
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Info */}
+          {!isLoading && (
+            <div className="mt-8 pt-6 border-t border-zinc-800/60 text-[11px] text-zinc-500 italic">
+              cocofino.gr • Ασφαλείς Πληρωμές μέσω ePay
+            </div>
           )}
         </div>
       </div>
