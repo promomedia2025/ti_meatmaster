@@ -597,6 +597,19 @@ export function AdminOrderDetailsModal({
     };
   }, [paperSize, isInvoiceModalOpen]);
 
+  // Auto-close invoice modal after 4 seconds
+  useEffect(() => {
+    if (isInvoiceModalOpen) {
+      const timer = setTimeout(() => {
+        setIsInvoiceModalOpen(false);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [isInvoiceModalOpen]);
+
   // Early return moved after all hooks to maintain hook order
   if (!isOpen || !order) return null;
 
@@ -1011,7 +1024,6 @@ export function AdminOrderDetailsModal({
           <PrintStyles paperSize={paperSize} />
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4 no-print overflow-y-auto"
-            onClick={() => setIsInvoiceModalOpen(false)}
           >
             <div
               className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative invoice-print-content my-auto"
@@ -1030,12 +1042,6 @@ export function AdminOrderDetailsModal({
                     title="Εκτύπωση"
                   >
                     <Printer className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setIsInvoiceModalOpen(false)}
-                    className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
