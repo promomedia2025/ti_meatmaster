@@ -16,26 +16,41 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { User, Bike, Car } from "lucide-react";
+import { User, Bike, Car, X, Info, ArrowRight } from "lucide-react"; // Added Info, ArrowRight
 import Image from "next/image";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useTranslations } from "@/lib/i18n/translations-provider";
-import { WoltNavbar } from "@/components/ui/woltcopies/woltnavbar";
+import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
+import { useAuth } from "@/lib/auth-context"; // Import Auth Context
+import Link from "next/link";
 
 const featuredMenuIds = [112, 101, 177, 406, 92, 176, 184, 196];
-const featuredDiscountIds = [553, 554, 555, 556, 557, 558, 559, 563];
+const featuredDiscountIds = [553, 561, 562, 564, 566];
 
 export default function HomePage() {
   const { dict, lang } = useTranslations();
   const { subscribe, unsubscribe, isConnected, pusher } = usePusher();
+  const { isAuthenticated } = useAuth(); // Get auth status
   const subscribedChannelsRef = useRef<Set<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
   const [radius, setRadius] = useState(5);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
 
   // Scroll to top on page load/reload
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  // Show renewal modal if not logged in
+  useEffect(() => {
+    // Small timeout to ensure hydration and smooth entrance
+    const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        setShowRenewalModal(true);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]);
 
   // Subscribe to all active orders for real-time notifications
   useEffect(() => {
@@ -66,7 +81,7 @@ export default function HomePage() {
 
         subscribedChannelsRef.current.add(channelName);
 
-        channel.bind("pusher:subscription_succeeded", () => {});
+        channel.bind("pusher:subscription_succeeded", () => { });
 
         channel.bind("pusher:subscription_error", (error: any) => {
           subscribedChannelsRef.current.delete(channelName);
@@ -107,7 +122,60 @@ export default function HomePage() {
   }, [isConnected, subscribe, unsubscribe, pusher]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+
+      {/* --- RENEWAL NOTICE MODAL --- */}
+      {showRenewalModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setShowRenewalModal(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative w-full max-w-md bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
+            {/* Header decoration */}
+            <div className="h-2 w-full bg-gradient-to-r from-orange-500 to-red-600" />
+
+            <button
+              onClick={() => setShowRenewalModal(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mb-6">
+                <Info className="w-8 h-8 text-orange-500" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-white mb-3">
+                Ανανεωθήκαμε!
+              </h3>
+
+              <p className="text-gray-300 mb-8 leading-relaxed">
+                Η ιστοσελίδα μας ανανεώθηκε πλήρως για να σας προσφέρουμε καλύτερη εμπειρία.
+                <br /><br />
+                <span className="font-medium text-orange-400">
+                  Παρακαλούμε δημιουργήστε νέο λογαριασμό
+                </span> για να συνεχίσετε τις παραγγελίες σας.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setShowRenewalModal(false)}
+                  className="w-full py-3.5 px-6 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  Εντάξει, κατάλαβα
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --------------------------- */}
+
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
@@ -161,7 +229,7 @@ export default function HomePage() {
             muted
             playsInline
             // Ensure the file is in your /public folder
-            src="/deliver.mp4" 
+            src="/deliver.mp4"
           />
         </div>
 

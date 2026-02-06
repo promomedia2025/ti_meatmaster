@@ -11,7 +11,7 @@ import { TranslationsProvider } from "@/lib/i18n/translations-provider";
 import { CartSidebarProvider } from "@/lib/cart-sidebar-context";
 import { Footer } from "@/components/footer";
 import { Toaster } from "sonner";
-import { WoltNavbar } from "@/components/ui/woltcopies/woltnavbar";
+import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 import { i18n, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
@@ -47,7 +47,7 @@ export default async function LangLayout({
               <PusherProvider>
                 <ServerCartProvider>
                   <CartSidebarProvider>
-                    <WoltNavbar lang={params.lang} dict={dict} />
+                    <BetterNavbar lang={params.lang} dict={dict} />
                     <Suspense fallback={null}>{children}</Suspense>
                     <Footer lang={params.lang} dict={dict} />
                     <Analytics />
