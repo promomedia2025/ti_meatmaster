@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           delivery_time_interval,
-          location_id: 13,
+          location_id: process.env.NEXT_LOCATION_ID,
         }),
         cache: "no-store",
       }

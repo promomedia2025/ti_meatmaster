@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Fragment, useEffect, useRef, useCallback } from "react";
-import { X, Printer } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getPrinterPaperSize,
@@ -63,393 +63,7 @@ interface AdminOrderDetailsModalProps {
   autoPrintOnAccept?: boolean; // New prop to trigger auto-print
 }
 
-// Component to generate dynamic print styles based on paper size
-function PrintStyles({ paperSize }: { paperSize: string }) {
-  const paperConfig = getPaperSizeConfig(paperSize as any);
-  const isThermal = paperSize === "80mm" || paperSize === "58mm";
-
-  let pageSizeCSS = "margin: 1cm;";
-
-  if (isThermal) {
-    // Thermal printer - continuous feed
-    pageSizeCSS = `
-      size: ${paperConfig.width}mm auto;
-      margin: 3mm 2mm;
-    `;
-  } else if (paperSize === "A4") {
-    pageSizeCSS = `
-      size: A4;
-      margin: 1.5cm;
-    `;
-  } else if (paperSize === "A5") {
-    pageSizeCSS = `
-      size: A5;
-      margin: 1cm;
-    `;
-  }
-
-  // Generate paper-size specific styles
-  const paperSpecificStyles = isThermal
-    ? `
-    /* Thermal printer - Compact layout */
-    .invoice-print-content {
-      width: ${paperConfig.width}mm !important;
-      max-width: ${paperConfig.width}mm !important;
-      padding: 0 !important;
-      margin: 0 auto !important;
-    }
-    
-    .invoice-print-content > div.p-5 {
-      padding: 10px !important;
-      font-size: 9.8325px !important;
-      line-height: 1.2 !important;
-    }
-    
-    /* Headers and titles - smaller */
-    .invoice-print-content h2,
-    .invoice-print-content h3 {
-      font-size: 25.4955px !important;
-      margin: 4px 0 !important;
-      font-weight: bold !important;
-    }
-    
-    /* All text smaller */
-    .invoice-print-content {
-      font-size: 25.76225px !important;
-      line-height: 1.2 !important;
-      font-weight: 600 !important;
-    }
-    
-    /* Spacing adjustments */
-    .invoice-print-content .mb-4 {
-      margin-bottom: 8px !important;
-    }
-    
-    .invoice-print-content .mb-2 {
-      margin-bottom: 4px !important;
-    }
-    
-    .invoice-print-content hr {
-      margin: 6px 0 !important;
-      border-width: 1px !important;
-    }
-    
-    /* Table adjustments for thermal */
-    .invoice-print-content table {
-      width: 100% !important;
-      font-size: 30.35425px !important;
-      border-collapse: collapse !important;
-    }
-    
-    .invoice-print-content table th,
-    .invoice-print-content table td {
-      padding: 3px 2px !important;
-      border-top: 1px solid #000 !important;
-      border-bottom: 1px solid #000 !important;
-      border-left: none !important;
-      border-right: none !important;
-      font-size: 14.35425px !important;
-      line-height: 1.1 !important;
-      font-weight: 600 !important;
-    }
-    
-    .invoice-print-content table th {
-      font-size: 30.35425px !important;
-      font-weight: bold !important;
-      padding: 4px 2px !important;
-    }
-    
-    /* Column widths for thermal */
-    .invoice-print-content table th:nth-child(1),
-    .invoice-print-content table td:nth-child(1) {
-      width: 10% !important;
-      text-align: center !important;
-      min-width: 20px !important;
-    }
-    
-    .invoice-print-content table th:nth-child(2),
-    .invoice-print-content table td:nth-child(2) {
-      width: 70% !important;
-      word-wrap: break-word !important;
-      word-break: break-word !important;
-      overflow-wrap: break-word !important;
-    }
-    
-    .invoice-print-content table th:nth-child(3),
-    .invoice-print-content table td:nth-child(3) {
-      width: 20% !important;
-      text-align: right !important;
-      white-space: nowrap !important;
-    }
-    
-    /* Ensure table cells don't overflow */
-    .invoice-print-content table td {
-      word-wrap: break-word !important;
-      overflow: hidden !important;
-      max-width: 0 !important;
-    }
-    
-    /* Better text wrapping for item names */
-    .invoice-print-content table td:nth-child(2) {
-      max-width: none !important;
-    }
-    
-    /* Options and nested lists - compact */
-    .invoice-print-content ul {
-      margin: 2px 0 !important;
-      padding-left: 8px !important;
-    }
-    
-    .invoice-print-content li {
-      margin: 1px 0 !important;
-      font-size: 16.376px !important;
-      line-height: 1.1 !important;
-      word-wrap: break-word !important;
-      word-break: break-word !important;
-      font-weight: 300 !important;
-    }
-    
-    /* Long text handling */
-    .invoice-print-content b,
-    .invoice-print-content strong {
-      word-wrap: break-word !important;
-      word-break: break-word !important;
-      max-width: 100% !important;
-    }
-    
-    /* Customer info - single column */
-    .invoice-print-content .flex {
-      display: block !important;
-    }
-    
-    .invoice-print-content .w-1\\/2,
-    .invoice-print-content .w-1\\/4 {
-      width: 100% !important;
-      margin-bottom: 4px !important;
-    }
-    
-    /* Strong/bold text */
-    .invoice-print-content strong,
-    .invoice-print-content b {
-      font-weight: bold !important;
-      font-size: inherit !important;
-    }
-    
-    /* Remove excessive spacing */
-    .invoice-print-content p {
-      margin: 2px 0 !important;
-      font-weight: 600 !important;
-    }
-    
-    /* Address and customer info */
-    .invoice-print-content address {
-      font-size: 14.626px !important;
-      line-height: 1.2 !important;
-      font-weight: 600 !important;
-    }
-    
-    /* Make customer and delivery sections bigger */
-    .invoice-print-content .invoice-customer-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-customer-section strong {
-      font-size: 20px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section strong {
-      font-size: 20px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section,
-    .invoice-print-content .invoice-date-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section strong,
-    .invoice-print-content .invoice-date-section strong {
-      font-size: 20px !important;
-    }
-    
-    body {
-      width: ${paperConfig.width}mm !important;
-    }
-  `
-    : paperSize === "A5"
-    ? `
-    /* A5 - Medium layout */
-    .invoice-print-content {
-      font-size: 14.61075px !important;
-      font-weight: 600 !important;
-    }
-    
-    .invoice-print-content h2,
-    .invoice-print-content h3 {
-      font-size: 23.9085px !important;
-    }
-    
-    .invoice-print-content table {
-      font-size: 13.2825px !important;
-    }
-    
-    .invoice-print-content table th,
-    .invoice-print-content table td {
-      padding: 6px 4px !important;
-      font-weight: 600 !important;
-    }
-    
-    /* Make customer and delivery sections bigger for A5 */
-    .invoice-print-content .invoice-customer-section {
-      font-size: 16px !important;
-    }
-    
-    .invoice-print-content .invoice-customer-section strong {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section {
-      font-size: 16px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section strong {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section,
-    .invoice-print-content .invoice-date-section {
-      font-size: 16px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section strong,
-    .invoice-print-content .invoice-date-section strong {
-      font-size: 18px !important;
-    }
-  `
-    : `
-    /* A4 - Standard layout (default) */
-    .invoice-print-content {
-      font-size: 15.939px !important;
-      font-weight: 600 !important;
-    }
-    
-    .invoice-print-content h2 {
-      font-size: 31.878px !important;
-    }
-    
-    .invoice-print-content h3 {
-      font-size: 26.565px !important;
-    }
-    
-    .invoice-print-content table {
-      font-size: 15.939px !important;
-    }
-    
-    .invoice-print-content table td {
-      font-weight: 600 !important;
-    }
-    
-    .invoice-print-content p,
-    .invoice-print-content address,
-    .invoice-print-content li {
-      font-weight: 600 !important;
-    }
-    
-    /* Make customer and delivery sections bigger for A4 */
-    .invoice-print-content .invoice-customer-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-customer-section strong {
-      font-size: 20px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-delivery-section strong {
-      font-size: 20px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section,
-    .invoice-print-content .invoice-date-section {
-      font-size: 18px !important;
-    }
-    
-    .invoice-print-content .invoice-payment-section strong,
-    .invoice-print-content .invoice-date-section strong {
-      font-size: 20px !important;
-    }
-  `;
-
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: `
-          @media print {
-            @page {
-              ${pageSizeCSS}
-            }
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            html, body {
-              background: white !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            /* Hide everything by default */
-            body * {
-              visibility: hidden !important;
-            }
-            /* Hide order details modal completely */
-            .order-details-modal {
-              display: none !important;
-            }
-            /* Show only invoice content */
-            .invoice-print-content {
-              position: fixed !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
-              background: white !important;
-              box-shadow: none !important;
-            }
-            /* Make all invoice content visible except no-print elements */
-            .invoice-print-content,
-            .invoice-print-content * {
-              visibility: visible !important;
-            }
-            /* Hide the header with buttons */
-            .invoice-print-content .no-print,
-            .invoice-print-content .no-print * {
-              display: none !important;
-              visibility: hidden !important;
-            }
-            /* Ensure the content div is visible */
-            .invoice-print-content > div.p-5 {
-              display: block !important;
-              visibility: visible !important;
-            }
-            .invoice-print-content > div {
-              max-height: none !important;
-              overflow: visible !important;
-            }
-            table {
-              page-break-inside: auto !important;
-            }
-            ${paperSpecificStyles}
-          }
-        `,
-      }}
-    />
-  );
-}
+// PrintStyles component removed - no longer needed with server-side PDF generation
 
 export function AdminOrderDetailsModal({
   isOpen,
@@ -457,123 +71,170 @@ export function AdminOrderDetailsModal({
   order,
   autoPrintOnAccept = false,
 }: AdminOrderDetailsModalProps) {
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [paperSize, setPaperSize] = useState(getPrinterPaperSize());
 
   // Define handlePrint using useCallback (must be before useEffect that uses it)
-  const handlePrint = useCallback(() => {
-    // Get current paper size configuration
-    const paperConfig = getPaperSizeConfig(paperSize);
+  const handlePrint = useCallback(async () => {
+    if (!order) return;
 
-    console.log("🖨️ [PRINT] Printing with paper size:", paperConfig);
+    console.log("🖨️ [PRINT] Generating PDF with paper size:", paperSize);
 
-    // Check if we're in an Electron environment
-    const win = window as any;
-    const isElectron =
-      typeof window !== "undefined" && (win.electron || win.require);
+    try {
+      // Call the PDF generation API
+      const response = await fetch("/api/admin/invoice/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order,
+          paperSize,
+        }),
+      });
 
-    // Prepare print options with paper size
-    const printOptions: any = {
-      silent: true,
-      printBackground: true,
-      deviceName: "", // Use default printer
-    };
-
-    // Add paper size configuration for thermal printers
-    if (paperSize === "80mm" || paperSize === "58mm") {
-      // Thermal printer settings
-      printOptions.pageSize = {
-        width: paperConfig.width / 25.4, // Convert mm to inches
-        height: undefined, // Continuous feed
-      };
-    } else {
-      // Standard paper sizes (A4, A5)
-      printOptions.pageSize = {
-        width: paperConfig.width / 25.4, // Convert mm to inches
-        height: paperConfig.height ? paperConfig.height / 25.4 : undefined, // Convert mm to inches
-      };
-    }
-
-    if (isElectron) {
-      // Use Electron's silent printing API
-      try {
-        // Method 1: If electron API is exposed via preload script
-        if (win.electron?.print) {
-          win.electron.print(printOptions);
-          return;
-        }
-
-        // Method 2: Use IPC if available
-        if (win.electron?.ipcRenderer) {
-          win.electron.ipcRenderer.send("print-invoice", printOptions);
-          return;
-        }
-
-        // Method 3: Try using require (if contextIsolation is disabled)
-        if (win.require) {
-          const { ipcRenderer } = win.require("electron");
-          if (ipcRenderer) {
-            ipcRenderer.send("print-invoice", printOptions);
-            return;
-          }
-        }
-
-        // Method 4: Try direct webContents access (if remote is enabled)
-        if (win.require) {
-          const { remote } = win.require("electron");
-          if (remote?.getCurrentWindow) {
-            const currentWindow = remote.getCurrentWindow();
-            if (currentWindow?.webContents?.print) {
-              currentWindow.webContents.print(printOptions);
-              return;
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error with Electron printing:", error);
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
       }
+
+      // Get PDF blob
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Check if Electron is available and use silent printing
+      const isElectron = typeof window !== "undefined" && window.electron;
+      const electronKeys = window.electron ? Object.keys(window.electron) : [];
+      console.log("🔍 [PRINT] Electron check:", {
+        isElectron,
+        hasWindow: typeof window !== "undefined",
+        hasElectron: !!window.electron,
+        hasIpcRenderer: !!window.electron?.ipcRenderer,
+        hasSend: !!window.electron?.ipcRenderer?.send,
+        availableMethods: electronKeys,
+        electronObject: window.electron,
+      });
+
+      // Warn if Electron is detected but ipcRenderer is missing
+      if (isElectron && !window.electron?.ipcRenderer) {
+        console.warn("⚠️ [PRINT] Electron detected but ipcRenderer is not exposed!");
+        console.warn("⚠️ [PRINT] Make sure your preload.js exposes ipcRenderer like this:");
+        console.warn("⚠️ [PRINT] contextBridge.exposeInMainWorld('electron', { ipcRenderer: { send: ... } })");
+      }
+
+      if (isElectron && window.electron?.ipcRenderer?.send) {
+        console.log("🖨️ [PRINT] Using Electron silent printing");
+        // Convert blob to base64 for Electron IPC
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          // Remove data:application/pdf;base64, prefix if present
+          const base64Only = base64data.includes(',') ? base64data.split(',')[1] : base64data;
+          console.log("📤 [PRINT] Sending IPC 'print-pdf' with data length:", base64Only.length);
+          // Send PDF data to Electron main process for printing
+          // The main process should handle saving temp file and printing
+          try {
+            window.electron?.ipcRenderer?.send('print-pdf', {
+              pdfData: base64Only,
+              silent: true,
+              printBackground: true,
+              deviceName: undefined,
+              paperSize: paperSize,
+            });
+            console.log("✅ [PRINT] IPC 'print-pdf' sent successfully");
+          } catch (error) {
+            console.error("❌ [PRINT] Error sending IPC:", error);
+            // Fallback to browser print
+            openPdfInWindow(url);
+          }
+        };
+        reader.onerror = () => {
+          console.error("❌ [PRINT] Failed to read PDF blob, falling back to browser print");
+          // Fallback to browser print
+          openPdfInWindow(url);
+        };
+        reader.readAsDataURL(blob);
+        // Clean up URL after a delay to allow IPC to complete
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 2000);
+      } else {
+        // Fallback to browser print dialog
+        console.log("🖨️ [PRINT] Using browser print dialog");
+        openPdfInWindow(url);
+      }
+
+      // Helper function to open PDF in window and print (with auto-close)
+      function openPdfInWindow(pdfUrl: string) {
+        const printWindow = window.open(pdfUrl, "_blank");
+        if (printWindow) {
+          // Function to trigger print and close window automatically
+          const handlePrint = () => {
+            try {
+              printWindow.print();
+              // Close window automatically after print dialog is shown
+              // Wait a bit to allow print dialog to appear, then close
+              setTimeout(() => {
+                printWindow.close();
+                window.URL.revokeObjectURL(pdfUrl);
+              }, 1500);
+            } catch (error) {
+              console.log("Print dialog may have been cancelled");
+              // Close window even if print fails
+              setTimeout(() => {
+                printWindow.close();
+                window.URL.revokeObjectURL(pdfUrl);
+              }, 1000);
+            }
+          };
+
+          // Try to wait for load event, but also set a fallback timer
+          let hasHandled = false;
+          printWindow.addEventListener("load", () => {
+            if (!hasHandled) {
+              hasHandled = true;
+              setTimeout(handlePrint, 500);
+            }
+          });
+
+          // Fallback: if load event doesn't fire, still try to print
+          setTimeout(() => {
+            if (!hasHandled) {
+              hasHandled = true;
+              handlePrint();
+            }
+          }, 1000);
+        } else {
+          // If popup was blocked, fallback to download
+          const link = document.createElement("a");
+          link.href = pdfUrl;
+          link.download = `invoice-${order?.order_id || 'unknown'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(pdfUrl);
+        }
+      }
+    } catch (error) {
+      console.error("❌ [PRINT] Error generating PDF:", error);
+      alert("Σφάλμα κατά τη δημιουργία PDF. Παρακαλώ δοκιμάστε ξανά.");
     }
-
-    // Fallback to browser print dialog if not in Electron or if Electron printing failed
-    window.print();
-
-    // Reset printing flag after a delay
-    setTimeout(() => {
-      (window as any).__isPrinting = false;
-    }, 1000);
-  }, [paperSize]);
+  }, [order, paperSize]);
 
   // Handle auto-print when accept is clicked
   useEffect(() => {
     if (autoPrintOnAccept && isOpen && order) {
-      // Small delay to ensure modal is fully rendered
-      const openTimer = setTimeout(() => {
-        setIsInvoiceModalOpen(true);
-      }, 100);
-
-      // Wait 3.5 seconds after invoice opens, then print and close
+      // Small delay to ensure everything is ready, then print directly
       const printTimer = setTimeout(() => {
         handlePrint();
-        // Close invoice modal after a short delay to allow print to start
-        setTimeout(() => {
-          setIsInvoiceModalOpen(false);
-        }, 500);
-      }, 3600); // 100ms delay + 3500ms display = 3600ms total
+      }, 500);
 
       return () => {
-        clearTimeout(openTimer);
         clearTimeout(printTimer);
       };
     }
   }, [autoPrintOnAccept, isOpen, order, handlePrint]);
 
-  // Update paper size when it changes in localStorage or when invoice modal opens
+  // Update paper size when it changes in localStorage
   useEffect(() => {
-    // Refresh paper size when invoice modal opens
-    if (isInvoiceModalOpen) {
-      setPaperSize(getPrinterPaperSize());
-    }
-
     const handleStorageChange = () => {
       setPaperSize(getPrinterPaperSize());
     };
@@ -583,11 +244,9 @@ export function AdminOrderDetailsModal({
 
     // Also check periodically for changes (in case same window)
     const interval = setInterval(() => {
-      if (isInvoiceModalOpen) {
-        const currentSize = getPrinterPaperSize();
-        if (currentSize !== paperSize) {
-          setPaperSize(currentSize);
-        }
+      const currentSize = getPrinterPaperSize();
+      if (currentSize !== paperSize) {
+        setPaperSize(currentSize);
       }
     }, 500);
 
@@ -595,20 +254,7 @@ export function AdminOrderDetailsModal({
       window.removeEventListener("storage", handleStorageChange);
       clearInterval(interval);
     };
-  }, [paperSize, isInvoiceModalOpen]);
-
-  // Auto-close invoice modal after 4 seconds
-  useEffect(() => {
-    if (isInvoiceModalOpen) {
-      const timer = setTimeout(() => {
-        setIsInvoiceModalOpen(false);
-      }, 5000);
-
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [isInvoiceModalOpen]);
+  }, [paperSize]);
 
   // Early return moved after all hooks to maintain hook order
   if (!isOpen || !order) return null;
@@ -660,19 +306,25 @@ export function AdminOrderDetailsModal({
   ) => {
     if (orderTypeName) {
       // If we have a display name, use it but map to our standard terms
-      const typeName = orderTypeName.toLowerCase();
+      const typeName = orderTypeName;
+      // Check exact matches and common variations
       if (
-        typeName.includes("delivery") ||
-        typeName.includes("διανομή") ||
-        typeName.includes("παράδοση")
+        typeName === "delivery" ||
+        typeName === "Delivery" ||
+        typeName === "DELIVERY"
       ) {
         return "Delivery";
       }
       if (
-        typeName.includes("collection") ||
-        typeName.includes("pickup") ||
-        typeName.includes("παραλαβή") ||
-        typeName.includes("takeaway")
+        typeName === "collection" ||
+        typeName === "Collection" ||
+        typeName === "COLLECTION" ||
+        typeName === "pickup" ||
+        typeName === "Pickup" ||
+        typeName === "PICKUP" ||
+        typeName === "takeaway" ||
+        typeName === "Takeaway" ||
+        typeName === "TAKEAWAY"
       ) {
         return "Takeaway";
       }
@@ -681,14 +333,17 @@ export function AdminOrderDetailsModal({
 
     // Fallback to order_type
     if (!orderType) return "N/A";
-    const type = orderType.toLowerCase();
-    if (type === "delivery" || type.includes("delivery")) {
+    const type = orderType;
+    if (type === "delivery" || type === "Delivery" || type === "DELIVERY") {
       return "Delivery";
     }
     if (
       type === "collection" ||
-      type.includes("collection") ||
-      type.includes("pickup")
+      type === "Collection" ||
+      type === "COLLECTION" ||
+      type === "pickup" ||
+      type === "Pickup" ||
+      type === "PICKUP"
     ) {
       return "Takeaway";
     }
@@ -699,13 +354,9 @@ export function AdminOrderDetailsModal({
     // Translate based on code first, then fallback to title
     if (code === "subtotal") return "Υποσύνολο";
     if (code === "total") return "Σύνολο";
-    // Also check title text as fallback
-    if (title.toLowerCase().includes("subtotal")) return "Υποσύνολο";
-    if (
-      title.toLowerCase().includes("total") &&
-      !title.toLowerCase().includes("subtotal")
-    )
-      return "Σύνολο";
+    // Also check title text as fallback (without using toLowerCase)
+    if (title === "Subtotal" || title === "subtotal" || title === "SUBTOTAL") return "Υποσύνολο";
+    if (title === "Total" || title === "total" || title === "TOTAL") return "Σύνολο";
     return title;
   };
 
@@ -724,10 +375,14 @@ export function AdminOrderDetailsModal({
   };
 
   return (
-    <Fragment>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+    <>
+      <div
+        className="order-details-modal fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto"
+        onClick={onClose}
+      >
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
             .order-modal-scroll::-webkit-scrollbar {
               width: 8px;
             }
@@ -750,10 +405,6 @@ export function AdminOrderDetailsModal({
           `,
         }}
       />
-      <div
-        className="order-details-modal fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto"
-        onClick={onClose}
-      >
         <div
           className="bg-[#1a1a1a] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-gray-800 relative my-auto"
           onClick={(e) => e.stopPropagation()}
@@ -1002,10 +653,10 @@ export function AdminOrderDetailsModal({
           {/* Action Buttons - Fixed at bottom */}
           <div className="p-6 pt-0 space-y-3 border-t border-gray-700 bg-[#1a1a1a] rounded-b-xl">
             <Button
-              onClick={() => setIsInvoiceModalOpen(true)}
+              onClick={handlePrint}
               className="w-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600 transition-all"
             >
-              Προβολή τιμολογίου
+              Εκτύπωση τιμολογίου
             </Button>
             <Button
               onClick={onClose}
@@ -1016,234 +667,6 @@ export function AdminOrderDetailsModal({
           </div>
         </div>
       </div>
-
-      {/* Invoice Modal */}
-      {isInvoiceModalOpen && (
-        <Fragment>
-          {/* Print Styles */}
-          <PrintStyles paperSize={paperSize} />
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4 no-print overflow-y-auto"
-          >
-            <div
-              className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative invoice-print-content my-auto"
-              data-paper-size={paperSize}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Invoice Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-300 p-4 flex items-center justify-between shadow-sm no-print z-10 rounded-t-xl">
-                <h2 className="text-xl font-bold text-black">
-                  Παραγγελία #{order.order_id}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrint}
-                    className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-lg"
-                    title="Εκτύπωση"
-                  >
-                    <Printer className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Invoice Content - Scrollable */}
-              <div className="p-5 bg-white text-black overflow-y-auto flex-1">
-                {/* Invoice Title */}
-                <div className="mb-4">
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-2xl font-bold mb-0">
-                      Παραγγελία #{order.order_id}
-                    </h2>
-                  </div>
-                </div>
-
-                <hr className="my-3" />
-
-                {/* Customer and Invoice Info */}
-                <div className="flex mb-4">
-                  <div className="w-1/2">
-                    <p className="invoice-customer-section">
-                      <strong>Πελάτης</strong>
-                      <br />
-                      {order.customer_name || "N/A"}
-                      {order.telephone && (
-                        <>
-                          <br />
-                          {order.telephone}
-                        </>
-                      )}
-                    </p>
-                    {order.order_type === "delivery" && (
-                      <div className="mt-2 invoice-delivery-section">
-                        <strong>Διεύθυνση Παράδοσης</strong>
-                        <br />
-                        <address className="not-italic">
-                          {formatLocationName(order.location_name) || "N/A"}
-                          {order.floor && (
-                            <>
-                              <br />
-                              Όροφος: {order.floor}
-                            </>
-                          )}
-                          {order.bell_name && (
-                            <>
-                              <br />
-                              Κουδούνι: {order.bell_name}
-                            </>
-                          )}
-                        </address>
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-1/2 text-right">
-                    <p className="invoice-payment-section">
-                      <strong>Πληρωμή</strong>
-                      <br />
-                      {getPaymentMethodName(order.payment)}
-                    </p>
-                    <p className="invoice-date-section">
-                      <strong>Τύπος παραγγελίας</strong>
-                      <br />
-                      {getOrderTypeDisplayName(
-                        order.order_type,
-                        order.order_type_name
-                      )}
-                    </p>
-                    <p className="invoice-date-section">
-                      <strong>Ημερομηνία Παραγγελίας</strong>
-                      <br />
-                      {formatDateTime(order.order_date, order.order_time)}
-                    </p>
-                    {order.comment && (
-                      <p className="invoice-date-section mt-2">
-                        <strong>Σχόλιο Παραγγελίας</strong>
-                        <br />
-                        {order.comment}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Order Items Table */}
-                <div>
-                  <div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <tbody>
-                          {order.order_menus && order.order_menus.length > 0
-                            ? order.order_menus.map((menu) => {
-                                const groupedOptions = groupMenuOptions(
-                                  menu.menu_options || []
-                                );
-                                return (
-                                  <tr key={menu.order_menu_id}>
-                                    <td className="border-t border-b border-gray-300 p-2">
-                                      {menu.quantity}x
-                                    </td>
-                                    <td className="border-t border-b border-gray-300 p-2 text-left">
-                                      <b>{menu.name}</b>
-                                      <br />
-                                      {menu.menu_options &&
-                                        menu.menu_options.length > 0 && (
-                                          <ul className="list-none pl-0 mt-1">
-                                            {menu.menu_options.map(
-                                              (option: any, idx: number) => {
-                                                const quantity =
-                                                  option.quantity > 1
-                                                    ? `${option.quantity} × `
-                                                    : "";
-                                                const price =
-                                                  option.order_option_price &&
-                                                  parseFloat(
-                                                    option.order_option_price
-                                                  ) > 0
-                                                    ? ` (${parseFloat(
-                                                        option.order_option_price
-                                                      ).toFixed(2)}€)`
-                                                    : "";
-                                                return (
-                                                  <li
-                                                    key={idx}
-                                                    className="text-xs"
-                                                  >
-                                                    • {quantity}
-                                                    {option.order_option_name ||
-                                                      option.name}
-                                                    {price}
-                                                  </li>
-                                                );
-                                              }
-                                            )}
-                                          </ul>
-                                        )}
-                                      {menu.comment && (
-                                        <div className="mt-1">
-                                          <small>
-                                            <b>{menu.comment}</b>
-                                          </small>
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td className="border-t border-b border-gray-300 p-2 text-right">
-                                      {formatCurrency(menu.subtotal)}{" "}
-                                      {order.currency === "EUR"
-                                        ? "€"
-                                        : order.currency}
-                                    </td>
-                                  </tr>
-                                );
-                              })
-                            : null}
-                        </tbody>
-                        <tfoot>
-                          {order.order_totals &&
-                            order.order_totals
-                              .sort((a, b) => a.priority - b.priority)
-                              .map((total, index) => {
-                                // Skip delivery total for collection orders
-                                if (
-                                  order.order_type === "collection" &&
-                                  total.code === "delivery"
-                                ) {
-                                  return null;
-                                }
-                                return (
-                                  <tr key={total.order_total_id}>
-                                    <td className="border-t border-b border-gray-300 p-2"></td>
-                                    <td className="border-t border-b border-gray-300 p-2 text-left">
-                                      {translateTotalTitle(
-                                        total.title,
-                                        total.code
-                                      )}
-                                    </td>
-                                    <td className="border-t border-b border-gray-300 p-2 text-right">
-                                      {formatCurrency(total.value)}{" "}
-                                      {order.currency === "EUR"
-                                        ? "€"
-                                        : order.currency}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                        </tfoot>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Thank You Message */}
-                <div className="mt-4">
-                  <div>
-                    <p className="text-center">
-                      Ευχαριστούμε για την παραγγελία σας!
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Fragment>
-      )}
-    </Fragment>
+    </>
   );
 }

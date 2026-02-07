@@ -42,7 +42,7 @@ export default function AdminIntervalsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          location_id: 13,
+          location_id: process.env.NEXT_LOCATION_ID,
         }),
         credentials: "include",
       });
@@ -85,7 +85,7 @@ export default function AdminIntervalsPage() {
         },
         body: JSON.stringify({
           collection_time_interval: parseInt(collectionInterval),
-          location_id: 13,
+          location_id: process.env.NEXT_LOCATION_ID,
         }),
       });
 
@@ -113,7 +113,7 @@ export default function AdminIntervalsPage() {
         },
         body: JSON.stringify({
           delivery_time_interval: parseInt(deliveryInterval),
-          location_id: 13,
+          location_id: process.env.NEXT_LOCATION_ID,
         }),
       });
 
