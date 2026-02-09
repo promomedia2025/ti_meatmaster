@@ -357,6 +357,10 @@ export default function AdminDashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
+    // Clear remembered credentials on manual logout
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("admin_remembered_credentials");
+    }
     router.push("/admin/login");
   };
 

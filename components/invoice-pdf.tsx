@@ -144,89 +144,107 @@ const translateTotalTitle = (title: string, code: string) => {
 // Dynamic styles based on paper size
 const getStyles = (paperSize: string) => {
   const isThermal = paperSize === "80mm" || paperSize === "58mm";
+  const is80mm = paperSize === "80mm";
+  const is58mm = paperSize === "58mm";
   const isA5 = paperSize === "A5";
 
   return StyleSheet.create({
     page: {
-      padding: isThermal ? 8 : isA5 ? 20 : 30,
-      fontSize: isThermal ? 8 : isA5 ? 10 : 12,
+      padding: 0, // No page padding - content wrapper will handle spacing
+      paddingHorizontal: 0,
+      fontSize: is80mm ? 10 : is58mm ? 9 : isA5 ? 10 : 12,
       fontFamily: "Helvetica",
+      width: "100%",
+      display: "flex",
+      flexDirection: "column",
+      // Content width will be adjusted via wrapper View, page is always A4
     },
     header: {
-      marginBottom: isThermal ? 8 : 12,
+      marginBottom: is80mm ? 8 : is58mm ? 6 : 12,
+      width: "100%",
     },
     title: {
-      fontSize: isThermal ? 14 : isA5 ? 18 : 24,
+      fontSize: is80mm ? 14 : is58mm ? 12 : isA5 ? 18 : 24,
       fontWeight: "bold",
-      marginBottom: isThermal ? 4 : 8,
+      marginBottom: is80mm ? 4 : is58mm ? 3 : 8,
+      textAlign: "center",
     },
     section: {
-      marginBottom: isThermal ? 6 : 10,
+      marginBottom: is80mm ? 5 : is58mm ? 4 : 10,
+      width: "100%",
     },
     row: {
-      flexDirection: "row",
-      marginBottom: isThermal ? 3 : 5,
+      flexDirection: isThermal ? "column" : "row",
+      marginBottom: is80mm ? 3 : is58mm ? 2 : 5,
+      width: "100%",
     },
     col: {
       flex: 1,
+      width: "100%",
     },
     label: {
-      fontSize: isThermal ? 7 : isA5 ? 9 : 11,
-      marginBottom: isThermal ? 2 : 4,
+      fontSize: is80mm ? 9 : is58mm ? 8 : isA5 ? 9 : 11,
+      marginBottom: is80mm ? 2 : is58mm ? 1 : 4,
+      fontWeight: "bold",
     },
     value: {
-      fontSize: isThermal ? 8 : isA5 ? 10 : 12,
-      fontWeight: "bold",
+      fontSize: is80mm ? 10 : is58mm ? 9 : isA5 ? 10 : 12,
+      marginBottom: is80mm ? 3 : is58mm ? 2 : 4,
     },
     table: {
       width: "100%",
-      marginTop: isThermal ? 6 : 10,
-      marginBottom: isThermal ? 6 : 10,
+      marginTop: is80mm ? 8 : is58mm ? 6 : 10,
+      marginBottom: is80mm ? 8 : is58mm ? 6 : 10,
     },
     tableRow: {
       flexDirection: "row",
-      borderBottomWidth: 1,
+      borderBottomWidth: isThermal ? 0.5 : 1,
       borderBottomColor: "#000",
-      paddingVertical: isThermal ? 3 : 5,
+      paddingVertical: is80mm ? 3 : is58mm ? 2 : 5,
+      width: "100%",
     },
     tableCell: {
-      fontSize: isThermal ? 7 : isA5 ? 9 : 11,
-      paddingHorizontal: isThermal ? 2 : 4,
+      fontSize: is80mm ? 9 : is58mm ? 8 : isA5 ? 9 : 11,
+      paddingHorizontal: is80mm ? 2 : is58mm ? 1 : 4,
     },
     tableCellQty: {
-      width: "15%",
+      width: is80mm ? "12%" : is58mm ? "10%" : "15%",
       textAlign: "center",
+      flexShrink: 0,
     },
     tableCellName: {
-      width: "60%",
+      width: is80mm ? "53%" : is58mm ? "55%" : "60%",
+      flexGrow: 1,
     },
     tableCellPrice: {
-      width: "25%",
+      width: is80mm ? "35%" : is58mm ? "35%" : "25%",
       textAlign: "right",
+      flexShrink: 0,
     },
     itemName: {
       fontWeight: "bold",
-      marginBottom: isThermal ? 2 : 4,
+      marginBottom: is80mm ? 2 : is58mm ? 1 : 4,
+      fontSize: is80mm ? 10 : is58mm ? 9 : undefined,
     },
     optionText: {
-      fontSize: isThermal ? 6 : isA5 ? 8 : 10,
-      marginLeft: isThermal ? 4 : 8,
-      marginTop: isThermal ? 1 : 2,
+      fontSize: is80mm ? 8 : is58mm ? 7 : isA5 ? 8 : 10,
+      marginLeft: is80mm ? 3 : is58mm ? 2 : 8,
+      marginTop: is80mm ? 1 : is58mm ? 0.5 : 2,
     },
     comment: {
-      fontSize: isThermal ? 6 : isA5 ? 8 : 10,
+      fontSize: is80mm ? 8 : is58mm ? 7 : isA5 ? 8 : 10,
       fontStyle: "italic",
-      marginTop: isThermal ? 2 : 4,
+      marginTop: is80mm ? 2 : is58mm ? 1 : 4,
     },
     footer: {
-      marginTop: isThermal ? 8 : 12,
+      marginTop: is80mm ? 10 : is58mm ? 8 : 12,
       textAlign: "center",
-      fontSize: isThermal ? 8 : isA5 ? 10 : 12,
+      fontSize: is80mm ? 9 : is58mm ? 8 : isA5 ? 10 : 12,
     },
     divider: {
       borderBottomWidth: 1,
       borderBottomColor: "#000",
-      marginVertical: isThermal ? 4 : 8,
+      marginVertical: is80mm ? 5 : is58mm ? 4 : 8,
     },
     strong: {
       fontWeight: "bold",
@@ -237,219 +255,311 @@ const getStyles = (paperSize: string) => {
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ order, paperSize }) => {
   const styles = getStyles(paperSize);
   const isThermal = paperSize === "80mm" || paperSize === "58mm";
+  const is80mm = paperSize === "80mm";
+  const is58mm = paperSize === "58mm";
   const isA5 = paperSize === "A5";
 
-  // Determine page size
-  let pageSize: "A4" | "A5" | [number, number] = "A4";
-  if (isA5) {
-    pageSize = "A5";
-  } else if (isThermal) {
-    // Thermal printer: 80mm = 226.77 points, 58mm = 164.41 points
-    const width = paperSize === "80mm" ? 226.77 : 164.41;
-    pageSize = [width, 0]; // 0 height means continuous feed
-  }
+  // Always use A4 page size - never adjust the paper size
+  const pageSize: "A4" = "A4";
+  
+  // Calculate content width in points based on paperSize setting
+  // This only affects the content width, not the PDF page size
+  // A4 = 210mm = 595.28 points
+  // A5 = 148mm = 419.53 points
+  // 80mm = 226.77 points
+  // 58mm = 164.41 points
+  const contentWidth = is80mm 
+    ? 80 * 2.83465 
+    : is58mm 
+    ? 58 * 2.83465 
+    : isA5 
+    ? 419.53 
+    : 595.28; // Default to full A4 width
 
   return (
     <Document>
-      <Page size={pageSize} style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Παραγγελία #{order.order_id}</Text>
-        </View>
+      <Page 
+        size={pageSize} 
+        style={styles.page}
+      >
+        {/* Always wrap content in a container with adjusted width - page is always A4 */}
+        <View style={{
+          width: contentWidth,
+          maxWidth: contentWidth,
+          alignSelf: "flex-start", // Align to left edge of A4 page
+          padding: isThermal ? 0 : (isA5 ? 20 : 30), // No padding for thermal, add padding for A4/A5
+          paddingHorizontal: isThermal ? 0 : (isA5 ? 20 : 30),
+          margin: 0,
+        }}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Παραγγελία #{order.order_id}</Text>
+            </View>
 
-        <View style={styles.divider} />
+            <View style={styles.divider} />
 
-        {/* Customer and Order Info */}
-        <View style={styles.section}>
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>
-                <Text style={styles.strong}>Πελάτης</Text>
-              </Text>
-              <Text style={styles.value}>
-                {order.customer_name || "N/A"}
-              </Text>
-              {order.telephone ? (
-                <Text style={styles.value}>{order.telephone}</Text>
-              ) : null}
-              {order.email ? (
-                <Text style={styles.value}>{order.email}</Text>
-              ) : null}
+            {/* Order Items Table */}
+            <View style={styles.table}>
+              {/* Table Header */}
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, styles.tableCellQty, styles.strong]}>
+                  Ποσ.
+                </Text>
+                <Text style={[styles.tableCell, styles.tableCellName, styles.strong]}>
+                  Προϊόν
+                </Text>
+                <Text
+                  style={[styles.tableCell, styles.tableCellPrice, styles.strong]}
+                >
+                  Τιμή
+                </Text>
+              </View>
 
-              {order.order_type === "delivery" ? (
-                <View style={{ marginTop: isThermal ? 4 : 8 }}>
+              {/* Table Rows */}
+              {order.order_menus && order.order_menus.length > 0
+                ? order.order_menus.map((menu) => {
+                    return (
+                      <View key={menu.order_menu_id} style={styles.tableRow}>
+                        <Text style={[styles.tableCell, styles.tableCellQty]}>
+                          {menu.quantity}x
+                        </Text>
+                        <View style={[styles.tableCell, styles.tableCellName]}>
+                          <Text style={styles.itemName}>
+                            {menu.name || "N/A"}
+                          </Text>
+                          {menu.menu_options && menu.menu_options.length > 0
+                            ? menu.menu_options.map((option: any, idx: number) => {
+                                const quantity =
+                                  option.quantity > 1
+                                    ? `${option.quantity} × `
+                                    : "";
+                                const price =
+                                  option.order_option_price &&
+                                  parseFloat(option.order_option_price) > 0
+                                    ? ` (${parseFloat(
+                                        option.order_option_price
+                                      ).toFixed(2)}€)`
+                                    : "";
+                                const optionName =
+                                  option.order_option_name || option.name || "";
+                                return (
+                                  <Text key={idx} style={styles.optionText}>
+                                    • {quantity}
+                                    {optionName}
+                                    {price}
+                                  </Text>
+                                );
+                              })
+                            : null}
+                          {menu.comment ? (
+                            <Text style={styles.comment}>
+                              <Text style={styles.strong}>{menu.comment}</Text>
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={[styles.tableCell, styles.tableCellPrice]}>
+                          {formatCurrency(menu.subtotal)}{" "}
+                          {order.currency === "EUR" ? "€" : order.currency}
+                        </Text>
+                      </View>
+                    );
+                  })
+                : null}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Order Totals */}
+            <View style={styles.table}>
+              {order.order_totals
+                ? order.order_totals
+                    .sort((a, b) => a.priority - b.priority)
+                    .filter((total) => {
+                      // Skip delivery total for collection orders
+                      return !(
+                        order.order_type === "collection" &&
+                        total.code === "delivery"
+                      );
+                    })
+                    .map((total) => {
+                      return (
+                        <View key={total.order_total_id} style={styles.tableRow}>
+                          <Text style={[styles.tableCell, styles.tableCellQty]}>
+                            {" "}
+                          </Text>
+                          <Text style={[styles.tableCell, styles.tableCellName]}>
+                            {translateTotalTitle(total.title, total.code)}
+                          </Text>
+                          <Text style={[styles.tableCell, styles.tableCellPrice]}>
+                            {formatCurrency(total.value)}{" "}
+                            {order.currency === "EUR" ? "€" : order.currency}
+                          </Text>
+                        </View>
+                      );
+                    })
+                : null}
+            </View>
+
+            {/* Customer and Order Info - Two column layout for A4, single column for thermal/A5 */}
+            <View style={styles.section}>
+              {isThermal ? (
+                <View>
                   <Text style={styles.label}>
-                    <Text style={styles.strong}>Διεύθυνση Παράδοσης</Text>
+                    <Text style={styles.strong}>Πελάτης</Text>
                   </Text>
                   <Text style={styles.value}>
-                    {formatLocationName(order.location_name) || "N/A"}
+                    {order.customer_name || "N/A"}
                   </Text>
-                  {order.floor ? (
-                    <Text style={styles.value}>Όροφος: {order.floor}</Text>
+                  {order.telephone ? (
+                    <Text style={styles.value}>{order.telephone}</Text>
                   ) : null}
-                  {order.bell_name ? (
-                    <Text style={styles.value}>
-                      Κουδούνι: {order.bell_name}
-                    </Text>
+                  {order.email ? (
+                    <Text style={styles.value}>{order.email}</Text>
                   ) : null}
-                </View>
-              ) : null}
-            </View>
 
-            <View style={styles.col}>
-              <Text style={[styles.label, { textAlign: "right" }]}>
-                <Text style={styles.strong}>Πληρωμή</Text>
-              </Text>
-              <Text style={[styles.value, { textAlign: "right" }]}>
-                {getPaymentMethodName(order.payment)}
-              </Text>
-
-              <Text
-                style={[
-                  styles.label,
-                  { textAlign: "right", marginTop: isThermal ? 4 : 8 },
-                ]}
-              >
-                <Text style={styles.strong}>Τύπος παραγγελίας</Text>
-              </Text>
-              <Text style={[styles.value, { textAlign: "right" }]}>
-                {getOrderTypeDisplayName(order.order_type, order.order_type_name)}
-              </Text>
-
-              <Text
-                style={[
-                  styles.label,
-                  { textAlign: "right", marginTop: isThermal ? 4 : 8 },
-                ]}
-              >
-                <Text style={styles.strong}>Ημερομηνία Παραγγελίας</Text>
-              </Text>
-              <Text style={[styles.value, { textAlign: "right" }]}>
-                {formatDateTime(order.order_date, order.order_time)}
-              </Text>
-
-              {order.comment ? (
-                <View style={{ marginTop: isThermal ? 4 : 8 }}>
-                  <Text style={[styles.label, { textAlign: "right" }]}>
-                    <Text style={styles.strong}>Σχόλιο Παραγγελίας</Text>
-                  </Text>
-                  <Text style={[styles.value, { textAlign: "right" }]}>
-                    {order.comment}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* Order Items Table */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, styles.tableCellQty, styles.strong]}>
-              Ποσ.
-            </Text>
-            <Text style={[styles.tableCell, styles.tableCellName, styles.strong]}>
-              Προϊόν
-            </Text>
-            <Text
-              style={[styles.tableCell, styles.tableCellPrice, styles.strong]}
-            >
-              Τιμή
-            </Text>
-          </View>
-
-          {/* Table Rows */}
-          {order.order_menus && order.order_menus.length > 0
-            ? order.order_menus.map((menu) => {
-                return (
-                  <View key={menu.order_menu_id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, styles.tableCellQty]}>
-                      {menu.quantity}x
-                    </Text>
-                    <View style={[styles.tableCell, styles.tableCellName]}>
-                      <Text style={styles.itemName}>
-                        {menu.name || "N/A"}
+                  {order.order_type === "delivery" ? (
+                    <View style={{ marginTop: is80mm ? 4 : 3 }}>
+                      <Text style={styles.label}>
+                        <Text style={styles.strong}>Διεύθυνση Παράδοσης</Text>
                       </Text>
-                      {menu.menu_options && menu.menu_options.length > 0
-                        ? menu.menu_options.map((option: any, idx: number) => {
-                            const quantity =
-                              option.quantity > 1
-                                ? `${option.quantity} × `
-                                : "";
-                            const price =
-                              option.order_option_price &&
-                              parseFloat(option.order_option_price) > 0
-                                ? ` (${parseFloat(
-                                    option.order_option_price
-                                  ).toFixed(2)}€)`
-                                : "";
-                            const optionName =
-                              option.order_option_name || option.name || "";
-                            return (
-                              <Text key={idx} style={styles.optionText}>
-                                • {quantity}
-                                {optionName}
-                                {price}
-                              </Text>
-                            );
-                          })
-                        : null}
-                      {menu.comment ? (
-                        <Text style={styles.comment}>
-                          <Text style={styles.strong}>{menu.comment}</Text>
+                      <Text style={styles.value}>
+                        {formatLocationName(order.location_name) || "N/A"}
+                      </Text>
+                      {order.floor ? (
+                        <Text style={styles.value}>Όροφος: {order.floor}</Text>
+                      ) : null}
+                      {order.bell_name ? (
+                        <Text style={styles.value}>
+                          Κουδούνι: {order.bell_name}
                         </Text>
                       ) : null}
                     </View>
-                    <Text style={[styles.tableCell, styles.tableCellPrice]}>
-                      {formatCurrency(menu.subtotal)}{" "}
-                      {order.currency === "EUR" ? "€" : order.currency}
+                  ) : null}
+
+                  <View style={{ marginTop: is80mm ? 4 : 3 }}>
+                    <Text style={styles.label}>
+                      <Text style={styles.strong}>Πληρωμή</Text>
+                    </Text>
+                    <Text style={styles.value}>
+                      {getPaymentMethodName(order.payment)}
                     </Text>
                   </View>
-                );
-              })
-            : null}
-        </View>
 
-        <View style={styles.divider} />
+                  <View style={{ marginTop: is80mm ? 4 : 3 }}>
+                    <Text style={styles.label}>
+                      <Text style={styles.strong}>Τύπος παραγγελίας</Text>
+                    </Text>
+                    <Text style={styles.value}>
+                      {getOrderTypeDisplayName(order.order_type, order.order_type_name)}
+                    </Text>
+                  </View>
 
-        {/* Order Totals */}
-        <View style={styles.table}>
-          {order.order_totals
-            ? order.order_totals
-                .sort((a, b) => a.priority - b.priority)
-                .filter((total) => {
-                  // Skip delivery total for collection orders
-                  return !(
-                    order.order_type === "collection" &&
-                    total.code === "delivery"
-                  );
-                })
-                .map((total) => {
-                  return (
-                    <View key={total.order_total_id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, styles.tableCellQty]}>
-                        {" "}
+                  <View style={{ marginTop: is80mm ? 4 : 3 }}>
+                    <Text style={styles.label}>
+                      <Text style={styles.strong}>Ημερομηνία Παραγγελίας</Text>
+                    </Text>
+                    <Text style={styles.value}>
+                      {formatDateTime(order.order_date, order.order_time)}
+                    </Text>
+                  </View>
+
+                  {order.comment ? (
+                    <View style={{ marginTop: is80mm ? 4 : 3 }}>
+                      <Text style={styles.label}>
+                        <Text style={styles.strong}>Σχόλιο Παραγγελίας</Text>
                       </Text>
-                      <Text style={[styles.tableCell, styles.tableCellName]}>
-                        {translateTotalTitle(total.title, total.code)}
-                      </Text>
-                      <Text style={[styles.tableCell, styles.tableCellPrice]}>
-                        {formatCurrency(total.value)}{" "}
-                        {order.currency === "EUR" ? "€" : order.currency}
-                      </Text>
+                      <Text style={styles.value}>{order.comment}</Text>
                     </View>
-                  );
-                })
-            : null}
-        </View>
+                  ) : null}
+                </View>
+              ) : (
+                <View style={styles.row}>
+                  <View style={styles.col}>
+                    <Text style={styles.label}>
+                      <Text style={styles.strong}>Πελάτης</Text>
+                    </Text>
+                    <Text style={styles.value}>
+                      {order.customer_name || "N/A"}
+                    </Text>
+                    {order.telephone ? (
+                      <Text style={styles.value}>{order.telephone}</Text>
+                    ) : null}
+                    {order.email ? (
+                      <Text style={styles.value}>{order.email}</Text>
+                    ) : null}
 
-        {/* Thank You Message */}
-        <View style={styles.footer}>
-          <Text>Ευχαριστούμε για την παραγγελία σας!</Text>
-        </View>
+                    {order.order_type === "delivery" ? (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={styles.label}>
+                          <Text style={styles.strong}>Διεύθυνση Παράδοσης</Text>
+                        </Text>
+                        <Text style={styles.value}>
+                          {formatLocationName(order.location_name) || "N/A"}
+                        </Text>
+                        {order.floor ? (
+                          <Text style={styles.value}>Όροφος: {order.floor}</Text>
+                        ) : null}
+                        {order.bell_name ? (
+                          <Text style={styles.value}>
+                            Κουδούνι: {order.bell_name}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.col}>
+                    <Text style={[styles.label, { textAlign: "right" }]}>
+                      <Text style={styles.strong}>Πληρωμή</Text>
+                    </Text>
+                    <Text style={[styles.value, { textAlign: "right" }]}>
+                      {getPaymentMethodName(order.payment)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.label,
+                        { textAlign: "right", marginTop: 8 },
+                      ]}
+                    >
+                      <Text style={styles.strong}>Τύπος παραγγελίας</Text>
+                    </Text>
+                    <Text style={[styles.value, { textAlign: "right" }]}>
+                      {getOrderTypeDisplayName(order.order_type, order.order_type_name)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.label,
+                        { textAlign: "right", marginTop: 8 },
+                      ]}
+                    >
+                      <Text style={styles.strong}>Ημερομηνία Παραγγελίας</Text>
+                    </Text>
+                    <Text style={[styles.value, { textAlign: "right" }]}>
+                      {formatDateTime(order.order_date, order.order_time)}
+                    </Text>
+
+                    {order.comment ? (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={[styles.label, { textAlign: "right" }]}>
+                          <Text style={styles.strong}>Σχόλιο Παραγγελίας</Text>
+                        </Text>
+                        <Text style={[styles.value, { textAlign: "right" }]}>
+                          {order.comment}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Thank You Message */}
+            <View style={styles.footer}>
+              <Text>Ευχαριστούμε για την παραγγελία σας!</Text>
+            </View>
+          </View>
       </Page>
     </Document>
   );

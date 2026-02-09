@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getPrinterPaperSize,
-  getPaperSizeConfig,
+  getSelectedPrinter,
 } from "./admin-printer-options-sidebar";
 
 interface OrderMenu {
@@ -98,119 +98,41 @@ export function AdminOrderDetailsModal({
 
       // Get PDF blob
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      
+      // Check if we're in Electron
+      if (typeof window !== "undefined" && window.electron?.ipcRenderer) {
+        // Convert blob to base64 for Electron
+        const arrayBuffer = await blob.arrayBuffer();
+        const base64 = btoa(
+          String.fromCharCode(...new Uint8Array(arrayBuffer))
+        );
+        
+        // Get selected printer name
+        const selectedPrinter = getSelectedPrinter();
+        
+        // Send to Electron for printing
+        // Note: paperSize is undefined since we always use A4 page size in the PDF
+        window.electron.ipcRenderer.send("print-pdf", {
+          pdfData: base64,
+          silent: true,
+          printBackground: true,
+          deviceName: selectedPrinter || undefined, // Use selected printer or undefined for default
+          paperSize: undefined,
+          scaleFactor: 1,
+          disablePrintingHeaderFooter: true,
+        });
 
-      // Check if Electron is available and use silent printing
-      const isElectron = typeof window !== "undefined" && window.electron;
-      const electronKeys = window.electron ? Object.keys(window.electron) : [];
-      console.log("🔍 [PRINT] Electron check:", {
-        isElectron,
-        hasWindow: typeof window !== "undefined",
-        hasElectron: !!window.electron,
-        hasIpcRenderer: !!window.electron?.ipcRenderer,
-        hasSend: !!window.electron?.ipcRenderer?.send,
-        availableMethods: electronKeys,
-        electronObject: window.electron,
-      });
-
-      // Warn if Electron is detected but ipcRenderer is missing
-      if (isElectron && !window.electron?.ipcRenderer) {
-        console.warn("⚠️ [PRINT] Electron detected but ipcRenderer is not exposed!");
-        console.warn("⚠️ [PRINT] Make sure your preload.js exposes ipcRenderer like this:");
-        console.warn("⚠️ [PRINT] contextBridge.exposeInMainWorld('electron', { ipcRenderer: { send: ... } })");
-      }
-
-      if (isElectron && window.electron?.ipcRenderer?.send) {
-        console.log("🖨️ [PRINT] Using Electron silent printing");
-        // Convert blob to base64 for Electron IPC
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64data = reader.result as string;
-          // Remove data:application/pdf;base64, prefix if present
-          const base64Only = base64data.includes(',') ? base64data.split(',')[1] : base64data;
-          console.log("📤 [PRINT] Sending IPC 'print-pdf' with data length:", base64Only.length);
-          // Send PDF data to Electron main process for printing
-          // The main process should handle saving temp file and printing
-          try {
-            window.electron?.ipcRenderer?.send('print-pdf', {
-              pdfData: base64Only,
-              silent: true,
-              printBackground: true,
-              deviceName: undefined,
-              paperSize: paperSize,
-            });
-            console.log("✅ [PRINT] IPC 'print-pdf' sent successfully");
-          } catch (error) {
-            console.error("❌ [PRINT] Error sending IPC:", error);
-            // Fallback to browser print
-            openPdfInWindow(url);
-          }
-        };
-        reader.onerror = () => {
-          console.error("❌ [PRINT] Failed to read PDF blob, falling back to browser print");
-          // Fallback to browser print
-          openPdfInWindow(url);
-        };
-        reader.readAsDataURL(blob);
-        // Clean up URL after a delay to allow IPC to complete
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-        }, 2000);
+        console.log("🖨️ [PRINT] IPC 'print-pdf' sent successfully");
       } else {
-        // Fallback to browser print dialog
-        console.log("🖨️ [PRINT] Using browser print dialog");
-        openPdfInWindow(url);
-      }
-
-      // Helper function to open PDF in window and print (with auto-close)
-      function openPdfInWindow(pdfUrl: string) {
-        const printWindow = window.open(pdfUrl, "_blank");
+        // Fallback to browser printing if not in Electron
+        const url = window.URL.createObjectURL(blob);
+        const printWindow = window.open(url, "_blank");
         if (printWindow) {
-          // Function to trigger print and close window automatically
-          const handlePrint = () => {
-            try {
+          printWindow.onload = () => {
+            setTimeout(() => {
               printWindow.print();
-              // Close window automatically after print dialog is shown
-              // Wait a bit to allow print dialog to appear, then close
-              setTimeout(() => {
-                printWindow.close();
-                window.URL.revokeObjectURL(pdfUrl);
-              }, 1500);
-            } catch (error) {
-              console.log("Print dialog may have been cancelled");
-              // Close window even if print fails
-              setTimeout(() => {
-                printWindow.close();
-                window.URL.revokeObjectURL(pdfUrl);
-              }, 1000);
-            }
+            }, 500);
           };
-
-          // Try to wait for load event, but also set a fallback timer
-          let hasHandled = false;
-          printWindow.addEventListener("load", () => {
-            if (!hasHandled) {
-              hasHandled = true;
-              setTimeout(handlePrint, 500);
-            }
-          });
-
-          // Fallback: if load event doesn't fire, still try to print
-          setTimeout(() => {
-            if (!hasHandled) {
-              hasHandled = true;
-              handlePrint();
-            }
-          }, 1000);
-        } else {
-          // If popup was blocked, fallback to download
-          const link = document.createElement("a");
-          link.href = pdfUrl;
-          link.download = `invoice-${order?.order_id || 'unknown'}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(pdfUrl);
         }
       }
     } catch (error) {
@@ -225,7 +147,7 @@ export function AdminOrderDetailsModal({
       // Small delay to ensure everything is ready, then print directly
       const printTimer = setTimeout(() => {
         handlePrint();
-      }, 500);
+        }, 500);
 
       return () => {
         clearTimeout(printTimer);
@@ -244,9 +166,9 @@ export function AdminOrderDetailsModal({
 
     // Also check periodically for changes (in case same window)
     const interval = setInterval(() => {
-      const currentSize = getPrinterPaperSize();
-      if (currentSize !== paperSize) {
-        setPaperSize(currentSize);
+        const currentSize = getPrinterPaperSize();
+        if (currentSize !== paperSize) {
+          setPaperSize(currentSize);
       }
     }, 500);
 
@@ -380,9 +302,9 @@ export function AdminOrderDetailsModal({
         className="order-details-modal fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto"
         onClick={onClose}
       >
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
             .order-modal-scroll::-webkit-scrollbar {
               width: 8px;
             }

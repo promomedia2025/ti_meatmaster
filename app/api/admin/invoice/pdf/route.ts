@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
     const isThermal = paperSize === "80mm" || paperSize === "58mm";
     const is80mm = paperSize === "80mm";
     const is58mm = paperSize === "58mm";
+    const isA5 = paperSize === "A5";
     
     // Convert mm to points (1mm = 2.83465 points)
     // For thermal printers, width is fixed, height will be dynamic
@@ -428,27 +429,30 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Create PDF document with calculated height to ensure single page
-    // Ensure portrait orientation: width < height (portrait is default in pdfkit)
-    // Disable automatic page creation to ensure single page
-    // Use calculated height directly (already includes minimal buffer) to eliminate dead space
-    const pageHeightWithBuffer = Math.min(842, calculatedHeight);
-    const pageSize: [number, number] = isThermal 
-      ? [thermalWidth, pageHeightWithBuffer] // Thermal: width is small, height is large (portrait)
-      : [calculatedWidth, pageHeightWithBuffer]; // Standard: width < height ensures portrait
+    // Always use A4 page size - never adjust the paper size
+    // A4 = 595.28 x 842 points
+    // CRITICAL: Ensure height is always >= width to prevent landscape auto-rotation
+    // When receipts are small, height < width causes printer drivers to auto-rotate to landscape
+    const minPortraitHeight = 595.28; // Minimum height must be >= width for portrait
+    const pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(842, calculatedHeight));
+    const pageSize: [number, number] = [595.28, pageHeightWithBuffer]; // Always A4 width
     
-    // Ensure portrait orientation (height >= width) - swap if accidentally landscape
-    if (pageSize[0] > pageSize[1]) {
-      pageSize.reverse();
-    }
+    // Calculate content width based on paperSize setting (only affects content, not page)
+    const contentWidth = is80mm 
+      ? 80 * 2.83465  // 226.77 points
+      : is58mm 
+      ? 58 * 2.83465  // 164.41 points
+      : isA5 
+      ? 419.53  // A5 width
+      : 595.28; // Full A4 width
     
     const doc = new PDFDocument({
-      size: pageSize, // Portrait orientation is ensured by width < height
+      size: pageSize, // Always A4 page size
       margins: {
-        top: pagePadding,
-        bottom: pagePadding,
-        left: pagePadding,
-        right: pagePadding,
+        top: isThermal ? 0 : pagePadding, // No top margin for thermal
+        bottom: isThermal ? 0 : pagePadding,
+        left: 0, // No left margin - content will be positioned manually
+        right: 0,
       },
       autoFirstPage: true,
       bufferPages: false, // Disable page buffering to prevent multiple pages
@@ -480,8 +484,13 @@ export async function POST(request: NextRequest) {
       return this;
     };
     
+    // Content positioning: constrain to contentWidth, aligned to left
+    const contentPadding = isThermal ? 0 : (isA5 ? 20 : 30); // Padding inside content area
+    const contentX = contentPadding + 5; // Start position for content (left edge + padding + 5px offset)
+    const availableContentWidth = contentWidth - (contentPadding * 2) - 5; // Width available for content (reduced by 5px offset)
+    
     // Track Y position
-    let y = doc.page.margins.top;
+    let y = contentPadding; // Start from top with padding
 
     // Helper to add text with wrapping
     const addText = (
@@ -514,18 +523,17 @@ export async function POST(request: NextRequest) {
         doc.font("Roboto");
       }
 
-      const textWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
       const textY = y;
       
-      doc.text(text, doc.page.margins.left, textY, {
-        width: textWidth,
+      doc.text(text, contentX, textY, {
+        width: availableContentWidth,
         align: align,
         lineGap: 2,
       });
 
       // Calculate actual height used
       const height = doc.heightOfString(text, {
-        width: textWidth,
+        width: availableContentWidth,
         lineGap: 2,
       });
 
@@ -538,11 +546,12 @@ export async function POST(request: NextRequest) {
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(titleFontSize)
       .fillColor("#000000")
-      .text(titleText, doc.page.margins.left, y, {
-        width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+      .text(titleText, contentX, y, {
+        width: availableContentWidth,
+        align: "center",
       });
     y += doc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, {
-      width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+      width: availableContentWidth,
     }) + sectionSpacing;
 
     // Customer and Order Info
@@ -551,12 +560,15 @@ export async function POST(request: NextRequest) {
       order.order_type === "Delivery" ||
       order.order_type === "DELIVERY";
 
-    // Left column: Customer info
-    const leftColumnWidth = (doc.page.width - doc.page.margins.left - doc.page.margins.right) / 2;
+    // Left column: Customer info (for A4/A5, use two columns; for thermal, single column)
+    const leftColumnWidth = isThermal ? availableContentWidth : (availableContentWidth / 2);
+    
+    // Save the starting Y position for the right column
+    const customerSectionStartY = y;
     
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(headerFontSize)
-      .text(protectWords("Πελάτης"), doc.page.margins.left, y);
+      .text(protectWords("Πελάτης"), contentX, y);
     y += lineHeight;
 
     // Customer name with proper wrapping
@@ -566,7 +578,7 @@ export async function POST(request: NextRequest) {
     });
     doc.font("Roboto")
       .fontSize(baseFontSize)
-      .text(sanitizeString(order.customer_name) || "N/A", doc.page.margins.left, y, {
+      .text(sanitizeString(order.customer_name) || "N/A", contentX, y, {
         width: leftColumnWidth,
         lineGap: 2,
       });
@@ -577,7 +589,7 @@ export async function POST(request: NextRequest) {
         width: leftColumnWidth, 
         lineGap: 2 
       });
-      doc.text(sanitizeString(order.telephone), doc.page.margins.left, y, {
+      doc.text(sanitizeString(order.telephone), contentX, y, {
         width: leftColumnWidth,
         lineGap: 2,
       });
@@ -588,99 +600,193 @@ export async function POST(request: NextRequest) {
       y += rowSpacing; // Spacing before delivery address section
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
-        .text(protectWords("Διεύθυνση Παράδοσης"), doc.page.margins.left, y);
+        .text(protectWords("Διεύθυνση Παράδοσης"), contentX, y);
       y += lineHeight;
 
       // Address with proper wrapping to prevent crowding
       const addressText = sanitizeString(order.location_name) || "N/A";
-      const addressHeight = 15;
+      const addressHeight = doc.heightOfString(addressText, { width: leftColumnWidth });
       doc.font("Roboto")
         .fontSize(baseFontSize)
-        .text(addressText, doc.page.margins.left, y, {
-          width: 250,
+        .text(addressText, contentX, y, {
+          width: leftColumnWidth,
         });
-      y += addressHeight;
+      // Reduced spacing after address - use smaller spacing instead of full addressHeight
+      y += 10 + (isThermal ? 2 : 4); // Small spacing after address
 
-      // Floor and bell are single-line fields, use lineHeight for consistent spacing
+      // Floor and bell are single-line fields, use reduced spacing
       if (order.floor) {
-        doc.text(`Όροφος: ${sanitizeString(order.floor)}`, doc.page.margins.left, y);
-        y += lineHeight;
+        doc.text(`Όροφος: ${sanitizeString(order.floor)}`, contentX, y);
+        y += (isThermal ? baseFontSize * 0.8 : baseFontSize * 0.9); // Reduced spacing
       }
 
       if (order.bell_name) {
-        doc.text(`Κουδούνι: ${sanitizeString(order.bell_name)}`, doc.page.margins.left, y);
-        y += lineHeight;
+        doc.text(`Κουδούνι: ${sanitizeString(order.bell_name)}`, contentX, y);
+        y += (isThermal ? baseFontSize * 0.8 : baseFontSize * 0.9); // Reduced spacing
       }
     }
 
-    // Right column: Payment and order info
-    const rightColumnX = doc.page.margins.left + leftColumnWidth;
-    let rightY = doc.page.margins.top + sectionSpacing + lineHeight; // Start after title
+    // For thermal printers, add payment, order type, and date in the left column
+    if (isThermal) {
+      y += rowSpacing;
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(headerFontSize)
+        .fillColor("#000000")
+        .text(protectWords("Πληρωμή"), contentX, y);
+      y += lineHeight;
+      doc.font("Roboto")
+        .fontSize(baseFontSize)
+        .fillColor("#000000")
+        .text(getPaymentMethodName(order.payment), contentX, y);
+      y += 10; // 10px spacing
 
-    doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
-      .fontSize(headerFontSize)
-      .text(protectWords("Πληρωμή"), rightColumnX, rightY, { align: "right" });
-    rightY += lineHeight;
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(headerFontSize)
+        .fillColor("#000000")
+        .text(protectWords("Τύπος παραγγελίας"), contentX, y);
+      y += lineHeight;
+      doc.font("Roboto")
+        .fontSize(baseFontSize)
+        .fillColor("#000000")
+        .text(getOrderTypeName(order.order_type), contentX, y);
+      y += 10; // 10px spacing
 
-    doc.font("Roboto")
-      .fontSize(baseFontSize)
-      .text(getPaymentMethodName(order.payment), rightColumnX, rightY, { align: "right" });
-    rightY += lineHeight * 1.4; // Harmonious spacing between sections
-    
-    // Move "Τύπος παραγγελίας" slightly left to prevent line breaking
-    const orderTypeX = rightColumnX - (isThermal ? 10 : 15);
-    doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
-      .fontSize(12)
-      .text(protectWords("Τύπος παραγγελίας:"), orderTypeX, rightY, { align: "right" });
-    rightY += lineHeight;
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(headerFontSize)
+        .fillColor("#000000")
+        .text(protectWords("Ημερομηνία"), contentX, y);
+      y += lineHeight;
+      doc.font("Roboto")
+        .fontSize(baseFontSize)
+        .fillColor("#000000")
+        .text(
+          `${formatDate(order.order_date)} ${formatTime(order.order_time)}`,
+          contentX,
+          y
+        );
+      y += sectionSpacing;
+    }
 
-    doc.font("Roboto")
-      .fontSize(16)
-      .text(getOrderTypeName(order.order_type), orderTypeX, rightY, { align: "right"});
-    rightY += lineHeight * 1.4; // Harmonious spacing between sections
-    
-    // Push "Ημερομηνία" down for better visual balance
-    rightY += 48;
+    // Right column: Payment and order info (only for A4/A5, not thermal)
+    if (!isThermal) {
+      // For A4/A5, use two-column layout
+      const rightColumnX = contentX + leftColumnWidth;
+      const rightColumnWidth = leftColumnWidth; // Same width as left column
+      let rightY = customerSectionStartY; // Start at same Y as left column ("Πελάτης" label)
 
-    doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
-      .fontSize(headerFontSize)
-      .text(protectWords("Ημερομηνία"), rightColumnX, rightY, { align: "right" });
-    rightY += lineHeight;
-
-    doc.font("Roboto")
-      .fontSize(baseFontSize)
-      .text(
-        `${formatDate(order.order_date)} ${formatTime(order.order_time)}`,
+      // Debug log
+      console.log("🔍 [PDF] Right column positioning:", {
+        contentX,
+        leftColumnWidth,
         rightColumnX,
-        rightY,
-        { align: "right" }
-      );
+        rightColumnWidth,
+        contentWidth,
+        availableContentWidth,
+        rightColumnEnd: rightColumnX + rightColumnWidth,
+        contentEnd: contentX + availableContentWidth,
+        isThermal,
+        paperSize
+      });
 
-    // Use the maximum Y from both columns
-    y = Math.max(y, rightY) + sectionSpacing;
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(headerFontSize)
+        .fillColor("#000000")
+        .text(protectWords("Πληρωμή"), rightColumnX, rightY, { 
+          width: rightColumnWidth,
+          align: "right" 
+        });
+      rightY += lineHeight;
+
+      doc.font("Roboto")
+        .fontSize(baseFontSize)
+        .fillColor("#000000")
+        .text(getPaymentMethodName(order.payment), rightColumnX, rightY, { 
+          width: rightColumnWidth,
+          align: "right" 
+        });
+      rightY += lineHeight + 10; // 10px spacing between sections
+      
+      // Move "Τύπος παραγγελίας" slightly left to prevent line breaking
+      const orderTypeX = rightColumnX;
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(12)
+        .fillColor("#000000")
+        .text(protectWords("Τύπος παραγγελίας:"), orderTypeX, rightY, { 
+          width: rightColumnWidth,
+          align: "right" 
+        });
+      rightY += lineHeight;
+
+      doc.font("Roboto")
+        .fontSize(16)
+        .fillColor("#000000")
+        .text(getOrderTypeName(order.order_type), orderTypeX, rightY, { 
+          width: rightColumnWidth,
+          align: "right"
+        });
+      rightY += lineHeight + 10; // 10px spacing between sections
+
+      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+        .fontSize(headerFontSize)
+        .fillColor("#000000")
+        .text(protectWords("Ημερομηνία"), rightColumnX, rightY, { 
+          width: rightColumnWidth,
+          align: "right" 
+        });
+      rightY += lineHeight;
+
+      doc.font("Roboto")
+        .fontSize(baseFontSize)
+        .fillColor("#000000")
+        .text(
+          `${formatDate(order.order_date)} ${formatTime(order.order_time)}`,
+          rightColumnX,
+          rightY,
+          { 
+            width: rightColumnWidth,
+            align: "right" 
+          }
+        );
+      
+      // Use the maximum Y from both columns
+      y = Math.max(y, rightY) + sectionSpacing;
+    }
 
     // Push order items section 25px down
     y += 25;
 
     // Table header
+    // For thermal printers, allocate more space to price column to prevent cutoff
+    const priceColumnWidth = isThermal ? 65 : 70; // Increased from 50 to 65 for thermal
+    // Reduce name column width to give more space to price column
+    const nameColumnReduction = isThermal ? 25 : 30; // Reduced name width to give more space to prices
     const tableColWidths = {
       qty: isThermal ? 30 : 50,
-      name: doc.page.width - doc.page.margins.left - doc.page.margins.right - (isThermal ? 80 : 120), // Reduced to give more space to price
-      price: isThermal ? 50 : 70, // Increased to prevent "Σύνολο" from breaking
+      name: availableContentWidth - (isThermal ? (30 + priceColumnWidth) : (50 + priceColumnWidth)) - nameColumnReduction, // Reduced name width to give more space to prices
+      price: priceColumnWidth,
     };
+
+    // Ensure we don't exceed available width
+    const totalTableWidth = tableColWidths.qty + tableColWidths.name + tableColWidths.price;
+    if (totalTableWidth > availableContentWidth) {
+      // If we exceed, reduce name width proportionally
+      tableColWidths.name = availableContentWidth - tableColWidths.qty - tableColWidths.price;
+    }
 
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(headerFontSize)
-      .text("Ποσ.", doc.page.margins.left, y, { width: tableColWidths.qty, align: "center" });
-    doc.text("Προϊόν", doc.page.margins.left + tableColWidths.qty, y, {
+      .text("Ποσ.", contentX, y, { width: tableColWidths.qty, align: "center" });
+    doc.text("Προϊόν", contentX + tableColWidths.qty, y, {
       width: tableColWidths.name,
     });
-    // Position "Σύνολο" with more space and move it slightly left to prevent breaking
-    const sumColumnX = doc.page.margins.left + tableColWidths.qty + tableColWidths.name;
-    doc.text(protectWords("Σύνολο"), sumColumnX - (isThermal ? 5 : 10), y, {
-      width: tableColWidths.price + (isThermal ? 10 : 20), // Extra width to prevent breaking
-      align: "right",
-    });
+    // Position "Σύνολο" header - ensure it fits within the price column with 10px right padding
+    const sumColumnX = contentX + tableColWidths.qty + tableColWidths.name;
+    doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+      .fontSize(headerFontSize)
+      .text(protectWords("Σύνολο"), sumColumnX, y, {
+        width: tableColWidths.price - 10, // 10px right padding
+        align: "right",
+      });
     y += lineHeight;
 
     // Table rows
@@ -718,7 +824,7 @@ export async function POST(request: NextRequest) {
           .fontSize(baseFontSize)
           .text(
             String(menu.quantity || 0),
-            doc.page.margins.left,
+            contentX,
             y,
             { width: tableColWidths.qty, align: "center" }
           );
@@ -726,7 +832,7 @@ export async function POST(request: NextRequest) {
         // Product name (bold) - rendered first
         doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
           .fontSize(baseFontSize)
-          .text(menuText, doc.page.margins.left + tableColWidths.qty, y, {
+          .text(menuText, contentX + tableColWidths.qty, y, {
             width: tableColWidths.name,
           });
 
@@ -754,7 +860,7 @@ export async function POST(request: NextRequest) {
           const optionsY = y + menuTextHeight;
           doc.font("Roboto")
             .fontSize(optionsFontSize)
-            .text(optionsText, doc.page.margins.left + tableColWidths.qty, optionsY, {
+            .text(optionsText, contentX + tableColWidths.qty, optionsY, {
               width: tableColWidths.name,
             });
         }
@@ -764,18 +870,19 @@ export async function POST(request: NextRequest) {
           const commentY = y + menuTextHeight + optionsHeight;
           doc.font(fonts.italic ? "Roboto-Italic" : "Roboto")
             .fontSize(commentFontSize)
-            .text(commentText, doc.page.margins.left + tableColWidths.qty, commentY, {
+            .text(commentText, contentX + tableColWidths.qty, commentY, {
               width: tableColWidths.name,
             });
         }
-        // Price
+        // Price with 10px right padding
+        const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
         doc.font("Roboto")
           .fontSize(baseFontSize)
           .text(
-            `${formatCurrency(menu.subtotal)} ${sanitizeString(order.currency) || "EUR"}`,
-            doc.page.margins.left + tableColWidths.qty + tableColWidths.name,
+            `${formatCurrency(menu.subtotal)} ${currencyDisplay}`,
+            contentX + tableColWidths.qty + tableColWidths.name,
             y,
-            { width: tableColWidths.price, align: "right" }
+            { width: tableColWidths.price - 10, align: "right" } // 10px right padding
           );
 
         y += Math.max(rowHeight, lineHeight) ; // Fixed 10px spacing between items
@@ -788,25 +895,29 @@ export async function POST(request: NextRequest) {
     if (order.comment) {
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
-        .text(protectWords("Σχόλιο"), doc.page.margins.left, y);
+        .text(protectWords("Σχόλιο"), contentX, y);
       y += lineHeight;
 
       doc.font("Roboto")
         .fontSize(baseFontSize)
-        .text(sanitizeString(order.comment), doc.page.margins.left, y, {
-          width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+        .text(sanitizeString(order.comment), contentX, y, {
+          width: availableContentWidth,
         });
       y += doc.heightOfString(sanitizeString(order.comment), {
-        width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+        width: availableContentWidth,
       });
       
       y += sectionSpacing; // Spacing after comment before totals
     }
 
     // Totals - right below order items (or comment if present)
+    // Move totals prices 25px to the left from table price column with 10px right padding
+    const totalsPriceX = contentX + tableColWidths.qty + tableColWidths.name - 25;
+    const totalsPriceWidth = tableColWidths.price + 25 - 10; // Increase width to accommodate the shift, minus 10px for right padding
+    
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(headerFontSize)
-      .text(protectWords("Σύνοψη Παραγγελίας"), doc.page.margins.left, y);
+      .text(protectWords("Σύνοψη Παραγγελίας"), contentX, y);
     y += lineHeight + rowSpacing;
 
     if (order.order_totals && order.order_totals.length > 0) {
@@ -818,15 +929,16 @@ export async function POST(request: NextRequest) {
 
           doc.font(isTotal && fonts.bold ? "Roboto-Bold" : "Roboto")
             .fontSize(fontSize)
-            .text(protectWords(sanitizeString(total.title)), doc.page.margins.left, y);
+            .text(protectWords(sanitizeString(total.title)), contentX, y);
 
+          const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
           doc.font(isTotal && fonts.bold ? "Roboto-Bold" : "Roboto")
             .fontSize(fontSize)
             .text(
-              `${formatCurrency(total.value)} ${sanitizeString(order.currency) || "EUR"}`,
-              doc.page.margins.left,
+              `${formatCurrency(total.value)} ${currencyDisplay}`,
+              totalsPriceX,
               y,
-              { align: "right" }
+              { width: totalsPriceWidth, align: "right" }
             );
 
           y += lineHeight;
@@ -834,15 +946,16 @@ export async function POST(request: NextRequest) {
     } else {
       doc.font("Roboto")
         .fontSize(baseFontSize)
-        .text(protectWords("Σύνολο"), doc.page.margins.left, y);
+        .text(protectWords("Σύνολο"), contentX, y);
 
+      const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(baseFontSize + 1)
         .text(
-          `${formatCurrency(order.order_total || 0)} ${sanitizeString(order.currency) || "EUR"}`,
-          doc.page.margins.left,
+          `${formatCurrency(order.order_total || 0)} ${currencyDisplay}`,
+          totalsPriceX,
           y,
-          { align: "right" }
+          { width: totalsPriceWidth, align: "right" }
         );
 
       y += lineHeight;
