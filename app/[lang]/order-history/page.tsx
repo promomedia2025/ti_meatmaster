@@ -69,7 +69,7 @@ export default function OrderHistoryPage() {
   const getStatusDisplay = (statusName: string) => {
     const s = statusName.toLowerCase();
     if (s.includes("delivery") || s.includes("road") || s.includes("δρόμο")) 
-      return { text: "Σε εξέλιξη", style: "bg-[#ff9328]/10 text-[#ff9328] border-[#ff9328]/20" };
+      return { text: "Σε εξέλιξη", style: "bg-[var(--brand-border)]/10 text-[var(--brand-border)] border-[var(--brand-border)]/20" };
     if (s.includes("received") || s.includes("completed") || s.includes("ολοκληρώθηκε")) 
       return { text: "Ολοκληρώθηκε", style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
     if (s.includes("pending") || s.includes("processing") || s.includes("εκκρεμεί")) 
@@ -100,7 +100,7 @@ export default function OrderHistoryPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center border-4 border-zinc-900 shadow-xl shrink-0">
-              <Clock className="w-8 h-8 text-[#ff9328]" />
+              <Clock className="w-8 h-8 text-[var(--brand-border)]" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white mb-1">Ιστορικό Παραγγελιών</h1>
@@ -134,7 +134,7 @@ export default function OrderHistoryPage() {
           <div className="text-center py-16 bg-zinc-900/50 border border-zinc-800 rounded-xl border-dashed">
             <Package className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-white mb-6">Δεν βρέθηκαν παραγγελίες</h3>
-            <Link href="/" className="bg-[#ff9328] text-white px-8 py-3 rounded-full font-bold transition-all hover:bg-[#915316]">
+            <Link href="/" className="bg-[var(--brand-border)] text-white px-8 py-3 rounded-full font-bold transition-all hover:bg-[var(--brand-hover)]">
               Κάντε την πρώτη σας παραγγελία
             </Link>
           </div>
@@ -149,15 +149,15 @@ export default function OrderHistoryPage() {
                     setSelectedOrderId(order.order_id);
                     setIsModalOpen(true);
                   }}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[#ff9328]/30 hover:bg-zinc-800/50 transition-all cursor-pointer group"
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[var(--brand-border)]/30 hover:bg-zinc-800/50 transition-all cursor-pointer group"
                 >
                   <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex gap-4">
-                      <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328]/50 transition-colors">
-                        <Receipt className="w-6 h-6 text-zinc-500 group-hover:text-[#ff9328] transition-colors" />
+                      <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center border border-zinc-800 group-hover:border-[var(--brand-border)]/50 transition-colors">
+                        <Receipt className="w-6 h-6 text-zinc-500 group-hover:text-[var(--brand-border)] transition-colors" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-[#ff9328] transition-colors">
+                        <h3 className="text-lg font-bold text-white group-hover:text-[var(--brand-border)] transition-colors">
                           {order.location_name}
                         </h3>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500 mt-1">

@@ -453,7 +453,7 @@ export function LocationModal({
             {lang === "el" ? "Χώρα" : "Country"}
           </label>
           <Select defaultValue="greece">
-            <SelectTrigger className="w-full bg-black border-zinc-700 text-white focus:ring-[#ff9328] focus:border-[#ff9328]">
+            <SelectTrigger className="w-full bg-black border-zinc-700 text-white focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -477,7 +477,7 @@ export function LocationModal({
                   loadSavedAddresses();
                 }
               }}
-              className="text-[#ff9328] text-sm font-medium hover:text-[#a03036] transition-colors"
+              className="text-[var(--brand-border)] text-sm font-medium hover:text-[#a03036] transition-colors"
             >
               {showAddressList
                 ? lang === "el"
@@ -505,13 +505,13 @@ export function LocationModal({
                   <div
                     key={savedAddress.id}
                     onClick={() => handleSavedAddressSelect(savedAddress)}
-                    className="flex items-center gap-3 p-3 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 hover:border-[#ff9328]/50 border border-transparent transition-all group"
+                    className="flex items-center gap-3 p-3 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 hover:border-[var(--brand-border)]/50 border border-transparent transition-all group"
                   >
-                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328] transition-colors">
-                      <MapPin className="w-4 h-4 text-zinc-400 group-hover:text-[#ff9328]" />
+                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[var(--brand-border)] transition-colors">
+                      <MapPin className="w-4 h-4 text-zinc-400 group-hover:text-[var(--brand-border)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-white text-sm font-bold truncate group-hover:text-[#ff9328] transition-colors">
+                      <div className="text-white text-sm font-bold truncate group-hover:text-[var(--brand-border)] transition-colors">
                         {savedAddress.label}
                       </div>
                       <div className="text-zinc-500 text-xs truncate">
@@ -552,7 +552,7 @@ export function LocationModal({
         <div className="mb-6">
           <label className="block text-sm font-medium text-zinc-400 mb-2">
             {dict.locationModal.enterAddress}{" "}
-            <span className="text-[#ff9328]">*</span>
+            <span className="text-[var(--brand-border)]">*</span>
           </label>
           <p className="text-xs text-zinc-500 mb-2 italic">
             {lang === "el"
@@ -567,17 +567,17 @@ export function LocationModal({
               placeholder={
                 lang === "el" ? "π.χ. Υδρας 24, 15342" : "e.g. Ydras 24, 15342"
               }
-              className="pr-24 bg-black border-zinc-700 text-white placeholder-zinc-600 focus:border-[#ff9328] focus:ring-1 focus:ring-[#ff9328]"
+              className="pr-24 bg-black border-zinc-700 text-white placeholder-zinc-600 focus:border-[var(--brand-border)] focus:ring-1 focus:ring-[var(--brand-border)]"
             />
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 bg-zinc-900 rounded-md p-0.5 border border-zinc-800">
               <button
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation}
-                className="p-1.5 hover:bg-zinc-800 rounded transition-colors text-[#ff9328]"
+                className="p-1.5 hover:bg-zinc-800 rounded transition-colors text-[var(--brand-border)]"
                 title={dict.locationModal.useCurrentLocation}
               >
                 {isGettingLocation ? (
-                  <Skeleton className="w-4 h-4 rounded-full bg-[#ff9328]/20" />
+                  <Skeleton className="w-4 h-4 rounded-full bg-[var(--brand-border)]/20" />
                 ) : (
                   <Navigation className="w-4 h-4 fill-current" />
                 )}
@@ -589,7 +589,7 @@ export function LocationModal({
         {/* Continue button */}
         <Button
           onClick={handleContinue}
-          className="w-full bg-[#ff9328] hover:bg-[#915316] text-white font-bold py-6 rounded-xl shadow-lg shadow-red-900/20 active:scale-[0.98] transition-all"
+          className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold py-6 rounded-xl shadow-lg shadow-[var(--brand-shadow)] active:scale-[0.98] transition-all"
         >
           {dict.common.confirm}
         </Button>

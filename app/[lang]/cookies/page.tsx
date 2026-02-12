@@ -5,21 +5,21 @@ import Link from "next/link";
 
 export default function CookiesPolicyPage() {
   return (
-    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[#ff9328]/30">
+    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
       
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
           <Link
             href="/"
-            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[#915316] transition-all text-zinc-400 hover:text-white shrink-0"
+            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[var(--brand-hover)] transition-all text-zinc-400 hover:text-white shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
           {/* Icon Circle */}
           <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center shrink-0 border-4 border-zinc-900 shadow-xl">
-            <Cookie className="w-6 h-6 text-[#ff9328]" />
+            <Cookie className="w-6 h-6 text-[var(--brand-border)]" />
           </div>
 
           <div>
@@ -52,7 +52,7 @@ export default function CookiesPolicyPage() {
 
         {/* Google AdWords */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Google AdWords
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -68,14 +68,14 @@ export default function CookiesPolicyPage() {
               στατιστικών αναφορών σχετικά με την αποτελεσματικότητα των
               διαφημίσεων. Μπορείτε να απενεργοποιήσετε τη χρήση cookies μέσω των
               ρυθμίσεων του περιηγητή σας ή αποκλείοντας το domain
-              <strong className="text-[#ff9328]"> googleadservices.com</strong>.
+              <strong className="text-[var(--brand-border)]"> googleadservices.com</strong>.
             </p>
           </div>
         </section>
 
         {/* Google Analytics */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Google Analytics
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -93,7 +93,7 @@ export default function CookiesPolicyPage() {
               <span className="block text-sm text-zinc-500 mb-2 italic">Απενεργοποίηση συλλογής δεδομένων:</span>
               <a
                 href="http://tools.google.com/dlpage/gaoptout?hl=en"
-                className="text-[#ff9328] hover:text-[#915316] underline break-all font-medium transition-colors"
+                className="text-[var(--brand-border)] hover:text-[var(--brand-hover)] underline break-all font-medium transition-colors"
                 target="_blank"
               >
                 tools.google.com/dlpage/gaoptout
@@ -104,7 +104,7 @@ export default function CookiesPolicyPage() {
 
         {/* Bing Ads */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Bing Ads
           </h2>
           <p>
@@ -116,7 +116,7 @@ export default function CookiesPolicyPage() {
 
         {/* Criteo & Mediaplex */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Criteo & Mediaplex (Conversant)
           </h2>
           <p>
@@ -128,7 +128,7 @@ export default function CookiesPolicyPage() {
 
         {/* Facebook Retargeting */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Facebook Retargeting
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -141,7 +141,7 @@ export default function CookiesPolicyPage() {
               <span className="block text-sm text-zinc-500 mb-2 italic">Εξαίρεση από την υπηρεσία:</span>
               <a
                 href="https://www.facebook.com/ads/website_custom_audiences"
-                className="text-[#ff9328] hover:text-[#915316] underline break-all font-medium transition-colors"
+                className="text-[var(--brand-border)] hover:text-[var(--brand-hover)] underline break-all font-medium transition-colors"
                 target="_blank"
               >
                 facebook.com/ads/website_custom_audiences
@@ -152,7 +152,7 @@ export default function CookiesPolicyPage() {
 
         {/* Hotjar */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Hotjar
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -165,7 +165,7 @@ export default function CookiesPolicyPage() {
               <span className="block text-sm text-zinc-500 mb-2 italic">Απενεργοποίηση καταγραφής:</span>
               <a
                 href="https://www.hotjar.com/opt-out"
-                className="text-[#ff9328] hover:text-[#915316] underline break-all font-medium transition-colors"
+                className="text-[var(--brand-border)] hover:text-[var(--brand-hover)] underline break-all font-medium transition-colors"
                 target="_blank"
               >
                 hotjar.com/opt-out
@@ -176,7 +176,7 @@ export default function CookiesPolicyPage() {
 
         {/* ADEX */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             ADEX
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -188,7 +188,7 @@ export default function CookiesPolicyPage() {
               <span className="block text-sm text-zinc-500 mb-2 italic">Εξαίρεση από την επεξεργασία:</span>
               <a
                 href="http://de.theadex.com/company/consumer-opt-out"
-                className="text-[#ff9328] hover:text-[#915316] underline break-all font-medium transition-colors"
+                className="text-[var(--brand-border)] hover:text-[var(--brand-hover)] underline break-all font-medium transition-colors"
                 target="_blank"
               >
                 theadex.com/consumer-opt-out

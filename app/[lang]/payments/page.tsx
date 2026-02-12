@@ -5,21 +5,21 @@ import Link from "next/link";
 
 export default function PaymentMethodsPage() {
   return (
-    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[#ff9328]/30">
+    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
       
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
           <Link
             href="/"
-            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[#915316] transition-all text-zinc-400 hover:text-white shrink-0"
+            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[var(--brand-hover)] transition-all text-zinc-400 hover:text-white shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
           {/* Icon Circle: Custom Orange Brand Color */}
           <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center shrink-0 border-4 border-zinc-900 shadow-xl">
-            <CreditCard className="w-6 h-6 text-[#ff9328]" />
+            <CreditCard className="w-6 h-6 text-[var(--brand-border)]" />
           </div>
 
           <div>
@@ -44,21 +44,21 @@ export default function PaymentMethodsPage() {
 
         {/* Cash Payment */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <Banknote className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <Banknote className="w-5 h-5 text-[var(--brand-border)]" />
             Με μετρητά
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <p>
-              Ο κλασικός τρόπος πληρωμής κατά την διάρκεια της παράδοσης. Για να είμαστε σίγουροι πως οι διανομείς μας θα επιστρέψουν στο μαγαζί πάντα με ασφάλεια, <strong className="text-zinc-200">δεν μεταφέρουν ποτέ πάνω από 50€</strong>. Για το λόγο αυτό, αν τυχόν θέλετε ρέστα από χαρτονόμισμα των 50€, είναι επιθυμητό να μας το αναφέρετε <span className="italic text-zinc-300 underline underline-offset-8 decoration-[#ff9328]/50">στα σχόλια της παραγγελίας σας</span>.
+              Ο κλασικός τρόπος πληρωμής κατά την διάρκεια της παράδοσης. Για να είμαστε σίγουροι πως οι διανομείς μας θα επιστρέψουν στο μαγαζί πάντα με ασφάλεια, <strong className="text-zinc-200">δεν μεταφέρουν ποτέ πάνω από 50€</strong>. Για το λόγο αυτό, αν τυχόν θέλετε ρέστα από χαρτονόμισμα των 50€, είναι επιθυμητό να μας το αναφέρετε <span className="italic text-zinc-300 underline underline-offset-8 decoration-[var(--brand-border)]/50">στα σχόλια της παραγγελίας σας</span>.
             </p>
           </div>
         </section>
 
         {/* Credit Card Payment */}
         <section className="space-y-6">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-[var(--brand-border)]" />
             Με πιστωτική κάρτα
           </h2>
           <p>
@@ -66,9 +66,9 @@ export default function PaymentMethodsPage() {
           </p>
           
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[#915316] transition-colors">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[var(--brand-hover)] transition-colors">
               <h3 className="text-zinc-100 font-bold flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#ff9328] rounded-full shadow-[0_0_8px_#ff9328]" />
+                <div className="w-2 h-2 bg-[var(--brand-border)] rounded-full shadow-[0_0_8px_var(--brand-border)]" />
                 (α) Firewall
               </h3>
               <p className="text-sm leading-relaxed">
@@ -76,9 +76,9 @@ export default function PaymentMethodsPage() {
               </p>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[#915316] transition-colors">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[var(--brand-hover)] transition-colors">
               <h3 className="text-zinc-100 font-bold flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#ff9328] rounded-full shadow-[0_0_8px_#ff9328]" />
+                <div className="w-2 h-2 bg-[var(--brand-border)] rounded-full shadow-[0_0_8px_var(--brand-border)]" />
                 (β) Κρυπτογράφηση
               </h3>
               <p className="text-sm leading-relaxed">
@@ -86,9 +86,9 @@ export default function PaymentMethodsPage() {
               </p>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[#915316] transition-colors">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 hover:border-[var(--brand-hover)] transition-colors">
               <h3 className="text-zinc-100 font-bold flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#ff9328] rounded-full shadow-[0_0_8px_#ff9328]" />
+                <div className="w-2 h-2 bg-[var(--brand-border)] rounded-full shadow-[0_0_8px_var(--brand-border)]" />
                 (γ) Ανίχνευση απάτης
               </h3>
               <p className="text-sm leading-relaxed">
@@ -100,7 +100,7 @@ export default function PaymentMethodsPage() {
 
         {/* Instructions Section */}
         <section className="space-y-8">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Οδηγίες Χρήσης Κάρτας
           </h2>
           
@@ -133,7 +133,7 @@ export default function PaymentMethodsPage() {
               }
             ].map((item, idx) => (
               <div key={idx} className="flex gap-6 group">
-                <div className="text-[#ff9328] font-black text-2xl opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="text-[var(--brand-border)] font-black text-2xl opacity-50 group-hover:opacity-100 transition-opacity">
                   {item.step}
                 </div>
                 <div>
@@ -143,7 +143,7 @@ export default function PaymentMethodsPage() {
                     <ul className="mt-2 space-y-2">
                       {item.list.map((li, lIdx) => (
                         <li key={lIdx} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-[#915316] rounded-full" />
+                          <div className="w-1.5 h-1.5 bg-[var(--brand-hover)] rounded-full" />
                           {li}
                         </li>
                       ))}
@@ -156,22 +156,22 @@ export default function PaymentMethodsPage() {
         </section>
 
         {/* Safety Tips Banner */}
-        <section className="bg-gradient-to-br from-[#ff9328]/10 to-transparent border border-[#ff9328]/20 rounded-2xl p-8 space-y-6">
+        <section className="bg-gradient-to-br from-[var(--brand-border)]/10 to-transparent border border-[var(--brand-border)]/20 rounded-2xl p-8 space-y-6">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-[#ff9328]" />
+            <Wallet className="w-5 h-5 text-[var(--brand-border)]" />
             Συμβουλές Ασφαλείας
           </h2>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-1 bg-[#ff9328]/20 rounded-md text-[#ff9328] shrink-0">✓</div>
+              <div className="p-1 bg-[var(--brand-border)]/20 rounded-md text-[var(--brand-border)] shrink-0">✓</div>
               <p>Χρησιμοποιείτε το ψηφιακό πορτοφόλι <span className="text-white">Apple Pay ή Google Pay</span> για αυξημένη ασφάλεια μέσω βιομετρικών στοιχείων.</p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-1 bg-[#ff9328]/20 rounded-md text-[#ff9328] shrink-0">✓</div>
+              <div className="p-1 bg-[var(--brand-border)]/20 rounded-md text-[var(--brand-border)] shrink-0">✓</div>
               <p>Ελέγχετε τακτικά τις κινήσεις του λογαριασμού σας.</p>
             </div>
             <div className="mt-4 p-4 bg-black/40 rounded-lg border border-zinc-800 text-sm italic">
-              <strong className="text-[#ff9328] not-italic block mb-1">Σημείωση:</strong>
+              <strong className="text-[var(--brand-border)] not-italic block mb-1">Σημείωση:</strong>
               Το Cocofino.gr δεν αποθηκεύει ποτέ κανένα στοιχείο της πιστωτικής σας κάρτας. Η συναλλαγή γίνεται στο ασφαλές περιβάλλον της τράπεζας.
             </div>
           </div>

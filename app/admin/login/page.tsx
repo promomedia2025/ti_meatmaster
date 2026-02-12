@@ -302,7 +302,7 @@ function AdminLoginContent() {
                 id="remember"
                 checked={remember}
                 onCheckedChange={(checked) => setRemember(checked === true)}
-                className="data-[state=checked]:bg-[#ff9328] data-[state=checked]:border-[#ff9328] border-gray-600 bg-[#1a1a1a]"
+                className="data-[state=checked]:bg-[var(--brand-border)] data-[state=checked]:border-[var(--brand-border)] border-gray-600 bg-[#1a1a1a]"
               />
               <label
                 htmlFor="remember"
@@ -322,7 +322,7 @@ function AdminLoginContent() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 disabled:opacity-50"
+            className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white h-12 disabled:opacity-50"
           >
             {isLoading ? "Σύνδεση..." : "Σύνδεση"}
           </Button>

@@ -24,7 +24,7 @@ import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 import { useAuth } from "@/lib/auth-context"; // Import Auth Context
 import Link from "next/link";
 
-const featuredMenuIds = [112, 101, 177, 406, 92, 176, 184, 196];
+const featuredMenuIds = [229, 101, 177, 406, 92, 176, 184, 196];
 const featuredDiscountIds = [553, 561, 562, 564, 566];
 
 export default function HomePage() {
@@ -218,7 +218,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredDiscountIds}
           locale={lang}
-          locationSlug="cocofino-13"
+          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
         />
 
         <div className="w-full my-8 rounded-xl overflow-hidden shadow-lg border border-white/10">
@@ -241,7 +241,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredMenuIds}
           locale={lang}
-          locationSlug="cocofino-13"
+          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
         />
       </main>
 

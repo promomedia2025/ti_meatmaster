@@ -475,7 +475,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
       case "pending":
         return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
       case "cancelled":
-        return "bg-[#ff9328]/10 text-[#ff9328] border-[#ff9328]/20";
+        return "bg-[var(--brand-border)]/10 text-[var(--brand-border)] border-[var(--brand-border)]/20";
       default:
         return "bg-zinc-800 text-zinc-400 border-zinc-700";
     }
@@ -746,7 +746,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
               onClick={() => setActiveCartTab("carts")}
               className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                 activeCartTab === "carts"
-                  ? "bg-zinc-900 text-white border-b-2 border-[#ff9328]"
+                  ? "bg-zinc-900 text-white border-b-2 border-[var(--brand-border)]"
                   : "text-zinc-400 hover:text-white"
               }`}
             >
@@ -756,7 +756,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
               onClick={() => setActiveCartTab("orders")}
               className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                 activeCartTab === "orders"
-                  ? "bg-zinc-900 text-white border-b-2 border-[#ff9328]"
+                  ? "bg-zinc-900 text-white border-b-2 border-[var(--brand-border)]"
                   : "text-zinc-400 hover:text-white"
               }`}
             >
@@ -790,7 +790,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                   ))}
                 </div>
               ) : ordersError ? (
-                <div className="text-center text-[#ff9328] py-8 bg-[#ff9328]/10 rounded-xl m-4 border border-[#ff9328]/20">
+                <div className="text-center text-[var(--brand-border)] py-8 bg-[var(--brand-border)]/10 rounded-xl m-4 border border-[var(--brand-border)]/20">
                   <p>{ordersError}</p>
                 </div>
               ) : orders.length === 0 ? (
@@ -898,7 +898,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                 disabled={clearingCarts.has(
                                   locationCart.locationId
                                 )}
-                                className={`text-zinc-500 hover:text-[#ff9328] transition-colors p-2 hover:bg-black rounded-full ${
+                                className={`text-zinc-500 hover:text-[var(--brand-border)] transition-colors p-2 hover:bg-black rounded-full ${
                                   clearingCarts.has(locationCart.locationId)
                                     ? "opacity-50 cursor-not-allowed"
                                     : ""
@@ -1063,9 +1063,9 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                         }`}
                                       >
                                         {removingItems.has(item.rowId) ? (
-                                          <Loader2 className="w-4 h-4 animate-spin text-[#ff9328]" />
+                                          <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-border)]" />
                                         ) : (
-                                          <Trash2 className="w-4 h-4 text-zinc-600 group-hover/trash:text-[#ff9328]" />
+                                          <Trash2 className="w-4 h-4 text-zinc-600 group-hover/trash:text-[var(--brand-border)]" />
                                         )}
                                       </button>
                                     </div>
@@ -1108,7 +1108,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                                           ) : (
                                               <button
                                                   onClick={(e) => toggleQuantityControls(item.rowId, e)}
-                                                  className="border border-zinc-700 hover:border-[#ff9328] text-zinc-400 hover:text-white transition-colors text-xs p-1 rounded w-8 text-center"
+                                                  className="border border-zinc-700 hover:border-[var(--brand-border)] text-zinc-400 hover:text-white transition-colors text-xs p-1 rounded w-8 text-center"
                                               >
                                                   {item.qty}
                                               </button>
@@ -1157,7 +1157,7 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                               className={`w-full font-bold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg active:scale-[0.98] ${
                                 isDeliveryBlocked(locationCart.locationId)
                                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                                  : "bg-[#ff9328] hover:bg-[#915316] text-white"
+                                  : "bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                               }`}
                             >
                               Ολοκλήρωση παραγγελίας

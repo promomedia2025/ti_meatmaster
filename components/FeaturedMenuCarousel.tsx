@@ -28,7 +28,7 @@ export default function FeaturedMenuCarousel({
   const [items, setItems] = useState<MenuItem[]>([]);
   const [emblaRef] = useEmblaCarousel({ dragFree: true, align: "start" });
 
-  const LOCATION_ID = 13;
+  const LOCATION_ID = process.env.NEXT_LOCATION_ID;
 
   useEffect(() => {
     async function loadAllPages() {
@@ -83,7 +83,7 @@ export default function FeaturedMenuCarousel({
             <div
               key={item.menu_id}
               // Restored max-w-[220px] to enforce consistent card width like the bottom row
-              className="embla__slide min-w-[200px] max-w-[200px] cursor-pointer bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-[#ff9328] hover:shadow-[0_0_15px_rgba(255,147,40,0.2)] hover:scale-[1.02] transition-all duration-300 group"
+              className="embla__slide min-w-[200px] max-w-[200px] cursor-pointer bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-[var(--brand-border)] hover:shadow-[0_0_15px_rgba(255,147,40,0.2)] hover:scale-[1.02] transition-all duration-300 group"
               onClick={() =>
                 router.push(
                   `/${locale}/location/${locationSlug}?select=${item.menu_id}`

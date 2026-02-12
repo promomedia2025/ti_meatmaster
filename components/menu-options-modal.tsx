@@ -672,7 +672,7 @@ export function MenuOptionsModal({
                       )}
                     </div>
                     {option.required && (
-                      <span className="text-[#ff9328] text-xs font-bold tracking-wider bg-[#ff9328]/10 px-2 py-1 rounded">
+                      <span className="text-[var(--brand-border)] text-xs font-bold tracking-wider bg-[var(--brand-border)]/10 px-2 py-1 rounded">
                         ΑΠΑΙΤΕΙΤΑΙ
                       </span>
                     )}
@@ -697,7 +697,7 @@ export function MenuOptionsModal({
                             value.available === false
                               ? "opacity-50 cursor-not-allowed bg-black border-zinc-800"
                               : "cursor-pointer bg-black border-zinc-800 hover:border-zinc-600"
-                          } ${isValueSelected(option, value) ? "border-[#ff9328] bg-[#ff9328]/5" : ""}`}
+                          } ${isValueSelected(option, value) ? "border-[var(--brand-border)] bg-[var(--brand-border)]/5" : ""}`}
                         >
                           <div className="flex items-center gap-3">
                             <input
@@ -706,7 +706,7 @@ export function MenuOptionsModal({
                               checked={isValueSelected(option, value)}
                               disabled={isValueDisabled(option, value)}
                               onChange={(e) => handleOptionChange(option, value, e.target.checked)}
-                              className="w-5 h-5 accent-[#ff9328] bg-zinc-800 border-zinc-600 rounded focus:ring-[#ff9328]"
+                              className="w-5 h-5 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 rounded focus:ring-[var(--brand-border)]"
                             />
                             <div className="flex items-center gap-2">
                               <span className={`text-sm font-medium ${value.available === false ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
@@ -752,7 +752,7 @@ export function MenuOptionsModal({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Προσθέστε σχόλια για το αντικείμενο..."
-              className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-500 focus:outline-none focus:border-[#ff9328] focus:ring-1 focus:ring-[#ff9328] min-h-[96px] resize-none text-sm transition-all"
+              className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--brand-border)] focus:ring-1 focus:ring-[var(--brand-border)] min-h-[96px] resize-none text-sm transition-all"
             />
           </div>
         </div>
@@ -785,7 +785,7 @@ export function MenuOptionsModal({
             <button
               onClick={handleAddToCart}
               disabled={!hasRequiredOptions() || isSubmitting}
-              className="flex-1 bg-[#ff9328] text-white py-3.5 px-6 rounded-xl font-bold hover:bg-[#915316] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg active:scale-[0.98]"
+              className="flex-1 bg-[var(--brand-border)] text-white py-3.5 px-6 rounded-xl font-bold hover:bg-[var(--brand-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg active:scale-[0.98]"
             >
               {isSubmitting ? "Αποθήκευση..." : confirmLabel || "Προσθήκη στο καλάθι"}
             </button>

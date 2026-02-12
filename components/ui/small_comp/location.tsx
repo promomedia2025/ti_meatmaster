@@ -96,14 +96,14 @@ export function WoltLocation({
 
   return (
     <div className="flex items-center gap-2 cursor-pointer" onClick={onClick}>
-      <div className="inline-flex relative justify-center items-center w-[40px] min-w-[40px] h-[40px] min-h-[40px] rounded-full transition-colors duration-[120ms] ease-out bg-[#60350F]">
-        <MapPin size={24} color="#ff9328" />
+      <div className="inline-flex relative justify-center items-center w-[40px] min-w-[40px] h-[40px] min-h-[40px] rounded-full transition-colors duration-[120ms] ease-out bg-[#FFFFFF]">
+        <MapPin size={24} color="rgb(104, 104, 104)" />
       </div>
       <div className="flex items-center gap-1">
         {showLoading ? (
           <Skeleton className="h-4 w-24" />
         ) : (
-          <p className="text-sm text-[#ff9328] font-semibold">
+            <p className="text-sm text-[#FFFFFF] font-semibold">
             {displayText}
           </p>
         )}
@@ -130,7 +130,7 @@ export function WoltLocation({
           )}
         </div>
       )}
-      <ChevronDown size={16} color="#ff9328" />
+      <ChevronDown size={16} color="#FFFFFF" />
     </div>
   );
 }

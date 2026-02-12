@@ -53,7 +53,7 @@ export function AdminSidebar() {
               onClick={() => setIsSidebarOpen(false)}
               className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                 isActive("/admin")
-                  ? "bg-[#ff9328] text-white"
+                  ? "bg-[var(--brand-border)] text-white"
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
@@ -64,7 +64,7 @@ export function AdminSidebar() {
               onClick={() => setIsSidebarOpen(false)}
               className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                 isActive("/admin/orders")
-                  ? "bg-[#ff9328] text-white"
+                  ? "bg-[var(--brand-border)] text-white"
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
@@ -75,7 +75,7 @@ export function AdminSidebar() {
               onClick={() => setIsSidebarOpen(false)}
               className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                 isActive("/admin/menu")
-                  ? "bg-[#ff9328] text-white"
+                  ? "bg-[var(--brand-border)] text-white"
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >
@@ -87,7 +87,7 @@ export function AdminSidebar() {
               onClick={() => setIsSidebarOpen(false)}
               className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                 isActive("/admin/intervals")
-                  ? "bg-[#ff9328] text-white"
+                  ? "bg-[var(--brand-border)] text-white"
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
             >

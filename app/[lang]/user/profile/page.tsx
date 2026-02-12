@@ -158,8 +158,8 @@ export default function UserProfilePage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors group">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            {/* ICON: Brand Orange #ff9328 */}
-            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-[#ff9328]">
+            {/* ICON: Brand Orange var(--brand-border) */}
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-[var(--brand-border)]">
                {icon}
             </div>
             <label className="text-zinc-400 text-sm font-medium">{label}</label>
@@ -181,7 +181,7 @@ export default function UserProfilePage() {
               type={type}
               value={value}
               onChange={(e) => handleInputChange(field, e.target.value)}
-              className="flex-1 bg-black text-white px-3 py-2 rounded-lg border border-zinc-700 focus:border-[#ff9328] focus:outline-none transition-all"
+              className="flex-1 bg-black text-white px-3 py-2 rounded-lg border border-zinc-700 focus:border-[var(--brand-border)] focus:outline-none transition-all"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleConfirmLocal();
@@ -191,7 +191,7 @@ export default function UserProfilePage() {
             <button onClick={handleConfirmLocal} className="text-white hover:bg-zinc-800 p-2 rounded-lg transition-colors">
               <Check className="w-4 h-4 text-green-500" />
             </button>
-            <button onClick={() => handleCancelLocal(field)} className="text-zinc-500 hover:text-[#ff9328] hover:bg-zinc-800 p-2 rounded-lg transition-colors">
+            <button onClick={() => handleCancelLocal(field)} className="text-zinc-500 hover:text-[var(--brand-border)] hover:bg-zinc-800 p-2 rounded-lg transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -207,7 +207,7 @@ export default function UserProfilePage() {
   if (isLoading || (!user && isAuthenticated !== false)) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#ff9328] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[var(--brand-border)] animate-spin" />
       </div>
     );
   }
@@ -246,7 +246,7 @@ export default function UserProfilePage() {
 
           <div className="flex items-center gap-4">
             {hasUnsavedChanges && (
-              <span className="text-sm text-[#ff9328] animate-pulse hidden sm:inline-block">
+              <span className="text-sm text-[var(--brand-border)] animate-pulse hidden sm:inline-block">
                 • Μη αποθηκευμένες αλλαγές
               </span>
             )}
@@ -256,7 +256,7 @@ export default function UserProfilePage() {
               className={`
                 px-6 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 text-sm
                 ${hasUnsavedChanges 
-                  ? "bg-[#ff9328] text-white hover:bg-[#915316] shadow-[0_0_20px_rgba(255,147,40,0.2)] cursor-pointer" 
+                  ? "bg-[var(--brand-border)] text-white hover:bg-[var(--brand-hover)] shadow-[0_0_20px_rgba(255,147,40,0.2)] cursor-pointer" 
                   : "bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed"}
               `}
             >

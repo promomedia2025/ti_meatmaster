@@ -219,14 +219,14 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                       placeholder="Email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                     />
                     <Input
                       type="password"
                       placeholder="Κωδικός πρόσβασης"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                     />
                   </div>
                   <div className="mt-2">
@@ -234,7 +234,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                       <Button
                         type="button"
                         variant="link"
-                        className="text-sm text-zinc-400 hover:text-[#ff9328] transition-colors p-0 h-auto font-normal"
+                        className="text-sm text-zinc-400 hover:text-[var(--brand-border)] transition-colors p-0 h-auto font-normal"
                       >
                         Ξεχάσετε τον κωδικό πρόσβασης;
                       </Button>
@@ -249,7 +249,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                       onCheckedChange={(checked) =>
                         setRemember(checked === true)
                       }
-                      className="data-[state=checked]:bg-[#ff9328] data-[state=checked]:border-[#ff9328] border-zinc-600 bg-zinc-900"
+                      className="data-[state=checked]:bg-[var(--brand-border)] data-[state=checked]:border-[var(--brand-border)] border-zinc-600 bg-zinc-900"
                     />
                     <label
                       htmlFor="remember"
@@ -269,7 +269,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                 <Button
                   type="submit"
                   disabled={isSubmitting || isLoading}
-                  className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 mb-4 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
+                  className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white h-12 mb-4 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
                 >
                   {isSubmitting ? "Συνδέομαι..." : "Είσοδος"}
                 </Button>
@@ -314,14 +314,14 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                     placeholder="Όνομα"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                   />
                   <Input
                     type="text"
                     placeholder="Επώνυμο"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 flex-1 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                   />
                 </div>
                 <Input
@@ -329,28 +329,28 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                   placeholder="Email"
                   value={registerEmail}
                   onChange={(e) => setRegisterEmail(e.target.value)}
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                 />
                 <Input
                   type="tel"
                   placeholder="Τηλέφωνο"
                   value={telephone}
                   onChange={(e) => setTelephone(e.target.value)}
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                 />
                 <Input
                   type="password"
                   placeholder="Κωδικός πρόσβασης"
                   value={registerPassword}
                   onChange={(e) => setRegisterPassword(e.target.value)}
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                 />
                 <Input
                   type="password"
                   placeholder="Επιβεβαίωση κωδικού"
                   value={passwordConfirmation}
                   onChange={(e) => setPasswordConfirmation(e.target.value)}
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                 />
               </div>
 
@@ -360,7 +360,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
             <Button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full bg-[#ff9328] hover:bg-[#915316] text-white h-12 mb-2 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
+              className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white h-12 mb-2 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
             >
               {isSubmitting ? "Εγγραφή..." : "Εγγραφή"}
             </Button>

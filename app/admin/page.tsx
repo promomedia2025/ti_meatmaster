@@ -1008,7 +1008,7 @@ export default function AdminDashboardPage() {
                 <Button
                   onClick={handleLogout}
                   variant="outline"
-                  className="bg-[#ff9328] border-gray-600 text-white hover:bg-[#ff9328]"
+                  className="bg-[var(--brand-border)] border-gray-600 text-white hover:bg-[var(--brand-border)]"
                 >
                   Logout
                 </Button>

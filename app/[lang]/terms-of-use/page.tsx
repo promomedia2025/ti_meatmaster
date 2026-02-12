@@ -5,21 +5,21 @@ import Link from "next/link";
 
 export default function TermsOfUsePage() {
   return (
-    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[#ff9328]/30">
+    <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
       
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
           <Link
             href="/"
-            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[#915316] transition-all text-zinc-400 hover:text-white shrink-0"
+            className="p-2 bg-black border border-zinc-800 rounded-xl hover:border-[var(--brand-hover)] transition-all text-zinc-400 hover:text-white shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
           {/* Icon Circle */}
           <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center shrink-0 border-4 border-zinc-900 shadow-xl">
-            <FileText className="w-6 h-6 text-[#ff9328]" />
+            <FileText className="w-6 h-6 text-[var(--brand-border)]" />
           </div>
 
           <div>
@@ -38,7 +38,7 @@ export default function TermsOfUsePage() {
         
         {/* Introduction */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">Εισαγωγή</h2>
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">Εισαγωγή</h2>
           <p>
             Η πρόσβαση και χρήση της ιστοσελίδας διέπονται από τους παρόντες Όρους
             Χρήσης, οι οποίοι είναι δεσμευτικοί και ισχύουν για κάθε επίσκεψη και
@@ -48,19 +48,19 @@ export default function TermsOfUsePage() {
 
         {/* Definitions */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">Ορισμοί</h2>
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">Ορισμοί</h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <ul className="space-y-4">
               <li className="flex gap-3">
-                <span className="text-[#ff9328] font-bold">•</span>
+                <span className="text-[var(--brand-border)] font-bold">•</span>
                 <span><strong className="text-zinc-200">Εταιρεία:</strong> ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ, ΑΦΜ 998154126</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-[#ff9328] font-bold">•</span>
+                <span className="text-[var(--brand-border)] font-bold">•</span>
                 <span><strong className="text-zinc-200">Ιστοσελίδα:</strong> Το ηλεκτρονικό κατάστημα Cocofino.gr (www.cocofino.gr)</span>
               </li>
               <li className="flex gap-3">
-                <span className="text-[#ff9328] font-bold">•</span>
+                <span className="text-[var(--brand-border)] font-bold">•</span>
                 <span><strong className="text-zinc-200">Χρήστης:</strong> Κάθε επισκέπτης ή/και πελάτης της Ιστοσελίδας</span>
               </li>
             </ul>
@@ -69,8 +69,8 @@ export default function TermsOfUsePage() {
 
         {/* General Terms */}
         <section className="space-y-6">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <Scale className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <Scale className="w-5 h-5 text-[var(--brand-border)]" />
             Γενικοί Όροι
           </h2>
           <p>
@@ -80,7 +80,7 @@ export default function TermsOfUsePage() {
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-4 shadow-xl">
             <div className="space-y-1">
-              <p className="text-[#ff9328] font-black text-lg tracking-tight">
+              <p className="text-[var(--brand-border)] font-black text-lg tracking-tight">
                 ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ
               </p>
               <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 998154126</p>
@@ -101,7 +101,7 @@ export default function TermsOfUsePage() {
 
         {/* Products & Info */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">
             Παρεχόμενες Πληροφορίες & Προϊόντα
           </h2>
           <p>
@@ -114,8 +114,8 @@ export default function TermsOfUsePage() {
 
         {/* Liability */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-[var(--brand-border)]" />
             Περιορισμός Ευθύνης
           </h2>
           <div className="space-y-4 bg-zinc-900/30 p-6 rounded-xl border border-zinc-800">
@@ -133,8 +133,8 @@ export default function TermsOfUsePage() {
 
         {/* User Account */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <UserCircle className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <UserCircle className="w-5 h-5 text-[var(--brand-border)]" />
             Λογαριασμός Χρήστη
           </h2>
           <p>
@@ -145,8 +145,8 @@ export default function TermsOfUsePage() {
 
         {/* Newsletter */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4 flex items-center gap-2">
-            <Mail className="w-5 h-5 text-[#ff9328]" />
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-[var(--brand-border)]" />
             Newsletter & Επικοινωνία
           </h2>
           <p>
@@ -158,7 +158,7 @@ export default function TermsOfUsePage() {
 
         {/* User Responsibility */}
         <section className="space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-[#ff9328] pl-4">Ευθύνη Χρήστη</h2>
+          <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">Ευθύνη Χρήστη</h2>
           <p>
             Ο Χρήστης οφείλει να χρησιμοποιεί την Ιστοσελίδα νόμιμα και υπεύθυνα.
             <strong className="text-zinc-200"> Απαγορεύεται η χρήση από ανηλίκους κάτω των 18 ετών.</strong>
@@ -166,7 +166,7 @@ export default function TermsOfUsePage() {
         </section>
 
         {/* Dispute Resolution */}
-        <section className="bg-gradient-to-br from-[#ff9328]/10 to-transparent border border-[#ff9328]/20 rounded-2xl p-8 space-y-4">
+        <section className="bg-gradient-to-br from-[var(--brand-border)]/10 to-transparent border border-[var(--brand-border)]/20 rounded-2xl p-8 space-y-4">
           <h2 className="text-xl font-bold text-white">Επίλυση Διαφορών</h2>
           <p className="text-sm">
             Οι παρόντες Όροι διέπονται από το ελληνικό δίκαιο και αρμόδια είναι τα

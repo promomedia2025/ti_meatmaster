@@ -141,8 +141,8 @@ export function AddAddressModal({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-zinc-800">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-[#ff9328]/10 rounded-full flex items-center justify-center border border-[#ff9328]/20">
-                <MapPin className="w-5 h-5 text-[#ff9328]" />
+              <div className="w-10 h-10 bg-[var(--brand-border)]/10 rounded-full flex items-center justify-center border border-[var(--brand-border)]/20">
+                <MapPin className="w-5 h-5 text-[var(--brand-border)]" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Προσθήκη Διεύθυνσης</h2>
@@ -187,7 +187,7 @@ export function AddAddressModal({
                     <Input 
                       value={bellName} onChange={(e) => setBellName(e.target.value)} 
                       placeholder="π.χ. Παππάς"
-                      className="bg-black border-zinc-800 text-white focus:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white focus:border-[var(--brand-border)]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -195,7 +195,7 @@ export function AddAddressModal({
                     <Input 
                       value={floor} onChange={(e) => setFloor(e.target.value)} 
                       placeholder="π.χ. 2ος"
-                      className="bg-black border-zinc-800 text-white focus:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white focus:border-[var(--brand-border)]"
                     />
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export function AddAddressModal({
             <Button 
               onClick={handleSave} 
               disabled={!selectedPlace || isSaving}
-              className="flex-1 bg-[#ff9328] hover:bg-[#915316] text-white font-bold shadow-lg shadow-orange-900/20"
+              className="flex-1 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold shadow-lg shadow-orange-900/20"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Αποθήκευση"}
             </Button>

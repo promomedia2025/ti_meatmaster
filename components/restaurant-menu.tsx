@@ -262,7 +262,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
       {/* Sticky Nav */}
       <div
         ref={navigationRef}
-        className={`sticky top-[75px] w-full border-b border-gray-800 z-30 shadow-lg transition-colors duration-200 ${
+        className={`sticky top-[60px] w-full border-b border-gray-800 z-30 shadow-lg transition-colors duration-200 ${
           isSticky ? "bg-[#242424]" : "bg-black"
         }`}
       >
@@ -279,7 +279,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
                     transition-colors
                     ${
                       activeCategory === cat.name
-                        ? "text-white border-[#ff9328]"
+                        ? "text-white border-[var(--brand-border)]"
                         : "text-gray-400 border-transparent hover:text-gray-300"
                     }
                   `}
@@ -345,13 +345,13 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
             setCartViewLocationId(locationId || undefined);
             setIsCartSidebarOpen(true);
           }}
-          className="w-full bg-[#ff9328] hover:bg-[#915316] text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-between shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
+          className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-between shadow-2xl shadow-blue-500/25 backdrop-blur-sm"
         >
           {(() => {
             const cart = getLocationCart(locationId || 0);
             return cart?.summary.count && cart.summary.count > 0;
           })() && (
-            <span className="bg-white text-[#ff9328] text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
+            <span className="bg-white text-[var(--brand-border)] text-sm font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center">
               {getLocationCart(locationId || 0)?.summary.count}
             </span>
           )}

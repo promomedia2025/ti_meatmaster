@@ -31,24 +31,24 @@ export default function PaymentFailedPage() {
           </div>
 
           {/* Action List / Instructions Box */}
-          <div className="bg-[#ff9328]/5 border border-[#ff9328]/20 rounded-2xl p-6 mb-8 text-left">
+          <div className="bg-[var(--brand-border)]/5 border border-[var(--brand-border)]/20 rounded-2xl p-6 mb-8 text-left">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#ff9328] mt-0.5 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-[var(--brand-border)] mt-0.5 shrink-0" />
               <div>
-                <p className="text-base text-[#ff9328] font-bold mb-3">
+                <p className="text-base text-[var(--brand-border)] font-bold mb-3">
                   Τι μπορείτε να κάνετε:
                 </p>
                 <ul className="text-[13px] text-zinc-300 space-y-2.5">
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#ff9328] rounded-full shrink-0" />
+                    <div className="w-1.5 h-1.5 bg-[var(--brand-border)] rounded-full shrink-0" />
                     Ελέγξτε αν το υπόλοιπο επαρκεί (Primary account).
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#ff9328] rounded-full shrink-0" />
+                    <div className="w-1.5 h-1.5 bg-[var(--brand-border)] rounded-full shrink-0" />
                     Εγκρίνετε τη συναλλαγή μέσω του Viva app.
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#ff9328] rounded-full shrink-0" />
+                    <div className="w-1.5 h-1.5 bg-[var(--brand-border)] rounded-full shrink-0" />
                     Βεβαιωθείτε ότι η κάρτα είναι ξεκλείδωτη.
                   </li>
                 </ul>
@@ -59,7 +59,7 @@ export default function PaymentFailedPage() {
           {/* Buttons Stack */}
           <div className="space-y-4">
             <Link href={`/${lang}/checkout`} className="block">
-              <Button className="w-full bg-[#ff9328] hover:bg-[#915316] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#7C2429]/20 flex items-center justify-center gap-2 text-lg font-bold">
+              <Button className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#7C2429]/20 flex items-center justify-center gap-2 text-lg font-bold">
                 <RefreshCw className="w-5 h-5" />
                 Δοκιμή Ξανά
               </Button>

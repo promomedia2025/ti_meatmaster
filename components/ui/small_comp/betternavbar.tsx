@@ -297,11 +297,11 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
           <div className="flex items-center gap-8 flex-shrink-0 ml-2">
             <Link href={`/${lang}`}>
               <Image
-                src="/logo_1.png"
+                src="/logo.png"
                 alt="Logo"
                 width={90}
-                height={68}
-                className="w-[70px] h-[60px] scale-100"
+                height={50}
+                className="w-[90px] h-[50px] scale-100"
               />
             </Link>
             {!isScrolled && !isSearchExpanded && (
@@ -352,7 +352,7 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
                   onClick={isAuthenticated ? handleProfileClick : handleAuthClick}
                   className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors focus-visible:outline-none
                   ${isAuthenticated
-                    ? "bg-[#ff9328] border-[#ff9328] hover:bg-[#915316]"
+                    ? "bg-[var(--brand-border)] border-[var(--brand-border)] hover:bg-[var(--brand-hover)]"
                     : "bg-background border-border hover:bg-muted"
                   }
                 `}

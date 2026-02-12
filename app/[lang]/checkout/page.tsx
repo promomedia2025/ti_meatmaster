@@ -968,7 +968,7 @@ function CheckoutPageContent() {
                 }
                 .spinner {
                   border: 3px solid #333;
-                  border-top: 3px solid #ff9328;
+                  border-top: 3px solid var(--brand-border);
                   border-radius: 50%;
                   width: 40px;
                   height: 40px;
@@ -1387,7 +1387,7 @@ function CheckoutPageContent() {
               {orderType === "delivery" && (
                 <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
                   <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-[#ff9328]" />
+                    <MapPin className="w-5 h-5 text-[var(--brand-border)]" />
                     Διεύθυνση παράδοσης
                   </h3>
                   {userLocation ? (
@@ -1424,7 +1424,7 @@ function CheckoutPageContent() {
                             userLocation.addressDetails.street || ""
                           }`.trim()}
                           readOnly
-                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -1435,7 +1435,7 @@ function CheckoutPageContent() {
                           <Input
                             value={userLocation.city}
                             readOnly
-                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
                         <div>
@@ -1445,7 +1445,7 @@ function CheckoutPageContent() {
                           <Input
                             value={userLocation.addressDetails.postalCode || ""}
                             readOnly
-                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
                       </div>
@@ -1458,7 +1458,7 @@ function CheckoutPageContent() {
                             value={bellName}
                             onChange={(e) => setBellName(e.target.value)}
                             placeholder="π.χ. Παππάς"
-                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
                         <div>
@@ -1469,7 +1469,7 @@ function CheckoutPageContent() {
                             value={floor}
                             onChange={(e) => setFloor(e.target.value)}
                             placeholder="π.χ. 3"
-                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                            className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
                       </div>
@@ -1499,7 +1499,7 @@ function CheckoutPageContent() {
                       <Button
                         onClick={handleAutocompleteFromNavbar}
                         disabled={!coordinates || isLoadingLocation}
-                        className="w-full bg-[#ff9328] text-white hover:bg-[#915316] disabled:opacity-50 disabled:cursor-not-allowed h-10 text-sm"
+                        className="w-full bg-[var(--brand-border)] text-white hover:bg-[var(--brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed h-10 text-sm"
                       >
                         {isLoadingLocation ? (
                           <>
@@ -1524,7 +1524,7 @@ function CheckoutPageContent() {
                           value={addressInput}
                           onChange={setAddressInput}
                           placeholder="Εισάγετε διεύθυνση παράδοσης..."
-                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                          className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                         />
                       </div>
                     </div>
@@ -1542,7 +1542,7 @@ function CheckoutPageContent() {
                   value={orderComments}
                   onChange={(e) => setOrderComments(e.target.value)}
                   placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
-                  className="w-full h-24 bg-black border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[#ff9328] focus:ring-1 focus:ring-[#ff9328] text-sm transition-all"
+                  className="w-full h-24 bg-black border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[var(--brand-border)] focus:ring-1 focus:ring-[var(--brand-border)] text-sm transition-all"
                 />
               </Card>
 
@@ -1570,7 +1570,7 @@ function CheckoutPageContent() {
                           isDeliveryDisabled
                             ? "cursor-not-allowed opacity-50 bg-black/50"
                             : "cursor-pointer hover:bg-black hover:border-zinc-800"
-                        } ${orderType === "delivery" ? "bg-black border-zinc-800 ring-1 ring-[#ff9328]" : ""}`}
+                        } ${orderType === "delivery" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : ""}`}
                       >
                         <input
                           type="radio"
@@ -1581,10 +1581,10 @@ function CheckoutPageContent() {
                             setOrderType(e.target.value as "delivery")
                           }
                           disabled={isDeliveryDisabled}
-                          className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                          className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
                         />
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`p-2 rounded-full ${orderType === "delivery" ? "bg-[#ff9328]/20 text-[#ff9328]" : "bg-zinc-800 text-zinc-400"}`}>
+                          <div className={`p-2 rounded-full ${orderType === "delivery" ? "bg-[var(--brand-border)]/20 text-[var(--brand-border)]" : "bg-zinc-800 text-zinc-400"}`}>
                              <MapPin className="w-4 h-4" />
                           </div>
                           <span className="text-white font-medium">Παράδοση</span>
@@ -1617,7 +1617,7 @@ function CheckoutPageContent() {
                           isPickupDisabledByMinOrder
                             ? "cursor-not-allowed opacity-50 bg-black/50"
                             : "cursor-pointer hover:bg-black hover:border-zinc-800"
-                        } ${orderType === "pickup" ? "bg-black border-zinc-800 ring-1 ring-[#ff9328]" : ""}`}
+                        } ${orderType === "pickup" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : ""}`}
                       >
                         <input
                           type="radio"
@@ -1628,10 +1628,10 @@ function CheckoutPageContent() {
                             setOrderType(e.target.value as "pickup")
                           }
                           disabled={isPickupDisabledByMinOrder}
-                          className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                          className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
                         />
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`p-2 rounded-full ${orderType === "pickup" ? "bg-[#ff9328]/20 text-[#ff9328]" : "bg-zinc-800 text-zinc-400"}`}>
+                          <div className={`p-2 rounded-full ${orderType === "pickup" ? "bg-[var(--brand-border)]/20 text-[var(--brand-border)]" : "bg-zinc-800 text-zinc-400"}`}>
                              <Package className="w-4 h-4" />
                           </div>
                           <span className="text-white font-medium">
@@ -1667,7 +1667,7 @@ function CheckoutPageContent() {
                   <div className="space-y-3">
                   {/* Cash Payment Option */}
                   <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "cash"
-                      ? "bg-zinc-900 border-[#ff9328] ring-1 ring-[#ff9328]"
+                      ? "bg-zinc-900 border-[var(--brand-border)] ring-1 ring-[var(--brand-border)]"
                       : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
                     }`}>
                     <input
@@ -1676,10 +1676,10 @@ function CheckoutPageContent() {
                       value="cash"
                       checked={paymentMethod === "cash"}
                       onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
-                      className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                      className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
                     />
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 ${paymentMethod === "cash" ? "text-[#ff9328]" : "text-zinc-500"}`} />
+                      <div className={`w-4 h-4 ${paymentMethod === "cash" ? "text-[var(--brand-border)]" : "text-zinc-500"}`} />
                       <span className="text-white font-medium text-sm">
                         Πληρωμή στην παράδοση/παραλαβή
                       </span>
@@ -1688,7 +1688,7 @@ function CheckoutPageContent() {
 
                   {/* Card Payment Option */}
                   <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "card"
-                      ? "bg-zinc-900 border-[#ff9328] ring-1 ring-[#ff9328]"
+                      ? "bg-zinc-900 border-[var(--brand-border)] ring-1 ring-[var(--brand-border)]"
                       : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
                     }`}>
                     <input
@@ -1697,10 +1697,10 @@ function CheckoutPageContent() {
                       value="card"
                       checked={paymentMethod === "card"}
                       onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
-                      className="w-4 h-4 accent-[#ff9328] bg-zinc-800 border-zinc-600 focus:ring-[#ff9328]"
+                      className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
                     />
                     <div className="flex items-center gap-2">
-                      <CreditCard className={`w-4 h-4 ${paymentMethod === "card" ? "text-[#ff9328]" : "text-zinc-500"}`} />
+                      <CreditCard className={`w-4 h-4 ${paymentMethod === "card" ? "text-[var(--brand-border)]" : "text-zinc-500"}`} />
                       <span className="text-white font-medium text-sm sm:text-base">
                         Πληρωμή με κάρτα 
                       </span>
@@ -1729,7 +1729,7 @@ function CheckoutPageContent() {
                         ""
                       }
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                       placeholder="Όνομα"
                     />
                   </div>
@@ -1740,7 +1740,7 @@ function CheckoutPageContent() {
                     <Input
                       value={user?.email || ""}
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                       placeholder="Email"
                     />
                   </div>
@@ -1751,7 +1751,7 @@ function CheckoutPageContent() {
                     <Input
                       value={user?.telephone || user?.phone || ""}
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#ff9328] focus:border-[#ff9328]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                       placeholder="Τηλέφωνο"
                     />
                   </div>
@@ -1861,7 +1861,7 @@ function CheckoutPageContent() {
                       <span className="text-white font-bold text-lg">
                         Σύνολο
                       </span>
-                      <span className="text-[#ff9328] font-bold text-xl">
+                      <span className="text-[var(--brand-border)] font-bold text-xl">
                         €{locationCart.summary.total.toFixed(2)}
                       </span>
                     </div>
@@ -1933,7 +1933,7 @@ function CheckoutPageContent() {
                           isDeliveryBlockedForCheckout ||
                           !currentOrderTypeMeetsMin
                             ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
-                            : "bg-[#ff9328] text-white hover:bg-[#915316] border border-transparent shadow-red-900/20 active:scale-[0.98]"
+                          : "bg-[var(--brand-border)] text-white hover:bg-[var(--brand-hover)] border border-transparent shadow-[var(--brand-shadow)] active:scale-[0.98]"
                         }`}
                       >
                         {isSubmitting ? (
@@ -2031,7 +2031,7 @@ export default function CheckoutPage() {
       fallback={
         <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-10 h-10 text-[#ff9328] animate-spin mx-auto mb-4" />
+            <Loader2 className="w-10 h-10 text-[var(--brand-border)] animate-spin mx-auto mb-4" />
             <div className="text-white text-lg font-medium">Φόρτωση...</div>
           </div>
         </div>

@@ -87,7 +87,7 @@ export default function MenuCategory({
   return (
     <div ref={categoryRef} className="mb-8">
       {/* Category Header with Orange Accent Border */}
-      <h2 className="text-xl font-bold text-white mb-4 pl-2 border-l-4 border-[#ff9328]">
+      <h2 className="text-xl font-bold text-white mb-4 pl-2 border-l-4 border-[var(--brand-border)]">
         {categoryName}
       </h2>
       
@@ -97,12 +97,12 @@ export default function MenuCategory({
             key={item.menu_id}
             id={String(item.menu_id)}
             onClick={() => onMenuItemClick(item)}
-            className="bg-transparent sm:bg-zinc-900 rounded-xl overflow-hidden border-0 sm:border border-zinc-800 border-b border-zinc-800/50 sm:border-b-zinc-800 flex pb-4 sm:pb-0 transition-all duration-200 hover:scale-[1.02] hover:border-[#ff9328]/50 hover:shadow-[0_0_20px_rgba(255,147,40,0.15)] cursor-pointer group"
+            className="bg-transparent sm:bg-zinc-900 rounded-xl overflow-hidden border-0 sm:border border-zinc-800 border-b border-zinc-800/50 sm:border-b-zinc-800 flex pb-4 sm:pb-0 transition-all duration-200 hover:scale-[1.02] hover:border-[var(--brand-border)]/50 hover:shadow-[0_0_20px_rgba(255,147,40,0.15)] cursor-pointer group"
           >
             {/* Left side - Text content */}
             <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
               <div className="flex flex-col h-full">
-                <h3 className="text-white font-bold mb-2 text-lg group-hover:text-[#ff9328] transition-colors truncate">
+                <h3 className="text-white font-bold mb-2 text-lg group-hover:text-[var(--brand-border)] transition-colors truncate">
                   {item.menu_name}
                 </h3>
                 
@@ -149,7 +149,7 @@ export default function MenuCategory({
                   onMenuItemClick(item);
                 }}
                 disabled={loadingItemId === item.menu_id || !isAuthenticated}
-                className="absolute top-0 right-0 w-10 h-10 bg-[#ff9328] rounded-full flex items-center justify-center hover:bg-[#915316] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-black hover:scale-110 active:scale-95 z-10"
+                className="absolute top-0 right-0 w-10 h-10 bg-[var(--brand-border)] rounded-full flex items-center justify-center hover:bg-[var(--brand-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-2 border-black hover:scale-110 active:scale-95 z-10"
               >
                 {loadingItemId === item.menu_id ? (
                   <Skeleton className="w-5 h-5 rounded-full bg-white/20" />

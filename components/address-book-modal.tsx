@@ -267,19 +267,19 @@ export function AddressBookModal({
                     {addresses.map((address) => (
                       <div
                         key={address.id}
-                        className="group flex items-start gap-4 p-4 bg-black rounded-xl cursor-pointer hover:border-[#ff9328] border border-zinc-800 transition-all duration-200 relative overflow-hidden"
+                        className="group flex items-start gap-4 p-4 bg-black rounded-xl cursor-pointer hover:border-[var(--brand-border)] border border-zinc-800 transition-all duration-200 relative overflow-hidden"
                         onClick={() => handleAddressSelect(address)}
                       >
                          {/* Hover highlight effect */}
-                         <div className="absolute inset-0 bg-[#ff9328]/0 group-hover:bg-[#ff9328]/5 transition-colors pointer-events-none" />
+                         <div className="absolute inset-0 bg-[var(--brand-border)]/0 group-hover:bg-[var(--brand-border)]/5 transition-colors pointer-events-none" />
 
-                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[#ff9328]/30 transition-colors shrink-0 z-10">
-                          <MapPin className="w-5 h-5 text-zinc-400 group-hover:text-[#ff9328] transition-colors" />
+                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[var(--brand-border)]/30 transition-colors shrink-0 z-10">
+                          <MapPin className="w-5 h-5 text-zinc-400 group-hover:text-[var(--brand-border)] transition-colors" />
                         </div>
                         
                         <div className="flex-1 min-w-0 z-10">
                           <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-white font-bold text-sm group-hover:text-[#ff9328] transition-colors">
+                              <span className="text-white font-bold text-sm group-hover:text-[var(--brand-border)] transition-colors">
                                 {address.label}
                               </span>
                           </div>
@@ -323,7 +323,7 @@ export function AddressBookModal({
                     </p>
                     <Button
                       onClick={handleAddNewAddress}
-                      className="bg-[#ff9328] hover:bg-[#915316] text-white shadow-lg shadow-red-900/20"
+                        className="bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white shadow-lg shadow-[var(--brand-shadow)]"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Προσθήκη πρώτης διεύθυνσης

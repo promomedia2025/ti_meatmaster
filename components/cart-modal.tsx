@@ -367,7 +367,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               </button>
             </div>
 
-            <button className="w-full bg-[#ff9328] text-white py-3 rounded-lg font-medium hover:bg-[#915316] transition-colors">
+            <button className="w-full bg-[var(--brand-border)] text-white py-3 rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-colors">
               Συνέχεια παραγγελίας
             </button>
           </div>

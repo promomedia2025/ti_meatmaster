@@ -117,7 +117,7 @@ export function ActiveOrdersDropdown({
 
   const getStatusStyle = (statusName: string) => {
     const s = statusName.toLowerCase();
-    if (s.includes("pending") || s.includes("process")) return { icon: <Clock className="w-4 h-4 text-[#ff9328]" />, color: "text-[#ff9328]" };
+    if (s.includes("pending") || s.includes("process")) return { icon: <Clock className="w-4 h-4 text-[var(--brand-border)]" />, color: "text-[var(--brand-border)]" };
     if (s.includes("delivery")) return { icon: <Package className="w-4 h-4 text-blue-500" />, color: "text-blue-500" };
     if (s.includes("received")) return { icon: <CheckCircle className="w-4 h-4 text-green-500" />, color: "text-green-500" };
     return { icon: <Clock className="w-4 h-4 text-muted-foreground" />, color: "text-muted-foreground" };
@@ -144,12 +144,12 @@ export function ActiveOrdersDropdown({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-popover relative z-20">
         <div className="flex items-center gap-2">
-          <div className="bg-[#ff9328]/10 p-1.5 rounded-full">
-            <Package className="w-4 h-4 text-[#ff9328]" />
+          <div className="bg-[var(--brand-border)]/10 p-1.5 rounded-full">
+            <Package className="w-4 h-4 text-[var(--brand-border)]" />
           </div>
           <h3 className="font-bold text-sm">Ενεργές Παραγγελίες</h3>
         </div>
-        <div className="bg-[#ff9328] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+        <div className="bg-[var(--brand-border)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
             {orders.length}
         </div>
       </div>
@@ -200,7 +200,7 @@ export function ActiveOrdersDropdown({
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold text-sm text-foreground group-hover:text-[#ff9328] transition-colors line-clamp-1">
+                      <h4 className="font-semibold text-sm text-foreground group-hover:text-[var(--brand-border)] transition-colors line-clamp-1">
                         {order.location_name}
                       </h4>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
@@ -218,7 +218,7 @@ export function ActiveOrdersDropdown({
                      <span className="block font-bold text-sm text-foreground whitespace-nowrap">
                        {parseFloat(order.order_total).toFixed(2)} {order.currency}
                      </span>
-                     <ArrowRight className="w-4 h-4 text-[#ff9328] ml-auto mt-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                     <ArrowRight className="w-4 h-4 text-[var(--brand-border)] ml-auto mt-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                   </div>
                 </div>
               );
@@ -235,7 +235,7 @@ export function ActiveOrdersDropdown({
               router.push("/order-history");
               onClose();
             }}
-            className="w-full py-2 text-center text-sm font-medium text-foreground hover:text-[#ff9328] transition-colors rounded-lg hover:bg-muted"
+            className="w-full py-2 text-center text-sm font-medium text-foreground hover:text-[var(--brand-border)] transition-colors rounded-lg hover:bg-muted"
           >
             Ιστορικό Παραγγελιών
           </button>

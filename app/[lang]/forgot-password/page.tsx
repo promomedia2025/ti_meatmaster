@@ -129,7 +129,7 @@ function ForgotPasswordForm() {
                 </p>
                 <div className="mt-4">
                   <Link href="/">
-                    <Button className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98]">
+                    <Button className="w-full h-12 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold transition-all shadow-lg active:scale-[0.98]">
                       Σύνδεση
                     </Button>
                   </Link>
@@ -144,7 +144,7 @@ function ForgotPasswordForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                     disabled={isResetting}
                     minLength={8}
                   />
@@ -157,7 +157,7 @@ function ForgotPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                    className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                     disabled={isResetting}
                     minLength={8}
                   />
@@ -172,7 +172,7 @@ function ForgotPasswordForm() {
                 <Button
                   type="submit"
                   disabled={isResetting}
-                  className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
+                  className="w-full h-12 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                 >
                   {isResetting ? "Ενημέρωση..." : "Ενημέρωση Κωδικού"}
                 </Button>
@@ -222,7 +222,7 @@ function ForgotPasswordForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[#ff9328] focus-visible:border-[#ff9328]"
+                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
                   disabled={isSubmitting}
                 />
               </div>
@@ -236,7 +236,7 @@ function ForgotPasswordForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 bg-[#ff9328] hover:bg-[#915316] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
+                className="w-full h-12 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
               >
                 {isSubmitting ? "Αποστολή..." : "Αποστολή"}
               </Button>

@@ -97,7 +97,7 @@ export default function PiraeusBankAuthorizePage() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 font-sans selection:bg-[#ff9328]/40">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 font-sans selection:bg-[var(--brand-border)]/40">
       <div className="max-w-md w-full">
         {/* Main Card */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 text-center shadow-2xl relative overflow-hidden">
@@ -105,7 +105,7 @@ export default function PiraeusBankAuthorizePage() {
           {isLoading && (
             <div className="animate-in fade-in duration-500">
               <div className="relative mb-6 inline-block">
-                <div className="absolute inset-0 bg-[#ff9328]/20 blur-xl rounded-full animate-pulse" />
+                <div className="absolute inset-0 bg-[var(--brand-border)]/20 blur-xl rounded-full animate-pulse" />
                 <Loader2 className="w-20 h-20 text-[#E54B53] relative z-10 animate-spin" />
               </div>
               <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">
@@ -151,14 +151,14 @@ export default function PiraeusBankAuthorizePage() {
           <div className="space-y-4">
             {isFailure ? (
               <Link href={`/${lang}/checkout${searchParams.get("locationId") ? `?locationId=${searchParams.get("locationId")}` : ""}`} className="block">
-                <Button className="w-full bg-[#ff9328] hover:bg-[#915316] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#ff9328]/20 flex items-center justify-center gap-2 text-lg font-bold">
+                <Button className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[var(--brand-border)]/20 flex items-center justify-center gap-2 text-lg font-bold">
                   <ArrowLeft className="w-5 h-5" />
                   Επιστροφή στο Checkout
                 </Button>
               </Link>
             ) : (
               <Link href={`/${lang}`} className="block">
-                <Button className="w-full bg-[#ff9328] hover:bg-[#915316] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[#ff9328]/20 flex items-center justify-center gap-2 text-lg font-bold">
+                <Button className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white py-7 rounded-2xl transition-all shadow-lg shadow-[var(--brand-border)]/20 flex items-center justify-center gap-2 text-lg font-bold">
                   {isSuccess ? "Συνέχεια στην Αρχική" : "Επιστροφή στην Αρχική"}
                 </Button>
               </Link>

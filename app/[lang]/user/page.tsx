@@ -52,13 +52,13 @@ export default function UserPage() {
   ) => {
     const content = (
       <div className="flex items-center gap-4">
-        {/* ICON: Using Brand Orange #ff9328 */}
-        <div className="w-12 h-12 rounded-xl bg-[#ff9328]/10 flex items-center justify-center text-[#ff9328] group-hover:bg-[#ff9328] group-hover:text-white transition-all duration-300">
+        {/* ICON: Using Brand Orange var(--brand-border) */}
+        <div className="w-12 h-12 rounded-xl bg-[var(--brand-border)]/10 flex items-center justify-center text-[var(--brand-border)] group-hover:bg-[var(--brand-border)] group-hover:text-white transition-all duration-300">
           {icon}
         </div>
         
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-white group-hover:text-[#ff9328] transition-colors">
+          <h3 className="text-lg font-bold text-white group-hover:text-[var(--brand-border)] transition-colors">
             {title}
           </h3>
           <p className="text-zinc-500 text-sm group-hover:text-zinc-400 transition-colors">
@@ -66,13 +66,13 @@ export default function UserPage() {
           </p>
         </div>
         
-        <div className="text-zinc-600 group-hover:text-[#ff9328] transition-colors transform group-hover:translate-x-1 duration-200">
+        <div className="text-zinc-600 group-hover:text-[var(--brand-border)] transition-colors transform group-hover:translate-x-1 duration-200">
           →
         </div>
       </div>
     );
 
-    const baseClasses = "block w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[#ff9328]/30 hover:bg-zinc-800 transition-all duration-200 group";
+    const baseClasses = "block w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-[var(--brand-border)]/30 hover:bg-zinc-800 transition-all duration-200 group";
 
     return href ? (
       <Link href={href} className={baseClasses}>{content}</Link>

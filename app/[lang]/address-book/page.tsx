@@ -116,7 +116,7 @@ export default function AddressBookPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#ff9328] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[var(--brand-border)] animate-spin" />
       </div>
     );
   }
@@ -132,7 +132,7 @@ export default function AddressBookPage() {
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center border-4 border-zinc-900 shadow-xl shrink-0">
               {/* Brand Color Icon */}
-              <MapPin className="w-8 h-8 text-[#ff9328]" />
+              <MapPin className="w-8 h-8 text-[var(--brand-border)]" />
             </div>
             <div className="overflow-hidden">
               <h1 className="text-3xl font-bold text-white mb-1">Βιβλίο Διευθύνσεων</h1>
@@ -156,7 +156,7 @@ export default function AddressBookPage() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm bg-[#ff9328] hover:bg-[#915316] text-white shadow-[0_0_20px_rgba(255,147,40,0.2)] transition-all"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white shadow-[0_0_20px_rgba(255,147,40,0.2)] transition-all"
           >
             <Plus className="w-5 h-5" />
             <span>Προσθήκη Διεύθυνσης</span>
@@ -189,7 +189,7 @@ export default function AddressBookPage() {
                 <h3 className="text-xl font-bold text-white mb-2">Δεν υπάρχουν διευθύνσεις</h3>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="mt-4 bg-[#ff9328] text-white px-6 py-2 rounded-full font-bold text-sm"
+                  className="mt-4 bg-[var(--brand-border)] text-white px-6 py-2 rounded-full font-bold text-sm"
                 >
                   Προσθήκη Διεύθυνσης
                 </button>
@@ -202,7 +202,7 @@ export default function AddressBookPage() {
                 >
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${address.is_default ? 'bg-[#ff9328] text-white' : 'bg-black text-zinc-500 border border-zinc-800'}`}>
+                      <div className={`mt-1 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${address.is_default ? 'bg-[var(--brand-border)] text-white' : 'bg-black text-zinc-500 border border-zinc-800'}`}>
                         {address.is_default ? <MapPin className="w-5 h-5 fill-current" /> : <Home className="w-5 h-5" />}
                       </div>
 
@@ -210,7 +210,7 @@ export default function AddressBookPage() {
                         <div className="flex flex-wrap items-center gap-3 mb-1">
                           <h3 className="text-lg font-bold text-white">{address.address_1}</h3>
                           {address.is_default && (
-                            <span className="bg-[#ff9328]/10 text-[#ff9328] border border-[#ff9328]/30 text-[10px] font-bold px-2 py-0.5 rounded-full ">
+                            <span className="bg-[var(--brand-border)]/10 text-[var(--brand-border)] border border-[var(--brand-border)]/30 text-[10px] font-bold px-2 py-0.5 rounded-full ">
                               Προεπιλογή
                             </span>
                           )}
@@ -240,7 +240,7 @@ export default function AddressBookPage() {
                       {!address.is_default && (
                         <button
                           onClick={() => handleSetAsDefault(address.id)}
-                          className="px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-[#ff9328] hover:text-white text-zinc-300 rounded-lg transition-all"
+                          className="px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-[var(--brand-border)] hover:text-white text-zinc-300 rounded-lg transition-all"
                         >
                           Ορισμός προεπιλογής
                         </button>

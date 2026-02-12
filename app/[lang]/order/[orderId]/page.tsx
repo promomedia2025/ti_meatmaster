@@ -466,7 +466,7 @@ export default function OrderStatusPage() {
                           : "Η παραγγελία σας είναι έτοιμη!"}
                       </span>
                       {timeRemaining > 0 && (
-                        <div className="text-4xl font-bold text-[#ff9328] font-mono">
+                        <div className="text-4xl font-bold text-[var(--brand-border)] font-mono">
                           {formatTimeRemaining(timeRemaining)}
                         </div>
                       )}
@@ -583,7 +583,7 @@ export default function OrderStatusPage() {
                                   !total.title
                                     .toLowerCase()
                                     .includes("subtotal")
-                                    ? "text-[#ff9328] font-bold text-xl"
+                                    ? "text-[var(--brand-border)] font-bold text-xl"
                                     : "text-zinc-300 font-medium"
                                 }`}
                               >

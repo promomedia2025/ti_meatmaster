@@ -211,7 +211,7 @@ export default function MenuSection({
               <button
                 onClick={() => handleAddToCart(3, "Feast for 2", 18.5)}
                 disabled={loadingItemId === 3}
-                className="w-8 h-8 bg-[#ff9328] rounded-full flex items-center justify-center hover:bg-[#ff9328] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-8 h-8 bg-[var(--brand-border)] rounded-full flex items-center justify-center hover:bg-[var(--brand-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingItemId === 3 ? (
                   <Skeleton className="w-4 h-4 rounded-full" />
