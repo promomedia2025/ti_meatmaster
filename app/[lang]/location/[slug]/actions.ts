@@ -45,7 +45,7 @@ export async function favoriteLocation(
     const result = await response.json();
 
     // Revalidate the page to refresh data
-    const pathToRevalidate = `/location/cocofino-${locationId}`;
+    const pathToRevalidate = `/location/Perfetta-${locationId}`;
     revalidatePath(pathToRevalidate, "page");
 
     return { success: true };
@@ -100,7 +100,7 @@ export async function unfavoriteLocation(
   
 
     // Revalidate the page to refresh data
-    const pathToRevalidate = `/location/cocofino-${locationId}`;
+    const pathToRevalidate = `/location/Perfetta-${locationId}`;
     revalidatePath(pathToRevalidate, "page");
 
     return { success: true };

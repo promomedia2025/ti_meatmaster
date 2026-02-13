@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
  * API Route: Piraeus Bank Authorize
  *
  * This endpoint receives JSON data and forwards it exactly as-is
- * to the cocofino.bettersolution.gr/piraeusbank/authorize backend API route.
+ * to the Perfetta.bettersolution.gr/piraeusbank/authorize backend API route.
  */
 export async function POST(request: NextRequest) {
   try {

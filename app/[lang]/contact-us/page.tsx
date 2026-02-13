@@ -67,7 +67,7 @@ export default function ContactPage() {
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             src="https://www.openstreetmap.org/export/embed.html?bbox=23.792,37.998,23.802,38.005&layer=mapnik"
-            title="Cocofino Location"
+            title="Perfetta Location"
             className="w-full h-full scale-[1.1]" 
           ></iframe>
           
@@ -122,7 +122,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Email</h3>
-              <p className="text-zinc-400 text-sm break-all">cocofinowoltdrive@gmail.com</p>
+              <p className="text-zinc-400 text-sm break-all">Perfettawoltdrive@gmail.com</p>
             </div>
           </div>
         </div>

@@ -179,7 +179,7 @@ export default function PiraeusBankAuthorizePage() {
           {/* Footer Info */}
           {!isLoading && (
             <div className="mt-8 pt-6 border-t border-zinc-800/60 text-[11px] text-zinc-500 italic">
-              cocofino.gr • Ασφαλείς Πληρωμές μέσω ePay
+              Perfetta.gr • Ασφαλείς Πληρωμές μέσω ePay
             </div>
           )}
         </div>

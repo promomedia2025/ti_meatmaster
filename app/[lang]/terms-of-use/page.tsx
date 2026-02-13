@@ -57,7 +57,7 @@ export default function TermsOfUsePage() {
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
-                <span><strong className="text-zinc-200">Ιστοσελίδα:</strong> Το ηλεκτρονικό κατάστημα Cocofino.gr (www.cocofino.gr)</span>
+                <span><strong className="text-zinc-200">Ιστοσελίδα:</strong> Το ηλεκτρονικό κατάστημα Perfetta.gr (www.Perfetta.gr)</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
@@ -88,7 +88,7 @@ export default function TermsOfUsePage() {
             <div className="text-sm space-y-1 text-zinc-300">
               <p>Φανερωμένης 1Α, Χολαργός 15561, Αττική</p>
               <p>Τηλ.: 210 6543065</p>
-              <p>Email: cocofinowoltdrive@gmail.com</p>
+              <p>Email: Perfettawoltdrive@gmail.com</p>
             </div>
           </div>
 

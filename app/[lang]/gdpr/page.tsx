@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Email: <a href="mailto:cocofinowoltdrive@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">cocofinowoltdrive@gmail.com</a>
+                Email: <a href="mailto:Perfettawoltdrive@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">Perfettawoltdrive@gmail.com</a>
               </p>
             </div>
           </div>

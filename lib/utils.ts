@@ -13,9 +13,9 @@ export function cn(...inputs: ClassValue[]) {
 export function getApiUrl(): string {
   if (typeof window === 'undefined') {
     // Server-side
-    return process.env.API_URL || 'https://cocofino.bettersolution.gr'
+    return process.env.API_URL || 'https://Perfetta.bettersolution.gr'
   } else {
     // Client-side
-    return process.env.NEXT_PUBLIC_API_URL || 'https://cocofino.bettersolution.gr'
+    return process.env.NEXT_PUBLIC_API_URL || 'https://Perfetta.bettersolution.gr'
   }
 }

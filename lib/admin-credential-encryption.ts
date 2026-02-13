@@ -24,7 +24,7 @@ function getSalt(): ArrayBuffer {
   
   // Add a fixed salt (this should be unique per app installation)
   // In production, you might want to generate this once per installation
-  const fixedSalt = "ti_cocofino_admin_encryption_salt_v1";
+  const fixedSalt = "ti_Perfetta_admin_encryption_salt_v1";
   sources.push(fixedSalt);
   
   // Combine all sources
@@ -39,7 +39,7 @@ function getSalt(): ArrayBuffer {
 function getPasswordMaterial(): ArrayBuffer {
   // Use a fixed password combined with app-specific data
   // This ensures the key is tied to the specific Electron installation
-  const password = "ti_cocofino_admin_password_key_v1";
+  const password = "ti_Perfetta_admin_password_key_v1";
   const encoder = new TextEncoder();
   return encoder.encode(password);
 }

@@ -218,7 +218,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredDiscountIds}
           locale={lang}
-          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
+          locationSlug={process.env.NEXT_LOCATION_SLUG}
         />
 
         <div className="w-full my-8 rounded-xl overflow-hidden shadow-lg border border-white/10">
@@ -241,7 +241,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredMenuIds}
           locale={lang}
-          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
+          locationSlug={process.env.NEXT_LOCATION_SLUG}
         />
       </main>
 

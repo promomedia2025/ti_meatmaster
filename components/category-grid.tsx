@@ -31,7 +31,7 @@ interface Category {
 }
 
 /* 🔥 ONE LINK FOR ALL CATEGORIES */
-const CATEGORY_LINK = "/location/cocofino-13";
+const CATEGORY_LINK = "/location/Perfetta-1";
 
 const categoryImageMap: Record<string, any> = {
   Τυλιχτά: image1,

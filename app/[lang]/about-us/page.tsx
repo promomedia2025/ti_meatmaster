@@ -50,7 +50,7 @@ export default function AboutUsPage() {
               Σχετικά με εμάς
             </h1>
             <p className="text-zinc-400 text-sm">
-              Λίγα λόγια για το Cocofino
+              Λίγα λόγια για το Perfetta
             </p>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function AboutUsPage() {
           <h2 className="text-3xl font-bold text-white">Η ιστορία μας</h2>
           <div className="text-lg leading-relaxed text-zinc-400 space-y-4">
             <p>
-              Το <span className="text-[var(--brand-border)] font-bold">Cocofino</span> είναι το αγαπημένο σας ψητοπωλείο που προσφέρει κυρίως
+              Το <span className="text-[var(--brand-border)] font-bold">Perfetta</span> είναι το αγαπημένο σας ψητοπωλείο που προσφέρει κυρίως
               κοτόπουλο (σούβλας, σχάρας, πανέ), αλλά και κρεατικά (γύρο, καλαμάκι,
               παϊδάκια), σουβλάκια, burger, και μεγάλη ποικιλία καθημερινών
               φρεσκομαγειρεμένων φαγητών.
@@ -119,7 +119,7 @@ export default function AboutUsPage() {
         <section className="bg-gradient-to-r from-[var(--brand-border)]/10 to-transparent border-l-4 border-[var(--brand-border)] p-6 rounded-r-xl">
           <p className="text-lg text-zinc-200 italic leading-relaxed">
             "Αν ψάχνετε για γρήγορο, νόστιμο και ποιοτικό κοτόπουλο,
-            κρεατικά, σουβλάκια ή μαγειρευτά, το Cocofino είναι η καλύτερη επιλογή!!"
+            κρεατικά, σουβλάκια ή μαγειρευτά, το Perfetta είναι η καλύτερη επιλογή!!"
           </p>
         </section>
 
@@ -140,7 +140,7 @@ export default function AboutUsPage() {
                   <MapPin className="w-5 h-5 text-[var(--brand-border)]" />
                 </div>
                 <div>
-                  <p className="font-bold text-white mb-1">Ψητοπωλείο Cocofino</p>
+                  <p className="font-bold text-white mb-1">Ψητοπωλείο Perfetta</p>
                   <p className="text-sm">Φανερωμένης 1Α, Χολαργός 15561, Αττική</p>
                 </div>
               </li>
@@ -154,7 +154,7 @@ export default function AboutUsPage() {
                 <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 group-hover:border-[var(--brand-border)]/50 transition-colors">
                   <Mail className="w-5 h-5 text-[var(--brand-border)]" />
                 </div>
-                <p className="font-medium text-white break-all">cocofinowoltdrive@gmail.com</p>
+                <p className="font-medium text-white break-all">Perfettawoltdrive@gmail.com</p>
               </li>
             </ul>
 

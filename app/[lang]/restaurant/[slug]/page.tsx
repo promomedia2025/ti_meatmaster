@@ -97,9 +97,9 @@ const restaurants = {
       "DRINKS",
     ],
   },
-  "cocofino-6": {
-    id: "cocofino-6",
-    name: "Cocofino",
+  "Perfetta-6": {
+    id: "Perfetta-6",
+    name: "Perfetta",
     description: "Fresh and delicious food!",
     image: "/placeholder.jpg",
     heroImage: "/placeholder.jpg",

@@ -18,7 +18,7 @@ export function Footer({ lang, dict }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
           {/* Logo and App Downloads */}
           <div className="md:col-span-1">
-            <div className="text-2xl font-bold text-white mb-6">Cocofino</div>
+            <div className="text-2xl font-bold text-white mb-6">Perfetta</div>
             <div className="space-y-3"></div>
           </div>
 
@@ -68,17 +68,17 @@ export function Footer({ lang, dict }: FooterProps) {
             <h3 className="text-white font-semibold mb-4">Ακολουθήστε μας</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="https://www.instagram.com/cocofino_delivery" className="hover:text-white transition-colors">
+                <a href="https://www.instagram.com/perfettapizzarestaurant/" className="hover:text-white transition-colors">
                   Instagram
                 </a>
               </li>
               <li>
-                <a href="https://www.facebook.com/cocofino.gr/?locale=el_GR" className="hover:text-white transition-colors">
+                <a href="https://www.facebook.com/perfettapizza/?locale=el_GR" className="hover:text-white transition-colors">
                   Facebook
                 </a>
               </li>
               <li>
-                <a href="https://g.page/r/CYGezXFudNWFEBE/review" className="hover:text-white transition-colors">
+                <a href="https://share.google.com/XcnyIVQhBXGXbuPD6" className="hover:text-white transition-colors">
                   Google Reviews
                 </a>
               </li>
@@ -100,39 +100,35 @@ export function Footer({ lang, dict }: FooterProps) {
               </a>
             </div>
 
-            {/* Center: Payment Logos Group (Visa, Master, Epay) */}
-            <a 
-              href="/payments" 
-              className="flex flex-col sm:flex-row items-center gap-3 group hover:opacity-80 transition-opacity"
-            >
-               <span className="text-xs text-gray-500 group-hover:text-gray-400">Πληρωμές με</span>
-               
-               <div className="flex items-center gap-4">
-                 {/* Visa */}
-                 <img 
-                   src="/banks/visa.png" 
-                   alt="Visa" 
-                   className="h-5 w-auto object-contain" 
-                 />
-                 
-                 {/* MasterCard */}
-                 <img 
-                   src="/banks/master.png" 
-                   alt="MasterCard" 
-                   className="h-6 w-auto object-contain" 
-                 />
-
-                 {/* Epay */}
-                 <img 
-                   src="/banks/epay.png" 
-                   alt="epay" 
-                   className="h-6 w-auto object-contain" 
-                 />
-               </div>
-            </a>
+            {/* Center: Payment Logos (The fix for centering) */}
+            <div className="flex justify-center">
+              <a
+                href="/payments"
+                className="flex flex-col sm:flex-row items-center gap-3 group hover:opacity-80 transition-opacity"
+              >
+                <span className="text-xs text-gray-500 group-hover:text-gray-400">Πληρωμές με</span>
+                <div className="flex items-center gap-4">
+                  <img
+                    src="/banks/visa.png"
+                    alt="Visa"
+                    className="h-4 md:h-5 w-auto object-contain"
+                  />
+                  <img
+                    src="/banks/master.png"
+                    alt="MasterCard"
+                    className="h-5 md:h-6 w-auto object-contain"
+                  />
+                  <img
+                    src="/banks/viva.png"
+                    alt="Viva"
+                    className="h-5 md:h-6 w-auto object-contain"
+                  />
+                </div>
+              </a>
+            </div>
 
             {/* Right: Copyright */}
-            <div className="text-sm text-gray-400">© Cocofino 2026</div>
+            <div className="text-sm text-gray-400">© Perfetta 2026</div>
           </div>
         </div>
       </div>
