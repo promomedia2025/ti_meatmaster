@@ -16,7 +16,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { User, Bike, Car, X, Info, ArrowRight } from "lucide-react"; // Added Info, ArrowRight
+import { User, Bike, Car, X, Info, ArrowRight, Hammer, Clock } from "lucide-react"; // Added Hammer, Clock
 import Image from "next/image";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useTranslations } from "@/lib/i18n/translations-provider";
@@ -24,10 +24,14 @@ import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 import { useAuth } from "@/lib/auth-context"; // Import Auth Context
 import Link from "next/link";
 
-const featuredMenuIds = [229, 101, 177, 406, 92, 176, 184, 196];
-const featuredDiscountIds = [553, 561, 562, 564, 566];
+const featuredMenuIds = [395, 404, 397, 415, 510, 410, 345, 341, 346, 411, 372, 388, 404, 287, 419, 508, 373, 284];
+const featuredDiscountIds = [527,528,529,530,531,532,533,534,535,536];
 
 export default function HomePage() {
+  // --- MAINTENANCE TOGGLE ---
+  const isUnderConstruction = false;
+  // --------------------------
+
   const { dict, lang } = useTranslations();
   const { subscribe, unsubscribe, isConnected, pusher } = usePusher();
   const { isAuthenticated } = useAuth(); // Get auth status
@@ -43,18 +47,20 @@ export default function HomePage() {
 
   // Show renewal modal if not logged in
   useEffect(() => {
-    // Small timeout to ensure hydration and smooth entrance
+    // Skip this if under construction
+    if (isUnderConstruction) return;
+
     const timer = setTimeout(() => {
       if (!isAuthenticated) {
         setShowRenewalModal(true);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isUnderConstruction]);
 
   // Subscribe to all active orders for real-time notifications
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected || isUnderConstruction) {
       return;
     }
 
@@ -64,11 +70,8 @@ export default function HomePage() {
       return;
     }
 
-    // Subscribe to each active order channel
     activeOrderIds.forEach((orderId) => {
       const channelName = `order.${orderId}`;
-
-      // Skip if already subscribed
       if (subscribedChannelsRef.current.has(channelName)) {
         return;
       }
@@ -76,18 +79,13 @@ export default function HomePage() {
       const channel = subscribe(channelName);
 
       if (channel) {
-        // Unbind any existing handlers first to prevent duplicates
         channel.unbind("orderStatusUpdated");
-
         subscribedChannelsRef.current.add(channelName);
-
         channel.bind("pusher:subscription_succeeded", () => { });
-
         channel.bind("pusher:subscription_error", (error: any) => {
           subscribedChannelsRef.current.delete(channelName);
         });
 
-        // Listen for order status updates
         channel.bind("orderStatusUpdated", (data: any) => {
           const statusName = data.status_name || data.statusName || "Updated";
           toast.success("Ενημέρωση Παραγγελίας", {
@@ -104,23 +102,49 @@ export default function HomePage() {
       }
     });
 
-    // Cleanup function
     return () => {
       subscribedChannelsRef.current.forEach((channelName) => {
-        // Get the channel and unbind all event handlers
         if (pusher) {
           const channel = pusher.channel(channelName);
           if (channel) {
             channel.unbind("orderStatusUpdated");
           }
         }
-
         unsubscribe(channelName);
       });
       subscribedChannelsRef.current.clear();
     };
-  }, [isConnected, subscribe, unsubscribe, pusher]);
+  }, [isConnected, subscribe, unsubscribe, pusher, isUnderConstruction]);
 
+  // --- MAINTENANCE VIEW ---
+  if (isUnderConstruction) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-6 text-center">
+        <div className="relative mb-10">
+          <div className="absolute inset-0 bg-orange-600 blur-[100px] opacity-20 rounded-full" />
+          <div className="relative bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-md">
+            <Hammer className="w-16 h-16 text-orange-500 animate-bounce" />
+          </div>
+        </div>
+
+        <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+          Επιστρέφουμε <span className="text-orange-500">Σύντομα</span>
+        </h1>
+
+        <div className="max-w-lg space-y-4">
+          <p className="text-xl text-gray-300 font-medium">
+            Η σελίδα μας ανανεώνεται για να σας προσφέρουμε την καλύτερη δυνατή εμπειρία.
+          </p>
+          <div className="flex items-center justify-center gap-2 text-orange-400 bg-orange-400/10 py-2 px-4 rounded-full w-fit mx-auto">
+            <Clock size={18} />
+            <span className="font-bold">Θα είμαστε συντομα online!</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ORIGINAL PAGE CONTENT ---
   return (
     <div className="min-h-screen bg-background relative">
 
@@ -218,7 +242,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredDiscountIds}
           locale={lang}
-          locationSlug={process.env.NEXT_LOCATION_SLUG}
+          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
         />
 
         <div className="w-full my-8 rounded-xl overflow-hidden shadow-lg border border-white/10">
@@ -229,7 +253,7 @@ export default function HomePage() {
             muted
             playsInline
             // Ensure the file is in your /public folder
-            src="/deliver.mp4"
+            src="/delivery.mp4"
           />
         </div>
 
@@ -241,7 +265,7 @@ export default function HomePage() {
         <FeaturedMenuCarousel
           featuredMenuIds={featuredMenuIds}
           locale={lang}
-          locationSlug={process.env.NEXT_LOCATION_SLUG}
+          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
         />
       </main>
 

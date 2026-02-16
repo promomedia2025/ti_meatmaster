@@ -70,7 +70,7 @@ export function AdminDeliveryTimeModal({
                 onClick={() => setSelectedTime(time)}
                 className={`px-4 py-3 rounded-lg font-medium transition-all ${
                   selectedTime === time
-                    ? "bg-[#009DE0] text-white border-2 border-[#009DE0]"
+                    ? "bg-[var(--brand-border)] text-white border-2 border-[#009DE0]"
                     : "bg-[#2a2a2a] text-gray-300 border-2 border-gray-700 hover:border-gray-600"
                 }`}
               >
@@ -97,7 +97,7 @@ export function AdminDeliveryTimeModal({
             <Button
               onClick={handleUpdate}
               disabled={isUpdating}
-              className="flex-1 bg-[#009DE0] hover:bg-[#0082b8] text-white"
+              className="flex-1 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
             >
               {isUpdating ? "Ενημέρωση..." : "Ενημέρωση χρόνου"}
             </Button>

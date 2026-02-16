@@ -15,12 +15,18 @@ import {
 export default function ContactPage() {
   
   const deliveryAreas = [
-    "Χολαργός",
-    "Παπάγου",
-    "Αγία Παρασκευή",
-    "Κάτω Χαλάνδρι",
-    "Νέο Ψυχικό",
-    "Πεντάγωνο"
+    "Κορυδαλλός",
+    "Νίκαια",
+    "Κερατσίνι",
+    "Δραπετσώνα",
+    "Κάτω Αιγάλεω"
+  ];
+  
+  const openingHours = [
+    { days: "Δευτέρα, Τρίτη, Πέμπτη", hours: "5:00 μ.μ. – 3:30 π.μ." },
+    { days: "Τετάρτη & Παρασκευή", hours: "5:00 μ.μ. – 4:00 π.μ." },
+    { days: "Σάββατο", hours: "12:00 μ.μ. – 4:00 π.μ." },
+    { days: "Κυριακή", hours: "12:00 μ.μ. – 3:30 π.μ." },
   ];
 
   return (
@@ -46,7 +52,7 @@ export default function ContactPage() {
               Επικοινωνία
             </h1>
             <p className="text-zinc-400 text-sm">
-              Βρείτε μας στο Χολαργό ή καλέστε μας
+              Βρείτε μας στον Κορυδαλλό ή καλέστε μας
             </p>
           </div>
         </div>
@@ -66,7 +72,7 @@ export default function ContactPage() {
             }} 
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            src="https://www.openstreetmap.org/export/embed.html?bbox=23.792,37.998,23.802,38.005&layer=mapnik"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=23.6416,37.9733,23.6516,37.9833&layer=mapnik"
             title="Perfetta Location"
             className="w-full h-full scale-[1.1]" 
           ></iframe>
@@ -79,7 +85,7 @@ export default function ContactPage() {
 
           {/* Navigation Button */}
           <a 
-            href="https://www.google.com/maps/dir/?api=1&destination=Φανερωμένης+1α+Χολαργός"
+            href="https://maps.app.goo.gl/E4icM2L8PyAhRPFz9"
             target="_blank" 
             rel="noopener noreferrer"
             className="absolute bottom-6 right-6 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-black hover:text-white px-6 py-3 rounded-xl font-black flex items-center gap-2.5 shadow-xl transition-all hover:scale-105 active:scale-95 z-20 group/btn"
@@ -100,7 +106,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Διεύθυνση</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">Φανερωμένης 1α,<br/> Χολαργός 155 61</p>
+              <p className="text-zinc-400 text-sm leading-relaxed">Φιλικής Εταιρείας 13, <br /> Κορυδαλλός 181 20</p>
             </div>
           </div>
 
@@ -111,7 +117,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Τηλέφωνο</h3>
-              <p className="text-zinc-400 text-sm">210 6543065</p>
+              <p className="text-zinc-400 text-sm">210 4952489</p>
             </div>
           </div>
 
@@ -122,7 +128,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Email</h3>
-              <p className="text-zinc-400 text-sm break-all">Perfettawoltdrive@gmail.com</p>
+              <p className="text-zinc-400 text-sm break-all">perfetta@gmail.com</p>
             </div>
           </div>
         </div>
@@ -147,7 +153,6 @@ export default function ContactPage() {
               ))}
             </ul>
           </div>
-
           {/* Opening Hours */}
           <div className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 hover:border-[var(--brand-border)]/30 transition-all group">
             <div className="flex items-center gap-4 mb-8">
@@ -156,18 +161,25 @@ export default function ContactPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Ωράριο Λειτουργίας</h3>
             </div>
-            <div className="space-y-6">
-              <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
-                <span className="text-zinc-300 font-medium">Καθημερινά</span>
-                <span className="text-[var(--brand-border)] font-black text-sm">11:30 π.μ. – 01:30 π.μ.</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-300 font-medium">Δευτέρα</span>
-                <span className="text-zinc-500 font-bold bg-black border border-zinc-800 px-4 py-1 rounded-full text-xs uppercase tracking-widest">
-                  Κλειστά
-                </span>
-              </div>
+
+            <div className="space-y-3">
+              {openingHours.map((row, idx) => (
+                <div
+                  key={row.days}
+                  className={`flex justify-between items-center ${idx !== openingHours.length - 1 ? "border-b border-zinc-800 pb-3" : ""
+                    }`}
+                >
+                  <span className="text-zinc-300 font-medium">{row.days}</span>
+                  <span className="text-[var(--brand-border)] font-black text-sm">
+                    {row.hours}
+                  </span>
+                </div>
+              ))}
             </div>
+
+            <p className="mt-5 text-xs text-zinc-500">
+              *Το ωράριο ενδέχεται να διαφοροποιείται σε αργίες.
+            </p>
           </div>
         </div>
 

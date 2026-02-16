@@ -8,9 +8,6 @@ const VIDEOS = [
   "/carousel_videos/4.mp4",
   "/carousel_videos/5.mp4",
   "/carousel_videos/6.mp4",
-  "/carousel_videos/7.mp4",
-  "/carousel_videos/8.mp4",
-  "/carousel_videos/9.mp4",
 ];
 
 export default function HeroVideoCarousel() {

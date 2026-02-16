@@ -6,23 +6,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchTags } from "@/lib/use-search-tags";
 
-import image1 from "@/public/categories/1.png";
-import image2 from "@/public/categories/2.png";
-import image3 from "@/public/categories/3.png";
-import image4 from "@/public/categories/4.png";
-import image5 from "@/public/categories/5.png";
-import image6 from "@/public/categories/6.png";
-import image7 from "@/public/categories/7.png";
-import image8 from "@/public/categories/8.png";
-import image9 from "@/public/categories/9.png";
-import image10 from "@/public/categories/10.png";
-import image11 from "@/public/categories/11.png";
-import image12 from "@/public/categories/12.png";
-import image13 from "@/public/categories/13.png";
-import image14 from "@/public/categories/14.png";
-import image15 from "@/public/categories/15.png";
-import image16 from "@/public/categories/16.png";
-import image17 from "@/public/categories/17.png";
+import image1 from "@/public/categories/classic_ham.png";
+import image2 from "@/public/categories/club_sand.png";
+import image3 from "@/public/categories/kids_menu.png";
+import image4 from "@/public/categories/spaghetti.png";
+import image5 from "@/public/categories/italian_pizza.png";
+import image6 from "@/public/categories/s_pizza.png";
+import image7 from "@/public/categories/soft_drinks.png";
+import image8 from "@/public/categories/pannacotta.png";
+import image9 from "@/public/categories/mix_grill.png";
+import image10 from "@/public/categories/beers.png";
+import image11 from "@/public/categories/garlic_bread.png";
+import image12 from "@/public/categories/stick_fried.png";
+import image13 from "@/public/categories/pern_ground_beef.png";
+import image14 from "@/public/categories/rissoto_white.png";
+import image15 from "@/public/categories/ceasars_salad.png";
+import image16 from "@/public/categories/sk_cheese_tom.png";
 
 interface Category {
   id: number;
@@ -34,22 +33,22 @@ interface Category {
 const CATEGORY_LINK = "/location/Perfetta-1";
 
 const categoryImageMap: Record<string, any> = {
-  Τυλιχτά: image1,
-  Μαγειρευτά: image2,
-  Κοτόπουλα: image5,
-  Σαλάτες: image14,
-  "Burgers XXL": image11,
-  Μερίδες: image9,
-  Αναψυκτικά: image17,
-  Χορτοφαγική: image3,
-  Γλυκά: image16,
-  Αλοιφές: image4,
-  Ορεκτικά: image15,
+  Burger: image1,
+  "Club sandwich": image2,
+  "Kids menu": image3,
+  Pasta: image4,
+  Pizza: image5,
+  "Sweet pizza": image6,
+  Αναψυκτικά: image7,
+  Γλυκά: image8,
+  "Μερίδες κρεατικών": image9,
+  "Μπύρες - Ποτά": image10,
+  Ορεκτικά: image11,
   Πατάτες: image12,
-  Ποικιλίες: image10,
-  Τεμάχια: image6,
-  "Σκεπαστές κλασικές": image7,
-  "Σκεπαστές XXL": image8,
+  "Πεϊνιρλί": image13,
+  Ριζότο: image14,
+  Σαλάτες: image15,
+  Σκεπαστές: image16,
 };
 
 export function CategoryGrid() {

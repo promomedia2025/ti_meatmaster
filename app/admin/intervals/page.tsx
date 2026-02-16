@@ -215,7 +215,7 @@ export default function AdminIntervalsPage() {
                   <Button
                     onClick={handleSaveCollection}
                     disabled={isSavingCollection}
-                    className="w-full bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                    className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                   >
                     {isSavingCollection ? "Αποθήκευση..." : "Αποθηκευση"}
                   </Button>
@@ -255,7 +255,7 @@ export default function AdminIntervalsPage() {
                   <Button
                     onClick={handleSaveDelivery}
                     disabled={isSavingDelivery}
-                    className="w-full bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                    className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                   >
                     {isSavingDelivery ? "Αποθήκευση..." : "Αποθηκευση"}
                   </Button>
