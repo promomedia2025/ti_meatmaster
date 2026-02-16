@@ -20,7 +20,7 @@ export async function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
-  title: "Perfetta | Online Delivery - Χολαργός, Χαλάνδρι, Παπάγου, Άγια Παρασκευή",
+  title: "Perfetta | Online Delivery - Κορυδαλλός , Νίκαια , Κερατσίνι , Δραπετσώνα ,Κάτω Αιγάλεω",
   description: "Παραγγείλετε φαγητό από τα αγαπημένα σας εστιατόρια",
   generator: "v0.app",
 };
