@@ -898,7 +898,7 @@ export default function AdminDashboardPage() {
             </p>
           )}
         </div>
-        <span className="bg-[#009DE0]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
+        <span className="bg-[var(--brand-border)]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}
         </span>
       </div>
@@ -1054,7 +1054,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setActiveList("pending")}
                     className={`${
                       activeList === "pending"
-                        ? "bg-[#009DE0] text-white"
+                        ? "bg-[var(--brand-border)] text-white"
                         : "bg-transparent text-gray-400 hover:text-white"
                     }`}
                   >
@@ -1065,7 +1065,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setActiveList("other")}
                     className={`${
                       activeList === "other"
-                        ? "bg-[#009DE0] text-white"
+                        ? "bg-[var(--brand-border)] text-white"
                         : "bg-transparent text-gray-400 hover:text-white"
                     }`}
                   >
@@ -1125,7 +1125,7 @@ export default function AdminDashboardPage() {
                         <h3 className="text-xl font-semibold text-white">
                           Εκκρεμείς Παραγγελίες
                         </h3>
-                        <span className="bg-[#009DE0] text-white px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="bg-[var(--brand-border)] text-white px-3 py-1 rounded-full text-sm font-medium">
                           {pendingOrders.length}
                         </span>
                       </div>
@@ -1143,7 +1143,7 @@ export default function AdminDashboardPage() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                    className="bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                                     onClick={(event) => {
                                       event.stopPropagation();
                                       handleAcceptOrder(order.order_id);
@@ -1274,7 +1274,7 @@ export default function AdminDashboardPage() {
                                           : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
                                       } else {
                                         buttonClassName = isActive
-                                          ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                          ? "bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                                           : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
                                       }
 
@@ -1328,7 +1328,7 @@ export default function AdminDashboardPage() {
                           <h3 className="text-xl font-semibold text-white">
                             Εκκρεμείς Παραγγελίες
                           </h3>
-                          <span className="bg-[#009DE0] text-white px-3 py-1 rounded-full text-sm font-medium">
+                          <span className="bg-[var(--brand-border)] text-white px-3 py-1 rounded-full text-sm font-medium">
                             {pendingOrders.length}
                           </span>
                         </div>
@@ -1346,7 +1346,7 @@ export default function AdminDashboardPage() {
                                   <>
                                     <Button
                                       size="sm"
-                                      className="bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                      className="bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                                       onClick={(event) => {
                                         event.stopPropagation();
                                         handleAcceptOrder(order.order_id);
@@ -1481,7 +1481,7 @@ export default function AdminDashboardPage() {
                                             : "bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50";
                                         } else {
                                           buttonClassName = isActive
-                                            ? "bg-[#009DE0] hover:bg-[#0082b8] text-white"
+                                            ? "bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                                             : "bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-700";
                                         }
 
