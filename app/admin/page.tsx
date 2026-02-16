@@ -378,7 +378,7 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({
           status: 1,
-          location_id: process.env.NEXT_LOCATION_ID,
+          location_id: process.env.NEXT_PUBLIC_LOCATION_ID,
         }),
       });
 
@@ -417,7 +417,7 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({
           status: 0,
-          location_id: process.env.NEXT_LOCATION_ID,
+          location_id: process.env.NEXT_PUBLIC_LOCATION_ID,
         }),
       });
 
