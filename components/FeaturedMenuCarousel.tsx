@@ -28,35 +28,50 @@ export default function FeaturedMenuCarousel({
   const [items, setItems] = useState<MenuItem[]>([]);
   const [emblaRef] = useEmblaCarousel({ dragFree: true, align: "start" });
 
-  const LOCATION_ID = process.env.NEXT_LOCATION_ID;
+  const LOCATION_ID =
+    process.env.NEXT_PUBLIC_LOCATION_ID ?? process.env.NEXT_LOCATION_ID;
 
   useEffect(() => {
     async function loadAllPages() {
       let allItems: MenuItem[] = [];
-      let currentPage = 1;
       let totalPages = 1;
 
+      async function fetchJson(url: string) {
+        const res = await fetch(url);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Request failed ${res.status}: ${text}`);
+        }
+        return res.json();
+      }
+
       try {
-        const firstRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${LOCATION_ID}/menu-items?page=1`
+        const base = process.env.NEXT_PUBLIC_API_URL;
+        const firstData = await fetchJson(
+          `${base}/api/locations/${LOCATION_ID}/menu-items?page=1`
         );
-        const firstData = await firstRes.json();
+
+        if (!firstData?.data?.menu_items) {
+          throw new Error("Invalid API response: missing data.menu_items");
+        }
 
         allItems = [...firstData.data.menu_items];
-        totalPages = firstData.data.pagination.last_page;
+        totalPages = firstData.data.pagination?.last_page ?? 1;
 
-        const pageRequests = [];
+        const pageRequests: Promise<any>[] = [];
         for (let p = 2; p <= totalPages; p++) {
           pageRequests.push(
-            fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${LOCATION_ID}/menu-items?page=${p}`
-            ).then((res) => res.json())
+            fetchJson(
+              `${base}/api/locations/${LOCATION_ID}/menu-items?page=${p}`
+            )
           );
         }
 
         const pages = await Promise.all(pageRequests);
         pages.forEach((pageData) => {
-          allItems = [...allItems, ...pageData.data.menu_items];
+          if (pageData?.data?.menu_items) {
+            allItems = [...allItems, ...pageData.data.menu_items];
+          }
         });
 
         const filtered = allItems.filter((item) =>
