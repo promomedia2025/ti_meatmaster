@@ -424,7 +424,7 @@ export default function AdminOrdersPage() {
                             {formatTime(order.order_time)}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="bg-[var(--brand-border)]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
+                            <span className="bg-[#3D3D3D] text-[#FFFFF] px-3 py-1 rounded-full text-xs font-medium">
                               {order.status_name}
                             </span>
                           </td>

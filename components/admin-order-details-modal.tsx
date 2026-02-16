@@ -582,7 +582,7 @@ export function AdminOrderDetailsModal({
             </Button>
             <Button
               onClick={onClose}
-              className="w-full bg-[var(--brand-border)] hover:bg-[#0088CC] text-white transition-all"
+              className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white transition-all"
             >
               Κλείσιμο
             </Button>

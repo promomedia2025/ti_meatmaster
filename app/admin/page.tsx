@@ -898,7 +898,7 @@ export default function AdminDashboardPage() {
             </p>
           )}
         </div>
-        <span className="bg-[var(--brand-border)]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
+        <span className="bg-[#3D3D3D]/20 text-[#FFFFF] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}
         </span>
       </div>
