@@ -44,8 +44,8 @@ export default function RefundPolicyPage() {
 
           <p>
             Η επιστροφή χρημάτων πραγματοποιείται από την ομόρρυθμη εταιρεία{" "}
-            <strong className="text-white">ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ</strong> (ΑΦΜ{" "}
-            <strong className="text-[var(--brand-border)]">998154126</strong>), η οποία φέρει τη μοναδική ευθύνη για την
+            <strong className="text-white">ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ</strong> (ΑΦΜ{" "}
+            <strong className="text-[var(--brand-border)]">101136205</strong>), η οποία φέρει τη μοναδική ευθύνη για την
             επιστροφή των χρημάτων στην κάρτα που χρησιμοποιήθηκε για τη συναλλαγή.
             <span className="block mt-4 text-[var(--brand-border)] font-bold italic">
               Ο καταναλωτής δεν επιβαρύνεται σε καμία περίπτωση με έξοδα επιστροφής.
@@ -81,7 +81,7 @@ export default function RefundPolicyPage() {
               </h3>
               <p className="text-sm leading-relaxed text-zinc-400">
                 Η διαδικασία πληρωμής είναι απολύτως ασφαλής. Η πληρωμή δεν
-                πραγματοποιείται απευθείας στην ομόρρυθμη εταιρεία ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ, 
+                πραγματοποιείται απευθείας στην ομόρρυθμη εταιρεία ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ, 
                 αλλά ο χρήστης μεταφέρεται σε ασφαλές περιβάλλον της{" "}
                 <strong className="text-zinc-200">Τράπεζας Πειραιώς</strong>.
               </p>
@@ -112,7 +112,7 @@ export default function RefundPolicyPage() {
         <section className="pt-8 text-center">
           <p className="text-sm text-zinc-500">
             Για οποιαδήποτε απορία σχετικά με την παραγγελία σας, καλέστε μας στο{" "}
-            <a href="tel:2106543065" className="text-[var(--brand-border)] font-bold hover:underline">210 6543065</a>.
+            <a href="tel:2104952489" className="text-[var(--brand-border)] font-bold hover:underline">210 4952489</a>.
           </p>
         </section>
 

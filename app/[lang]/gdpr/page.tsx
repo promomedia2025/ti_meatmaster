@@ -39,8 +39,8 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-6">
           <p>
             Η ομόρρυθμη εταιρεία{" "}
-            <strong className="text-zinc-200">ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ</strong>, ΑΦΜ{" "}
-            <strong className="text-[var(--brand-border)]">998154126</strong>, σας ευχαριστεί για την επίσκεψή σας στην
+            <strong className="text-zinc-200">ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ</strong>, ΑΦΜ{" "}
+            <strong className="text-[var(--brand-border)]">101136205</strong>, σας ευχαριστεί για την επίσκεψή σας στην
             ιστοσελίδα και για το ενδιαφέρον σας στις υπηρεσίες και προσφορές μας.
           </p>
 
@@ -88,23 +88,23 @@ export default function PrivacyPolicyPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-4 shadow-xl">
             <div className="space-y-1">
               <p className="text-[var(--brand-border)] font-black text-lg tracking-tight">
-                ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ
+                ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ
               </p>
-              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 998154126</p>
+              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 101136205</p>
             </div>
             
             <div className="grid gap-2 text-zinc-300">
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Διεύθυνση: Φανερωμένης 1Α, Χολαργός 15561, Αττική
+                Διεύθυνση: Φιλικής Εταιρείας 13, Κορυδαλλός, 18120, Αττική
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Τηλέφωνο: 210 6543065
+                Τηλέφωνο: 210 4952489
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Email: <a href="mailto:Perfettawoltdrive@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">Perfettawoltdrive@gmail.com</a>
+                Email: <a href="mailto:perfetta@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">perfetta@gmail.com</a>
               </p>
             </div>
           </div>

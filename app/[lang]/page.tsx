@@ -25,11 +25,11 @@ import { useAuth } from "@/lib/auth-context"; // Import Auth Context
 import Link from "next/link";
 
 const featuredMenuIds = [395, 403, 397, 415, 510, 410, 345, 341, 346, 411, 372, 388, 404, 287, 419, 508, 373, 284];
-const featuredDiscountIds = [553, 561, 562, 564, 566];
+const featuredDiscountIds = [527,528,529,530,531,532,533,534,535,536];
 
 export default function HomePage() {
   // --- MAINTENANCE TOGGLE ---
-  const isUnderConstruction = true;
+  const isUnderConstruction = false;
   // --------------------------
 
   const { dict, lang } = useTranslations();

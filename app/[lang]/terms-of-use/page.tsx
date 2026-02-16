@@ -53,7 +53,7 @@ export default function TermsOfUsePage() {
             <ul className="space-y-4">
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
-                <span><strong className="text-zinc-200">Εταιρεία:</strong> ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ, ΑΦΜ 998154126</span>
+                <span><strong className="text-zinc-200">Εταιρεία:</strong> ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ, ΑΦΜ 101136205</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
@@ -81,14 +81,14 @@ export default function TermsOfUsePage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-4 shadow-xl">
             <div className="space-y-1">
               <p className="text-[var(--brand-border)] font-black text-lg tracking-tight">
-                ΑΝΑΣΤΑΣΙΟΣ ΤΡΥΠΟΣΚΟΥΦΗΣ & ΣΙΑ ΟΕ
+                ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ
               </p>
-              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 998154126</p>
+              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 101136205</p>
             </div>
             <div className="text-sm space-y-1 text-zinc-300">
-              <p>Φανερωμένης 1Α, Χολαργός 15561, Αττική</p>
-              <p>Τηλ.: 210 6543065</p>
-              <p>Email: Perfettawoltdrive@gmail.com</p>
+              <p>Φιλικής Εταιρείας 13, Κορυδαλλός, 18120, Αττική</p>
+              <p>Τηλ.: 210 4952489</p>
+              <p>Email: perfetta@gmail.com</p>
             </div>
           </div>
 
