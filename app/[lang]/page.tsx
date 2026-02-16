@@ -253,7 +253,7 @@ export default function HomePage() {
             muted
             playsInline
             // Ensure the file is in your /public folder
-            src="/deliver.mp4"
+            src="/delivery.mp4"
           />
         </div>
 
