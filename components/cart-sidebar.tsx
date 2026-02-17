@@ -1138,27 +1138,12 @@ export function CartSidebar({ isOpen, onClose, locationId }: CartSidebarProps) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (
-                                  isDeliveryBlocked(locationCart.locationId)
-                                ) {
-                                  toast.error(
-                                    "Η διεύθυνσή σας είναι εκτός περιοχής παράδοσης"
-                                  );
-                                  return;
-                                }
                                 router.push(
                                   `/${currentLang}/checkout?locationId=${locationCart.locationId}`
                                 );
                                 onClose();
                               }}
-                              disabled={isDeliveryBlocked(
-                                locationCart.locationId
-                              )}
-                              className={`w-full font-bold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg active:scale-[0.98] ${
-                                isDeliveryBlocked(locationCart.locationId)
-                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                                  : "bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
-                              }`}
+                              className="w-full font-bold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg active:scale-[0.98] bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white"
                             >
                               Ολοκλήρωση παραγγελίας
                             </button>

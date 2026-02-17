@@ -13,6 +13,7 @@ interface Address {
   isDefault?: boolean;
   bell_name?: string | null;
   floor?: string | null;
+  comments?: string | null;
   coordinates?: {
     latitude: number;
     longitude: number;
@@ -102,6 +103,7 @@ export function AddressBookModal({
                   isDefault: apiAddress.is_default || false,
                   bell_name: apiAddress.bell_name || null,
                   floor: apiAddress.floor || null,
+                  comments: apiAddress.comments || null,
                   coordinates,
                   // Include original API fields for checkout
                   address_1: apiAddress.address_1 || null,
@@ -267,19 +269,19 @@ export function AddressBookModal({
                     {addresses.map((address) => (
                       <div
                         key={address.id}
-                        className="group flex items-start gap-4 p-4 bg-black rounded-xl cursor-pointer hover:border-[var(--brand-border)] border border-zinc-800 transition-all duration-200 relative overflow-hidden"
+                        className="group flex items-start gap-4 p-4 bg-black rounded-xl cursor-pointer hover:border-[#7C2429] border border-zinc-800 transition-all duration-200 relative overflow-hidden"
                         onClick={() => handleAddressSelect(address)}
                       >
                          {/* Hover highlight effect */}
-                         <div className="absolute inset-0 bg-[var(--brand-border)]/0 group-hover:bg-[var(--brand-border)]/5 transition-colors pointer-events-none" />
+                         <div className="absolute inset-0 bg-[#7C2429]/0 group-hover:bg-[#7C2429]/5 transition-colors pointer-events-none" />
 
-                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[var(--brand-border)]/30 transition-colors shrink-0 z-10">
-                          <MapPin className="w-5 h-5 text-zinc-400 group-hover:text-[var(--brand-border)] transition-colors" />
+                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800 group-hover:border-[#7C2429]/30 transition-colors shrink-0 z-10">
+                          <MapPin className="w-5 h-5 text-zinc-400 group-hover:text-[#7C2429] transition-colors" />
                         </div>
                         
                         <div className="flex-1 min-w-0 z-10">
                           <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-white font-bold text-sm group-hover:text-[var(--brand-border)] transition-colors">
+                              <span className="text-white font-bold text-sm group-hover:text-[#7C2429] transition-colors">
                                 {address.label}
                               </span>
                           </div>
@@ -287,7 +289,7 @@ export function AddressBookModal({
                             {address.address}
                           </p>
                           
-                          {(address.bell_name || address.floor) && (
+                          {(address.bell_name || address.floor || address.comments) && (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {address.bell_name && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800">
@@ -297,6 +299,11 @@ export function AddressBookModal({
                               {address.floor && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800">
                                   {address.floor}
+                                </span>
+                              )}
+                              {address.comments && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800 w-full">
+                                  Σχόλια: {address.comments}
                                 </span>
                               )}
                             </div>
@@ -323,7 +330,7 @@ export function AddressBookModal({
                     </p>
                     <Button
                       onClick={handleAddNewAddress}
-                        className="bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white shadow-lg shadow-[var(--brand-shadow)]"
+                      className="bg-[#7C2429] hover:bg-[#601D21] text-white shadow-lg shadow-red-900/20"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Προσθήκη πρώτης διεύθυνσης

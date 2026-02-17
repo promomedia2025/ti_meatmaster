@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       is_default,
       latitude,
       longitude,
+      comments,
     } = body;
 
     // Validation
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         country,
         bell_name: bell_name || "",
         floor: floor || "",
+        comments: comments || "",
         is_default: is_default || false,
         ...(latitude !== undefined &&
           longitude !== undefined && {

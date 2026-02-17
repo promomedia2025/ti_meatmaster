@@ -36,6 +36,7 @@ interface AdminOrder {
   total_items?: number;
   bell_name?: string | null;
   floor?: string | null;
+  comments?: string | null;
   address_id?: number | null;
 }
 
@@ -135,6 +136,10 @@ const normalizeOrderPayload = (payload: any): AdminOrder | null => {
     order_type_name: payload.order_type_name || payload.orderTypeName,
     comment: payload.comment,
     total_items: payload.total_items ?? payload.totalItems,
+    bell_name: payload.bell_name || payload.bellName || null,
+    floor: payload.floor || null,
+    comments: payload.comments || null,
+    address_id: payload.address_id ?? payload.addressId ?? null,
   };
 };
 

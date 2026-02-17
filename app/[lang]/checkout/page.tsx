@@ -17,13 +17,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft,
   MapPin,
-  CreditCard,
   Package,
+  CreditCard,
   Loader2,
   X,
   Trash2,
   Plus,
   Minus,
+  Wallet,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import GooglePlacesCustom from "@/components/google-places-custom";
@@ -49,6 +50,7 @@ interface UserLocation {
   bell_name?: string | null;
   floor?: string | null;
   addressId?: string | null;
+  comments?: string | null;
 }
 
 function CheckoutPageContent() {
@@ -161,6 +163,40 @@ function CheckoutPageContent() {
     fetchLocationData();
   }, [locationId]);
 
+  // Fetch wallet balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setWalletBalance(null);
+        setWalletLoading(false);
+        return;
+      }
+
+      try {
+        setWalletLoading(true);
+        const response = await fetch(`/api/wallet/balance?customer_id=${user.id}`, {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const balance = data.data.balance || data.data.amount || data.data.wallet_balance || 0;
+          setWalletBalance(typeof balance === 'number' ? balance : parseFloat(balance) || 0);
+        } else {
+          setWalletBalance(0);
+        }
+      } catch (err) {
+        console.error("Error fetching wallet balance:", err);
+        setWalletBalance(0);
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
+    fetchWalletBalance();
+  }, [isAuthenticated, user?.id]);
+
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("delivery");
 
   useEffect(() => {
@@ -193,12 +229,12 @@ function CheckoutPageContent() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [paymentWindow, setPaymentWindow] = useState<Window | null>(null);
   const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [addressInput, setAddressInput] = useState("");
   const [bellName, setBellName] = useState("");
   const [floor, setFloor] = useState("");
+  const [addressComments, setAddressComments] = useState("");
   const [saveAddress, setSaveAddress] = useState(false);
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
@@ -206,6 +242,11 @@ function CheckoutPageContent() {
   const [menuItemForEdit, setMenuItemForEdit] = useState<any>(null);
   const [isLoadingMenuItem, setIsLoadingMenuItem] = useState(false);
   const [isUpdatingItem, setIsUpdatingItem] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [useWallet, setUseWallet] = useState(false);
+  const [selectedTip, setSelectedTip] = useState<"0.50" | "1" | "2" | "5" | "custom" | null>(null);
+  const [customTipAmount, setCustomTipAmount] = useState("");
 
   const handleRemoveItem = async (item: CartItem) => {
     if (!locationCart) return;
@@ -366,6 +407,7 @@ function CheckoutPageContent() {
     setUserLocation(null);
     setBellName("");
     setFloor("");
+    setAddressComments("");
     setAddressInput("");
     setSaveAddress(false);
     toast.success("Η διεύθυνση διαγράφηκε");
@@ -429,6 +471,9 @@ function CheckoutPageContent() {
       }
       if (formattedAddress?.floor) {
         setFloor(formattedAddress.floor);
+      }
+      if (formattedAddress?.comments) {
+        setAddressComments(formattedAddress.comments);
       }
 
       toast.success("Η διεύθυνση συμπληρώθηκε αυτόματα");
@@ -506,6 +551,7 @@ function CheckoutPageContent() {
             bell_name: address.bell_name || null,
             floor: address.floor || null,
             addressId: address.id || null,
+            comments: address.comments || null,
           };
         } else {
           location = {
@@ -539,6 +585,7 @@ function CheckoutPageContent() {
             bell_name: address.bell_name || null,
             floor: address.floor || null,
             addressId: address.id || null,
+            comments: address.comments || null,
           };
         }
       } else {
@@ -564,6 +611,7 @@ function CheckoutPageContent() {
           bell_name: address.bell_name || null,
           floor: address.floor || null,
           addressId: address.id || null,
+          comments: address.comments || null,
         };
       }
 
@@ -574,6 +622,9 @@ function CheckoutPageContent() {
       }
       if (address.floor) {
         setFloor(address.floor);
+      }
+      if (address.comments) {
+        setAddressComments(address.comments);
       }
 
       if (
@@ -663,6 +714,9 @@ function CheckoutPageContent() {
         }
         if (geocoded.floor) {
           setFloor(geocoded.floor);
+        }
+        if (geocoded.comments) {
+          setAddressComments(geocoded.comments);
         }
         setAddressInput("");
 
@@ -859,6 +913,12 @@ function CheckoutPageContent() {
       ) {
         setFloor(formattedAddress.floor);
       }
+      if (
+        formattedAddress.comments !== undefined &&
+        formattedAddress.comments !== null
+      ) {
+        setAddressComments(formattedAddress.comments);
+      }
     }
   }, [formattedAddress]);
 
@@ -872,6 +932,9 @@ function CheckoutPageContent() {
       }
       if (userLocation.floor !== undefined && userLocation.floor !== null) {
         setFloor(userLocation.floor);
+      }
+      if (userLocation.comments !== undefined && userLocation.comments !== null) {
+        setAddressComments(userLocation.comments);
       }
     }
   }, [userLocation]);
@@ -898,29 +961,6 @@ function CheckoutPageContent() {
     };
   }, [isConnected, orderId, subscribe, unsubscribe]);
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data?.type === "PAYMENT_STATUS") {
-        if (event.data.paymentVerified === true) {
-          if (locationCart) {
-            clearLocationCart(locationCart.locationId);
-          }
-          toast.success("Η πληρωμή επιβεβαιώθηκε επιτυχώς!");
-          if (orderId) {
-            router.push(`/${currentLang}/order/${orderId}`);
-          }
-        } else {
-          toast.error("Η πληρωμή απέτυχε. Μπορείτε να δοκιμάσετε ξανά.");
-          setIsSubmitting(false);
-        }
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [locationCart, orderId, currentLang, router]);
 
   if (!locationCart) {
     return (
@@ -936,65 +976,6 @@ function CheckoutPageContent() {
     if (!isAuthenticated || !user) {
       alert("Παρακαλώ συνδεθείτε για να ολοκληρώσετε την παραγγελία.");
       return;
-    }
-
-    // Open payment window synchronously on user click (required for Safari)
-    let paymentWin: Window | null = null;
-    if (paymentMethod === "card") {
-      paymentWin = window.open("", "_blank");
-      if (paymentWin) {
-        setPaymentWindow(paymentWin);
-        // Show loading message immediately
-        paymentWin.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Πληρωμή</title>
-              <meta charset="UTF-8">
-              <style>
-                body {
-                  margin: 0;
-                  padding: 0;
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  min-height: 100vh;
-                  background: #000;
-                  color: #fff;
-                }
-                .loading-container {
-                  text-align: center;
-                }
-                .spinner {
-                  border: 3px solid #333;
-                  border-top: 3px solid var(--brand-border);
-                  border-radius: 50%;
-                  width: 40px;
-                  height: 40px;
-                  animation: spin 1s linear infinite;
-                  margin: 0 auto 20px;
-                }
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-                .message {
-                  font-size: 16px;
-                  color: #ccc;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="loading-container">
-                <div class="spinner"></div>
-                <div class="message">Προετοιμασία πληρωμής...</div>
-              </div>
-            </body>
-          </html>
-        `);
-        paymentWin.document.close();
-      }
     }
 
     const isRestaurantOpen =
@@ -1113,14 +1094,32 @@ function CheckoutPageContent() {
         };
       });
 
+      // Calculate tip amount
+      let tipAmount = 0;
+      if (selectedTip === "custom" && customTipAmount) {
+        tipAmount = parseFloat(customTipAmount) || 0;
+      } else if (selectedTip && selectedTip !== "custom") {
+        tipAmount = parseFloat(selectedTip) || 0;
+      }
+
+      // Calculate total with tip
+      const orderTotal = locationCart.summary.total + tipAmount;
+
+      // Calculate wallet amount to use
+      const walletAmount = useWallet && walletBalance !== null && walletBalance > 0
+        ? Math.min(walletBalance, orderTotal)
+        : 0;
+
       const orderData: any = {
         locationId: locationCart.locationId,
         locationName: locationCart.locationName,
         items: formattedItems,
-        total: locationCart.summary.total,
+        total: orderTotal,
+        tip_amount: tipAmount,
         orderType: orderType === "delivery" ? "delivery" : "collection",
         paymentMethod: paymentMethod === "cash" ? "cod" : "card",
         orderComments,
+        wallet_amount: walletAmount,
         user: {
           id: user.id,
           email: user.email,
@@ -1174,6 +1173,7 @@ function CheckoutPageContent() {
           },
           bell_name: bellName || "",
           floor: floor || "",
+          comments: addressComments || "",
           ...(userLocation.addressId && { addressId: userLocation.addressId }),
         };
       }
@@ -1202,6 +1202,7 @@ function CheckoutPageContent() {
               country: userLocation.addressDetails.country || "Ελλάδα",
               bell_name: bellName || "",
               floor: floor || "",
+              comments: addressComments || "",
               is_default: false,
             };
 
@@ -1248,72 +1249,73 @@ function CheckoutPageContent() {
         }
       }
 
-      const contentType = response.headers.get("content-type") || "";
-      let orderId: number | null = null;
-
-      if (contentType.includes("text/html")) {
-        // HTML response means card payment - extract order ID from response
-        try {
-          const paymentFormHtml = await response.text();
-          
-          // Extract order ID from the form
-          const orderIdMatch = paymentFormHtml.match(/name="MerchantReference"[^>]*value="(\d+)"/);
-          if (orderIdMatch) {
-            orderId = parseInt(orderIdMatch[1]);
-            setOrderId(orderId);
-            addActiveOrder(orderId, locationCart.locationName);
-          }
-
-          // Don't clear cart yet - wait for payment confirmation
-          // Cart will be cleared when payment status is received
-
-          // Redirect the already-opened window to payment redirect page with orderId
-          if (paymentWin && !paymentWin.closed) {
-            const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId || ""}&lang=${currentLang}`;
-            paymentWin.location.href = redirectUrl;
-          } else {
-            throw new Error("Payment window was closed or blocked");
-          }
-
-        } catch (paymentError) {
-          console.error("Error handling card payment:", paymentError);
-          toast.error(
-            "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
-          );
-        }
-        return;
-      }
-
       const result = await response.json();
 
-      orderId =
+      const orderId =
         result.data?.order_id || result.data?.id || result.order_id;
       if (orderId) {
         setOrderId(orderId);
 
         addActiveOrder(orderId, locationCart.locationName);
 
+        // If card payment, initiate Viva Payments session
         if (paymentMethod === "card") {
-          // Don't clear cart yet - wait for payment confirmation
-          // Cart will be cleared when payment status is received
           try {
-            // Redirect the already-opened window to payment redirect page with orderId
-            if (paymentWin && !paymentWin.closed) {
-              const redirectUrl = `/${currentLang}/payment/redirect?orderId=${orderId || ""}&lang=${currentLang}`;
-              paymentWin.location.href = redirectUrl;
+            // Calculate remaining amount after wallet discount (including tip)
+            const totalWithTip = locationCart.summary.total + tipAmount;
+            const remainingAmount = useWallet && walletBalance !== null && walletBalance > 0
+              ? Math.max(0, totalWithTip - Math.min(walletBalance, totalWithTip))
+              : totalWithTip;
+
+            const paymentResponse = await fetch("/api/viva/initiate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                orderId: orderId.toString(),
+                amount: remainingAmount,
+                currency: "EUR",
+                description: `Order #${orderId}`,
+                customerEmail: user?.email || "",
+                customerName: user?.name || `${user?.first_name || ""} ${user?.last_name || ""}`.trim(),
+                customerPhone: user?.telephone || user?.phone || "",
+                customerAddress: orderType === "delivery" && userLocation
+                  ? userLocation.addressDetails?.street || userLocation.fullAddress
+                  : "",
+                customerCity: orderType === "delivery" && userLocation
+                  ? userLocation.city
+                  : "",
+                customerZipCode: orderType === "delivery" && userLocation
+                  ? userLocation.addressDetails?.postalCode || ""
+                  : "",
+                customerCountryCode: "GR",
+                lang: currentLang,
+              }),
+            });
+
+            const paymentData = await paymentResponse.json();
+
+            if (paymentData.success && paymentData.paymentUrl) {
+              // Redirect to Viva Payments checkout page
+              window.location.href = paymentData.paymentUrl;
+              return;
             } else {
-              throw new Error("Payment window was closed or blocked");
+              throw new Error(paymentData.error || "Failed to create payment session");
             }
           } catch (paymentError) {
-            console.error("Error opening payment form:", paymentError);
+            console.error("Error initiating Viva payment:", paymentError);
             toast.error(
-              "Σφάλμα κατά το άνοιγμα της φόρμας πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
+              "Σφάλμα κατά την έναρξη της πληρωμής. Η παραγγελία δημιουργήθηκε. Παρακαλώ επικοινωνήστε με την εξυπηρέτηση."
             );
+            // Still clear cart and redirect to order page
+            clearLocationCart(locationCart.locationId);
+            router.push(`/${currentLang}/order/${orderId}`);
+            return;
           }
-        } else if (paymentMethod === "cash") {
-          // For cash payments, clear cart immediately since there's no payment gateway
+        } else {
+          // Cash payment - clear cart and redirect to order page
           clearLocationCart(locationCart.locationId);
-          toast.success("Η παραγγελία υποβλήθηκε επιτυχώς!");
           router.push(`/${currentLang}/order/${orderId}`);
         }
       } else {
@@ -1473,6 +1475,17 @@ function CheckoutPageContent() {
                           />
                         </div>
                       </div>
+                      <div>
+                        <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
+                          Σχόλια
+                        </label>
+                        <textarea
+                          value={addressComments}
+                          onChange={(e) => setAddressComments(e.target.value)}
+                          placeholder="Προσθέστε σχόλια για αυτή τη διεύθυνση..."
+                          className="w-full h-20 bg-black border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[var(--brand-border)] focus:ring-1 focus:ring-[var(--brand-border)] text-sm"
+                        />
+                      </div>
                       {isAuthenticated && (
                         <div className="flex items-center space-x-2 pt-1">
                           
@@ -1544,6 +1557,61 @@ function CheckoutPageContent() {
                   placeholder="Προσθέστε σχόλια για την παραγγελία σας..."
                   className="w-full h-24 bg-black border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-[var(--brand-border)] focus:ring-1 focus:ring-[var(--brand-border)] text-sm transition-all"
                 />
+              </Card>
+
+              {/* Tip Selection */}
+              <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                <h3 className="text-base sm:text-lg font-bold text-white mb-4">
+                  Φιλοδώρημα διανομέα
+                </h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-4 gap-2">
+                    {["0.50", "1", "2", "5"].map((tip) => (
+                      <button
+                        key={tip}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTip(tip as "0.50" | "1" | "2" | "5");
+                          setCustomTipAmount("");
+                        }}
+                        className={`p-3 rounded-lg border transition-all text-sm font-medium ${
+                          selectedTip === tip
+                            ? "bg-[var(--brand-border)] text-white border-[var(--brand-border)] ring-1 ring-[var(--brand-border)]"
+                            : "bg-black text-white border-zinc-800 hover:border-zinc-700"
+                        }`}
+                      >
+                        €{tip}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTip("custom");
+                      setCustomTipAmount("");
+                    }}
+                    className={`w-full p-3 rounded-lg border transition-all text-sm font-medium ${
+                      selectedTip === "custom"
+                        ? "bg-[#7C2429] text-white border-[#7C2429] ring-1 ring-[#7C2429]"
+                        : "bg-black text-white border-zinc-800 hover:border-zinc-700"
+                    }`}
+                  >
+                    Custom
+                  </button>
+                  {selectedTip === "custom" && (
+                    <div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={customTipAmount}
+                        onChange={(e) => setCustomTipAmount(e.target.value)}
+                        placeholder="Εισάγετε ποσό..."
+                        className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#7C2429] focus:border-[#7C2429]"
+                      />
+                    </div>
+                  )}
+                </div>
               </Card>
 
               {/* Delivery / Pickup Toggle */}
@@ -1665,50 +1733,99 @@ function CheckoutPageContent() {
                     Τρόπος πληρωμής
                   </h3>
                   <div className="space-y-3">
-                  {/* Cash Payment Option */}
-                  <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "cash"
-                      ? "bg-zinc-900 border-[var(--brand-border)] ring-1 ring-[var(--brand-border)]"
-                      : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
-                    }`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="cash"
-                      checked={paymentMethod === "cash"}
-                      onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
-                      className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
-                    />
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 ${paymentMethod === "cash" ? "text-[var(--brand-border)]" : "text-zinc-500"}`} />
-                      <span className="text-white font-medium text-sm">
-                        Πληρωμή στην παράδοση/παραλαβή
-                      </span>
-                    </div>
-                  </label>
-
-                  {/* Card Payment Option */}
-                  <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${paymentMethod === "card"
-                      ? "bg-zinc-900 border-[var(--brand-border)] ring-1 ring-[var(--brand-border)]"
-                      : "border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700"
-                    }`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="card"
-                      checked={paymentMethod === "card"}
-                      onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card")}
-                      className="w-4 h-4 accent-[var(--brand-border)] bg-zinc-800 border-zinc-600 focus:ring-[var(--brand-border)]"
-                    />
-                    <div className="flex items-center gap-2">
-                      <CreditCard className={`w-4 h-4 ${paymentMethod === "card" ? "text-[var(--brand-border)]" : "text-zinc-500"}`} />
-                      <span className="text-white font-medium text-sm sm:text-base">
-                        Πληρωμή με κάρτα 
-                      </span>
-                    </div>
-                  </label>
-
+                    <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "cash" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cash"
+                        checked={paymentMethod === "cash"}
+                        onChange={(e) =>
+                          setPaymentMethod(e.target.value as "cash" | "card")
+                        }
+                        className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-zinc-400" />
+                        <span className="text-white font-medium text-sm">
+                          Πληρωμή στην παράδοση/παραλαβή
+                        </span>
+                      </div>
+                    </label>
+                    <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "card" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="card"
+                        checked={paymentMethod === "card"}
+                        onChange={(e) =>
+                          setPaymentMethod(e.target.value as "cash" | "card")
+                        }
+                        className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
+                      />
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-zinc-400" />
+                        <span className="text-white font-medium text-sm">
+                          Πληρωμή με κάρτα
+                        </span>
+                      </div>
+                    </label>
                   </div>
                 </Card>
+
+                {/* Wallet Balance Option */}
+                {isAuthenticated && walletBalance !== null && walletBalance > 0 && (
+                  <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[var(--brand-border)]/20 rounded-full flex items-center justify-center border border-[var(--brand-border)]/30">
+                          <Wallet className="w-5 h-5 text-[var(--brand-border)]" />
+                        </div>
+                        <div>
+                          <h3 className="text-base sm:text-lg font-bold text-white">
+                            Wallet Balance
+                          </h3>
+                          {walletLoading ? (
+                            <Skeleton className="h-4 w-24 bg-zinc-800 mt-1" />
+                          ) : (
+                            <p className="text-zinc-400 text-sm">
+                              Διαθέσιμο: €{walletBalance.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="useWallet"
+                        checked={useWallet}
+                        onCheckedChange={(checked) => setUseWallet(checked === true)}
+                        className="data-[state=checked]:bg-[var(--brand-border)] data-[state=checked]:border-[var(--brand-border)] border-zinc-700 bg-zinc-800"
+                      />
+                      <label
+                        htmlFor="useWallet"
+                        className="text-sm text-zinc-300 cursor-pointer select-none flex-1"
+                      >
+                        Χρησιμοποίηση wallet για αυτή την παραγγελία
+                      </label>
+                    </div>
+                    {useWallet && locationCart && (
+                      <div className="mt-3 pt-3 border-t border-zinc-800">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-zinc-400">Ποσό από wallet:</span>
+                          <span className="text-[var(--brand-border)] font-bold">
+                            -€{Math.min(walletBalance || 0, locationCart.summary.total).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-800">
+                          <span className="text-zinc-400">Υπόλοιπο πληρωμής:</span>
+                          <span className="text-white font-bold">
+                            €{Math.max(0, locationCart.summary.total - Math.min(walletBalance || 0, locationCart.summary.total)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
                   
                 {/* User Info */}
                 <Card className="bg-zinc-900 border-zinc-800 p-4 sm:p-6 shadow-xl rounded-xl">
@@ -1729,7 +1846,7 @@ function CheckoutPageContent() {
                         ""
                       }
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#7C2429] focus:border-[#7C2429]"
                       placeholder="Όνομα"
                     />
                   </div>
@@ -1740,7 +1857,7 @@ function CheckoutPageContent() {
                     <Input
                       value={user?.email || ""}
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#7C2429] focus:border-[#7C2429]"
                       placeholder="Email"
                     />
                   </div>
@@ -1751,7 +1868,7 @@ function CheckoutPageContent() {
                     <Input
                       value={user?.telephone || user?.phone || ""}
                       readOnly
-                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
+                      className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[#7C2429] focus:border-[#7C2429]"
                       placeholder="Τηλέφωνο"
                     />
                   </div>
@@ -1856,13 +1973,64 @@ function CheckoutPageContent() {
                         <span>Υποσύνολο</span>
                         <span>€{locationCart.summary.total.toFixed(2)}</span>
                     </div>
+                    {/* Tip */}
+                    {(() => {
+                      const tipValue = selectedTip === "custom" && customTipAmount
+                        ? parseFloat(customTipAmount) || 0
+                        : selectedTip && selectedTip !== "custom"
+                        ? parseFloat(selectedTip) || 0
+                        : 0;
+                      return tipValue > 0 ? (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-zinc-400">Φιλοδώρημα διανομέα</span>
+                          <span className="text-white font-semibold">
+                            +€{tipValue.toFixed(2)}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+                    {/* Wallet discount */}
+                    {useWallet && walletBalance !== null && walletBalance > 0 && (() => {
+                      const totalWithTip = locationCart.summary.total + (selectedTip === "custom" && customTipAmount
+                        ? parseFloat(customTipAmount) || 0
+                        : selectedTip && selectedTip !== "custom"
+                        ? parseFloat(selectedTip) || 0
+                        : 0);
+                      return (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-zinc-400">Εκπτωση Wallet</span>
+                          <span className="text-[#7C2429] font-semibold">
+                            -€{Math.min(walletBalance, totalWithTip).toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })()}
                     {/* Add delivery fee logic here if needed */}
                     <div className="flex justify-between items-center pt-2 border-t border-zinc-800">
                       <span className="text-white font-bold text-lg">
-                        Σύνολο
+                        {useWallet && walletBalance !== null && walletBalance > 0 && (() => {
+                          const totalWithTip = locationCart.summary.total + (selectedTip === "custom" && customTipAmount
+                            ? parseFloat(customTipAmount) || 0
+                            : selectedTip && selectedTip !== "custom"
+                            ? parseFloat(selectedTip) || 0
+                            : 0);
+                          return Math.min(walletBalance, totalWithTip) >= totalWithTip;
+                        })()
+                          ? "Πληρωμή από Wallet"
+                          : "Σύνολο"}
                       </span>
                       <span className="text-[var(--brand-border)] font-bold text-xl">
-                        €{locationCart.summary.total.toFixed(2)}
+                        €{(() => {
+                          const tipValue = selectedTip === "custom" && customTipAmount
+                            ? parseFloat(customTipAmount) || 0
+                            : selectedTip && selectedTip !== "custom"
+                            ? parseFloat(selectedTip) || 0
+                            : 0;
+                          const totalWithTip = locationCart.summary.total + tipValue;
+                          return useWallet && walletBalance !== null && walletBalance > 0
+                            ? Math.max(0, totalWithTip - Math.min(walletBalance, totalWithTip)).toFixed(2)
+                            : totalWithTip.toFixed(2);
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -1910,10 +2078,15 @@ function CheckoutPageContent() {
                   const isBlockedByMinOrder =
                     !deliveryMeetsMin && !pickupMeetsMin;
 
-                  const isDeliveryBlockedForCheckout =
+                  const isDeliveryBlockedForCheckout = 
                     orderType === "delivery" &&
                     locationCart &&
                     isDeliveryBlocked(locationCart.locationId);
+
+                  // Edge case: Also check isOutsideDeliveryArea in case delivery data exists but isDeliveryBlocked hasn't caught it
+                  const shouldDisableDelivery = 
+                    orderType === "delivery" && 
+                    (isDeliveryBlockedForCheckout || isOutsideDeliveryArea);
 
                   return (
                     <div className="space-y-3 mt-6">
@@ -1924,7 +2097,7 @@ function CheckoutPageContent() {
                           isLoadingRestaurantStatus ||
                           isRestaurantClosed ||
                           isBlockedByMinOrder ||
-                          isDeliveryBlockedForCheckout ||
+                          shouldDisableDelivery ||
                           !currentOrderTypeMeetsMin
                         }
                         className={`w-full py-6 text-base font-bold shadow-lg transition-all duration-200 ${
@@ -1933,7 +2106,7 @@ function CheckoutPageContent() {
                           isDeliveryBlockedForCheckout ||
                           !currentOrderTypeMeetsMin
                             ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
-                          : "bg-[var(--brand-border)] text-white hover:bg-[var(--brand-hover)] border border-transparent shadow-[var(--brand-shadow)] active:scale-[0.98]"
+                            : "bg-[var(--brand-border)] text-white hover:bg-[var(--brand-hover)] border border-transparent shadow-[var(--brand-shadow)]/20 active:scale-[0.98]"
                         }`}
                       >
                         {isSubmitting ? (

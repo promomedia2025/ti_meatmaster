@@ -28,6 +28,9 @@ interface AdminOrder {
   order_type_name?: string;
   comment?: string;
   total_items?: number;
+  bell_name?: string | null;
+  floor?: string | null;
+  comments?: string | null;
   address_id?: number | null;
 }
 
@@ -304,10 +307,6 @@ export default function AdminOrdersPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
-    // Clear remembered credentials on manual logout
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("admin_remembered_credentials");
-    }
     router.push("/admin/login");
   };
 
@@ -358,7 +357,12 @@ export default function AdminOrdersPage() {
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="bg-[#2a2a2a] border-gray-600 text-white hover:bg-[#3a3a3a]"
+              className="text-white"
+              style={{
+                backgroundColor: "#2a2a2a",
+                borderColor: "#4b5563",
+                color: "#ffffff",
+              }}
             >
               Logout
             </Button>
@@ -424,7 +428,7 @@ export default function AdminOrdersPage() {
                             {formatTime(order.order_time)}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="bg-[#3D3D3D] text-[#FFFFF] px-3 py-1 rounded-full text-xs font-medium">
+                            <span className="bg-[#009DE0]/20 text-[#009DE0] px-3 py-1 rounded-full text-xs font-medium">
                               {order.status_name}
                             </span>
                           </td>

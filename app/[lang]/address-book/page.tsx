@@ -19,6 +19,7 @@ interface Address {
   postcode: string;
   bell_name: string | null;
   floor: string | null;
+  comments: string | null;
   country: {
     id: number;
     name: string;
@@ -217,7 +218,7 @@ export default function AddressBookPage() {
                         </div>
                         <p className="text-zinc-400 text-sm leading-relaxed">{address.formatted_address}</p>
                         
-                        {(address.bell_name || address.floor) && (
+                        {(address.bell_name || address.floor || address.comments) && (
                           <div className="mt-3 flex flex-wrap gap-4 text-xs">
                             {address.bell_name && (
                               <div className="flex items-center gap-1.5 bg-black px-2 py-1 rounded border border-zinc-800">
@@ -229,6 +230,12 @@ export default function AddressBookPage() {
                               <div className="flex items-center gap-1.5 bg-black px-2 py-1 rounded border border-zinc-800">
                                 <span className="text-zinc-500">Όροφος:</span>
                                 <span className="text-zinc-200 font-medium">{address.floor}</span>
+                              </div>
+                            )}
+                            {address.comments && (
+                              <div className="flex items-center gap-1.5 bg-black px-2 py-1 rounded border border-zinc-800">
+                                <span className="text-zinc-500">Σχόλια:</span>
+                                <span className="text-zinc-200 font-medium">{address.comments}</span>
                               </div>
                             )}
                           </div>

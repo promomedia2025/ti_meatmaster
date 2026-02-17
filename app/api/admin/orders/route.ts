@@ -60,9 +60,10 @@ export async function GET(request: NextRequest) {
       ? data.data.map((item: any) => {
           const attrs = item.attributes || {};
 
-          // Extract bell_name and floor - they should be directly in attrs
+          // Extract bell_name, floor, comments, and address_id - they should be directly in attrs
           const bell_name = attrs.bell_name || null;
           const floor = attrs.floor || null;
+          const comments = attrs.comments || null;
           const address_id = attrs.address_id || null;
 
           return {
@@ -93,6 +94,7 @@ export async function GET(request: NextRequest) {
             total_items: attrs.total_items,
             bell_name: bell_name,
             floor: floor,
+            comments: comments,
             address_id: address_id,
           };
         })

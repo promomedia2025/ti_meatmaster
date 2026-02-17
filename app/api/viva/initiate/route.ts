@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPiraeusPaymentRequest } from "@/lib/piraeus-payment";
+import { createVivaPaymentSession } from "@/lib/viva-payment";
 
 export const dynamic = "force-dynamic";
 
 /**
- * API Route: Initiate Piraeus Bank Payment
+ * API Route: Initiate Viva Payments Session
  * 
- * This endpoint creates a payment request and returns form data
- * to submit via POST to Piraeus Bank's payment gateway.
- * The form includes all credentials as hidden fields.
+ * This endpoint creates a payment session with Viva Payments and returns
+ * a payment URL for redirection.
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    console.log("💳 [VIVA INITIATE] Incoming request body:", JSON.stringify(body, null, 2));
     
     const {
       orderId,
@@ -22,6 +23,10 @@ export async function POST(request: NextRequest) {
       customerEmail,
       customerName,
       customerPhone,
+      customerAddress,
+      customerCity,
+      customerZipCode,
+      customerCountryCode = "GR",
       lang,
     } = body;
 
@@ -49,18 +54,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get base URL for callback URLs
-    const baseUrl = request.nextUrl.origin;
-    // Use language from request body, or extract from referer, or default to 'el'
-    const language = lang || (() => {
-      const referer = request.headers.get("referer") || "";
-      const langMatch = referer.match(/\/(el|en)\//);
-      return langMatch ? langMatch[1] : "el";
-    })();
-    const returnUrl = `${baseUrl}/api/payments/piraeus/callback?orderId=${encodeURIComponent(orderId)}&lang=${language}`;
-    const cancelUrl = `${baseUrl}/api/payments/piraeus/callback?orderId=${encodeURIComponent(orderId)}&cancelled=true&lang=${language}`;
+    const baseUrl = "https://ti-espitiko-six.vercel.app";
+    const language = lang || "el";
+    // Use authorize route as configured in Viva Payments
+    const successUrl = `${baseUrl}/${language}/authorize`;
+    const failureUrl = `${baseUrl}/${language}/authorize`;
 
-    // Create payment request
-    const paymentRequest = createPiraeusPaymentRequest({
+    // Create payment session
+    const paymentSession = await createVivaPaymentSession({
       orderId: orderId.toString(),
       amount: amountNum,
       currency,
@@ -68,28 +69,38 @@ export async function POST(request: NextRequest) {
       customerEmail,
       customerName,
       customerPhone,
-      returnUrl,
-      cancelUrl,
+      customerAddress,
+      customerCity,
+      customerZipCode,
+      customerCountryCode,
+      successUrl,
+      failureUrl,
     });
 
-    if (!paymentRequest.success) {
+    if (!paymentSession.success) {
+      console.error("💳 [VIVA INITIATE] Payment session creation failed:", paymentSession.error);
       return NextResponse.json(
         {
           success: false,
-          error: paymentRequest.error || "Failed to create payment request",
+          error: paymentSession.error || "Failed to create payment session",
         },
         { status: 500 }
       );
     }
 
-    // Return form data for POST submission
+    console.log("💳 [VIVA INITIATE] Payment session created successfully:", {
+      success: true,
+      paymentUrl: paymentSession.paymentUrl,
+      transactionId: paymentSession.transactionId,
+    });
+
     return NextResponse.json({
       success: true,
-      formData: paymentRequest.formData,
-      gatewayUrl: paymentRequest.gatewayUrl,
-      transactionId: paymentRequest.transactionId,
+      paymentUrl: paymentSession.paymentUrl,
+      transactionId: paymentSession.transactionId,
     });
   } catch (error) {
+    console.error("Error initiating Viva payment:", error);
     return NextResponse.json(
       {
         success: false,
@@ -100,4 +111,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

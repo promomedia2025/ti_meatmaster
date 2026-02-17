@@ -32,6 +32,9 @@ interface DefaultAddress {
   is_default: boolean;
   created_at: string | null;
   updated_at: string | null;
+  bell_name?: string | null;
+  floor?: string | null;
+  comments?: string | null;
 }
 
 interface FormattedAddress {
@@ -41,6 +44,7 @@ interface FormattedAddress {
   fullAddress: string;
   bell_name?: string | null;
   floor?: string | null;
+  comments?: string | null;
 }
 
 interface LocationContextType {
@@ -297,6 +301,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                   `${address.address_1}, ${address.city} ${address.postcode}`,
                 bell_name: address.bell_name || null,
                 floor: address.floor || null,
+                comments: address.comments || null,
               };
               console.log(
                 "📍 [ADDRESS FETCH] Setting formatted address from address data:",
@@ -314,6 +319,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                   `${address.address_1}, ${address.city} ${address.postcode}`,
                 bell_name: address.bell_name || null,
                 floor: address.floor || null,
+                comments: address.comments || null,
               };
               console.log(
                 "📍 [ADDRESS FETCH] Setting formatted address from address data (no coordinates):",

@@ -10,6 +10,8 @@ interface MenuItem {
   menu_name: string;
   menu_description: string;
   menu_price: number;
+  original_price?: number;
+  is_special?: boolean;
   minimum_qty: number;
   menu_priority: number;
   order_restriction: string | null;
@@ -86,7 +88,7 @@ export default function MenuCategory({
 
   return (
     <div ref={categoryRef} className="mb-8">
-      {/* Category Header with Orange Accent Border */}
+      {/* Category Header with Brand Accent Border */}
       <h2 className="text-xl font-bold text-white mb-4 pl-2 border-l-4 border-[var(--brand-border)]">
         {categoryName}
       </h2>
@@ -97,7 +99,7 @@ export default function MenuCategory({
             key={item.menu_id}
             id={String(item.menu_id)}
             onClick={() => onMenuItemClick(item)}
-            className="bg-transparent sm:bg-zinc-900 rounded-xl overflow-hidden border-0 sm:border border-zinc-800 border-b border-zinc-800/50 sm:border-b-zinc-800 flex pb-4 sm:pb-0 transition-all duration-200 hover:scale-[1.02] hover:border-[var(--brand-border)]/50 hover:shadow-[0_0_20px_rgba(255,147,40,0.15)] cursor-pointer group"
+            className="bg-transparent sm:bg-zinc-900 rounded-xl overflow-hidden border-0 sm:border border-zinc-800 border-b border-zinc-800/50 sm:border-b-zinc-800 flex pb-4 sm:pb-0 transition-all duration-200 hover:scale-[1.02] hover:border-[var(--brand-border)]/50 hover:shadow-[0_0_20px_var(--brand-border)]/15 cursor-pointer group"
           >
             {/* Left side - Text content */}
             <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
@@ -115,9 +117,32 @@ export default function MenuCategory({
               </div>
               
               <div className="mt-3">
-                <p className="text-white font-bold text-lg">
-                  {item.menu_price.toFixed(2)} {item.currency}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {item.is_special && (
+                    <span className="bg-[var(--brand-border)] text-white text-xs font-bold px-2 py-1 rounded-full">
+                      ΕΙΔΙΚΗ ΠΡΟΣΦΟΡΑ
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2 mt-1">
+                  {item.original_price && item.original_price > item.menu_price ? (
+                    <>
+                      <p className="text-white font-bold text-lg">
+                        {item.menu_price.toFixed(2)} {item.currency}
+                      </p>
+                      <p className="text-zinc-500 text-sm line-through">
+                        {item.original_price.toFixed(2)} {item.currency}
+                      </p>
+                      <span className="text-[var(--brand-border)] text-xs font-semibold">
+                        -{Math.round(((item.original_price - item.menu_price) / item.original_price) * 100)}%
+                      </span>
+                    </>
+                  ) : (
+                    <p className="text-white font-bold text-lg">
+                      {item.menu_price.toFixed(2)} {item.currency}
+                    </p>
+                  )}
+                </div>
                 {item.minimum_qty > 1 && (
                   <p className="text-zinc-500 text-sm mt-1">
                     Min: {item.minimum_qty}
@@ -142,7 +167,7 @@ export default function MenuCategory({
                 )}
               </div>
 
-              {/* Add button - Orange Brand Color */}
+              {/* Add button - Brand Color */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
