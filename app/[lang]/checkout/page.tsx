@@ -1011,6 +1011,17 @@ function CheckoutPageContent() {
         );
         return;
       }
+
+      // Validate required delivery address fields
+      if (!bellName || bellName.trim() === "") {
+        toast.error("Παρακαλώ εισάγετε το όνομα του κουδουνιού");
+        return;
+      }
+
+      if (!floor || floor.trim() === "") {
+        toast.error("Παρακαλώ εισάγετε τον όροφο");
+        return;
+      }
     }
 
     if (!locationId || !locationCart) {
@@ -1454,23 +1465,25 @@ function CheckoutPageContent() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
-                            Κουδούνι
+                            Κουδούνι <span className="text-red-500">*</span>
                           </label>
                           <Input
                             value={bellName}
                             onChange={(e) => setBellName(e.target.value)}
                             placeholder="π.χ. Παππάς"
+                            required
                             className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
                         <div>
                           <label className="block text-zinc-400 text-xs sm:text-sm mb-1.5 font-medium">
-                            Όροφος
+                            Όροφος <span className="text-red-500">*</span>
                           </label>
                           <Input
                             value={floor}
                             onChange={(e) => setFloor(e.target.value)}
                             placeholder="π.χ. 3"
+                            required
                             className="bg-black border-zinc-800 text-white h-10 text-sm focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
                           />
                         </div>
