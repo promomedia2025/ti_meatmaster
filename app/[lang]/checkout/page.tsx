@@ -1013,12 +1013,14 @@ function CheckoutPageContent() {
       }
 
       // Validate required delivery address fields
-      if (!bellName || bellName.trim() === "") {
+      const bellNameStr = String(bellName || "").trim();
+      if (!bellNameStr) {
         toast.error("Παρακαλώ εισάγετε το όνομα του κουδουνιού");
         return;
       }
 
-      if (!floor || floor.trim() === "") {
+      const floorStr = String(floor || "").trim();
+      if (!floorStr) {
         toast.error("Παρακαλώ εισάγετε τον όροφο");
         return;
       }
