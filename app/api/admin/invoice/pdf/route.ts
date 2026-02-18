@@ -429,25 +429,33 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Always use A4 page size - never adjust the paper size
-    // A4 = 595.28 x 842 points
-    // CRITICAL: Ensure height is always >= width to prevent landscape auto-rotation
-    // When receipts are small, height < width causes printer drivers to auto-rotate to landscape
-    const minPortraitHeight = 595.28; // Minimum height must be >= width for portrait
-    const pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(842, calculatedHeight));
-    const pageSize: [number, number] = [595.28, pageHeightWithBuffer]; // Always A4 width
+    // For thermal printers, use actual thermal page dimensions
+    // For standard paper, use A4/A5 dimensions
+    let pageSize: [number, number];
+    let contentWidth: number;
     
-    // Calculate content width based on paperSize setting (only affects content, not page)
-    const contentWidth = is80mm 
-      ? 80 * 2.83465  // 226.77 points
-      : is58mm 
-      ? 58 * 2.83465  // 164.41 points
-      : isA5 
-      ? 419.53  // A5 width
-      : 595.28; // Full A4 width
+    if (isThermal) {
+      // Thermal printers: use actual thermal width, dynamic height
+      // 80mm = 226.77 points, 58mm = 164.41 points
+      const thermalPageWidth = is80mm ? 226.77 : 164.41;
+      // Ensure minimum height to prevent landscape rotation
+      const minPortraitHeight = thermalPageWidth;
+      const pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight);
+      pageSize = [thermalPageWidth, pageHeightWithBuffer];
+      contentWidth = thermalPageWidth;
+    } else {
+      // Standard paper sizes: A4 or A5
+      // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
+      const minPortraitHeight = isA5 ? 419.53 : 595.28;
+      const maxHeight = isA5 ? 595.28 : 842;
+      const pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
+      const pageWidth = isA5 ? 419.53 : 595.28;
+      pageSize = [pageWidth, pageHeightWithBuffer];
+      contentWidth = pageWidth;
+    }
     
     const doc = new PDFDocument({
-      size: pageSize, // Always A4 page size
+      size: pageSize, // Use actual thermal dimensions for thermal printers, A4/A5 for standard paper
       margins: {
         top: isThermal ? 0 : pagePadding, // No top margin for thermal
         bottom: isThermal ? 0 : pagePadding,
@@ -484,10 +492,10 @@ export async function POST(request: NextRequest) {
       return this;
     };
     
-    // Content positioning: constrain to contentWidth, aligned to left
-    const contentPadding = isThermal ? 0 : (isA5 ? 20 : 30); // Padding inside content area
-    const contentX = contentPadding + 5; // Start position for content (left edge + padding + 5px offset)
-    const availableContentWidth = contentWidth - (contentPadding * 2) - 5; // Width available for content (reduced by 5px offset)
+    // Content positioning: for thermal printers, use full width; for standard paper, add padding
+    const contentPadding = isThermal ? (is58mm ? 5 : 8) : (isA5 ? 20 : 30); // Small padding for thermal to prevent edge cutoff
+    const contentX = contentPadding; // Start position for content (left edge + padding)
+    const availableContentWidth = contentWidth - (contentPadding * 2); // Width available for content
     
     // Track Y position
     let y = contentPadding; // Start from top with padding
