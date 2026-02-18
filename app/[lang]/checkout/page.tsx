@@ -1749,41 +1749,41 @@ function CheckoutPageContent() {
                   </h3>
                   <div className="space-y-3">
                     <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "cash" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cash"
-                        checked={paymentMethod === "cash"}
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cash"
+                      checked={paymentMethod === "cash"}
                         onChange={(e) =>
                           setPaymentMethod(e.target.value as "cash" | "card")
                         }
                         className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
-                      />
-                      <div className="flex items-center gap-2">
+                    />
+                    <div className="flex items-center gap-2">
                         <Package className="w-5 h-5 text-zinc-400" />
-                        <span className="text-white font-medium text-sm">
-                          Πληρωμή στην παράδοση/παραλαβή
-                        </span>
-                      </div>
-                    </label>
+                      <span className="text-white font-medium text-sm">
+                        Πληρωμή στην παράδοση/παραλαβή
+                      </span>
+                    </div>
+                  </label>
                     <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "card" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={paymentMethod === "card"}
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={paymentMethod === "card"}
                         onChange={(e) =>
                           setPaymentMethod(e.target.value as "cash" | "card")
                         }
                         className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
-                      />
-                      <div className="flex items-center gap-2">
+                    />
+                    <div className="flex items-center gap-2">
                         <CreditCard className="w-5 h-5 text-zinc-400" />
                         <span className="text-white font-medium text-sm">
-                          Πληρωμή με κάρτα
-                        </span>
-                      </div>
-                    </label>
+                        Πληρωμή με κάρτα 
+                      </span>
+                    </div>
+                  </label>
                   </div>
                 </Card>
 
@@ -1794,7 +1794,7 @@ function CheckoutPageContent() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-[var(--brand-border)]/20 rounded-full flex items-center justify-center border border-[var(--brand-border)]/30">
                           <Wallet className="w-5 h-5 text-[var(--brand-border)]" />
-                        </div>
+                  </div>
                         <div>
                           <h3 className="text-base sm:text-lg font-bold text-white">
                             Wallet Balance
@@ -1839,7 +1839,7 @@ function CheckoutPageContent() {
                         </div>
                       </div>
                     )}
-                  </Card>
+                </Card>
                 )}
                   
                 {/* User Info */}
@@ -2093,7 +2093,7 @@ function CheckoutPageContent() {
                   const isBlockedByMinOrder =
                     !deliveryMeetsMin && !pickupMeetsMin;
 
-                  const isDeliveryBlockedForCheckout = 
+                  const isDeliveryBlockedForCheckout =
                     orderType === "delivery" &&
                     locationCart &&
                     isDeliveryBlocked(locationCart.locationId);

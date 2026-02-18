@@ -210,11 +210,16 @@ export async function POST(request: NextRequest) {
       // Set font immediately to prevent Helvetica initialization
       measureDoc.font("Roboto");
       
-      let measureY = measureDoc.page.margins.top;
+      let measureY = 0; // Start from 0, no top margin
       const textWidth = measureDoc.page.width - measureDoc.page.margins.left - measureDoc.page.margins.right;
       
+      // Track section heights for debugging
+      const sectionHeights: Record<string, number> = {};
+      
       // Measure title
-      measureY += measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth }) + sectionSpacing;
+      const titleHeight = measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth });
+      measureY += titleHeight + sectionSpacing;
+      sectionHeights.title = titleHeight + sectionSpacing;
       
       // Measure customer info (left column) and order info (right column)
       // Use actual text measurement to account for wrapping
@@ -258,13 +263,21 @@ export async function POST(request: NextRequest) {
                                  lineHeight * 1.4 + // spacing
                                  25 + // Extra spacing before "Ημερομηνία"
                                  lineHeight + lineHeight; // Date label + value
-      measureY += Math.max(leftColumnHeight, rightColumnHeight) + sectionSpacing;
+      const customerInfoHeight = Math.max(leftColumnHeight, rightColumnHeight) + sectionSpacing;
+      measureY += customerInfoHeight;
+      sectionHeights.customerInfo = customerInfoHeight;
       
       // Push order items section 25px down
-      measureY += 45;
+      const itemsSectionSpacing = 45;
+      measureY += itemsSectionSpacing;
+      sectionHeights.itemsSectionSpacing = itemsSectionSpacing;
       
       // Measure items table
-      measureY += lineHeight + rowSpacing; // "Προϊόντα" header
+      const itemsHeaderHeight = lineHeight + rowSpacing; // "Προϊόντα" header
+      measureY += itemsHeaderHeight;
+      sectionHeights.itemsHeader = itemsHeaderHeight;
+      
+      let itemsTotalHeight = 0;
       if (order.order_menus && order.order_menus.length > 0) {
         order.order_menus.forEach((menu: any) => {
           const options: string[] = [];
@@ -284,26 +297,44 @@ export async function POST(request: NextRequest) {
           const fullText = [menuText, optionsText, commentText].filter(Boolean).join("\n");
           
           const rowHeight = measureDoc.heightOfString(fullText, { width: textWidth * 0.6, lineGap: 2 });
-          measureY += Math.max(rowHeight, lineHeight) + 10; // Fixed 10px spacing between items
+          const itemRowHeight = Math.max(rowHeight, lineHeight) + 10; // Fixed 10px spacing between items
+          itemsTotalHeight += itemRowHeight;
+          measureY += itemRowHeight;
         });
       }
+      sectionHeights.items = itemsTotalHeight;
       
       measureY += sectionSpacing;
+      sectionHeights.afterItemsSpacing = sectionSpacing;
       
       // Measure comment - moved above totals
+      let commentHeight = 0;
       if (order.comment) {
-        measureY += lineHeight; // "Σχόλιο" label
-        measureY += measureDoc.heightOfString(sanitizeString(order.comment), { width: textWidth });
-        measureY += sectionSpacing; // Spacing after comment before totals
+        commentHeight = lineHeight; // "Σχόλιο" label
+        commentHeight += measureDoc.heightOfString(sanitizeString(order.comment), { width: textWidth });
+        commentHeight += sectionSpacing; // Spacing after comment before totals
+        measureY += commentHeight;
       }
+      sectionHeights.comment = commentHeight;
       
       // Measure totals - right below order items (or comment if present)
-      measureY += lineHeight + rowSpacing; // "Σύνοψη Παραγγελίας" header
-      if (order.order_totals && order.order_totals.length > 0) {
-        measureY += lineHeight * order.order_totals.length;
-      } else {
-        measureY += lineHeight;
-      }
+      const totalsHeaderHeight = lineHeight + rowSpacing; // "Σύνοψη Παραγγελίας" header
+      measureY += totalsHeaderHeight;
+      const totalsRowsHeight = order.order_totals && order.order_totals.length > 0
+        ? lineHeight * order.order_totals.length
+        : lineHeight;
+      measureY += totalsRowsHeight;
+      sectionHeights.totals = totalsHeaderHeight + totalsRowsHeight;
+      
+      // Log section breakdown
+      const totalMeasured = Object.values(sectionHeights).reduce((sum, h) => sum + h, 0);
+      console.log("📏 [PDF] Content height breakdown:", {
+        sections: sectionHeights,
+        totalMeasured: totalMeasured,
+        measureY: measureY,
+        pagePadding: pagePadding,
+        calculatedHeight: measureY + pagePadding,
+      });
       
       calculatedHeight = measureY + pagePadding;
       // Ensure minimum height
@@ -325,7 +356,7 @@ export async function POST(request: NextRequest) {
         
         // Re-measure with scaled fonts to get accurate height
         // This ensures the page height matches the actual scaled content
-        let remeasureY = measureDoc.page.margins.top;
+        let remeasureY = 0; // Start from 0, no top margin
         remeasureY += measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth }) + sectionSpacing;
         
         // Re-measure customer info with actual text measurement
@@ -411,11 +442,11 @@ export async function POST(request: NextRequest) {
         }
         
         // Use the re-measured height (with scaled fonts) but cap at maxHeight
-        // Add buffer to ensure totals section is never cut off
-        calculatedHeight = Math.min(maxHeight, remeasureY + pagePadding + 20); // 20px buffer for safety
+        // Use the actual measured Y position as the height
+        calculatedHeight = Math.min(maxHeight, remeasureY + pagePadding); // Use actual measured height
       } else {
-        // Use measured height with buffer to ensure nothing gets cut off
-        calculatedHeight = measureY + pagePadding + 20; // 20px buffer for safety
+        // Use measured height - use actual measured Y position
+        calculatedHeight = measureY + pagePadding; // Use actual measured height
         if (calculatedHeight > maxHeight) {
           calculatedHeight = maxHeight;
         }
@@ -439,6 +470,7 @@ export async function POST(request: NextRequest) {
       // Thermal printers: use actual thermal width, dynamic height
       // 80mm = 226.77 points, 58mm = 164.41 points
       const thermalPageWidth = is80mm ? 226.77 : 164.41;
+      // Use calculatedHeight directly (which is based on actual measured content)
       // Ensure minimum height to prevent landscape rotation
       const minPortraitHeight = thermalPageWidth;
       pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight);
@@ -447,6 +479,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Standard paper sizes: A4 or A5
       // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
+      // Use calculatedHeight directly (which is based on actual measured content)
       const minPortraitHeight = isA5 ? 419.53 : 595.28;
       const maxHeight = isA5 ? 595.28 : 842;
       pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
@@ -454,6 +487,18 @@ export async function POST(request: NextRequest) {
       pageSize = [pageWidth, pageHeightWithBuffer];
       contentWidth = pageWidth;
     }
+    
+    // Log page dimensions for debugging
+    console.log("📄 [PDF] Page dimensions:", {
+      paperSize,
+      pageSizeArray: pageSize,
+      widthPoints: pageSize[0],
+      heightPoints: pageSize[1],
+      widthInches: (pageSize[0] / 72).toFixed(2),
+      heightInches: (pageSize[1] / 72).toFixed(2),
+      widthMM: (pageSize[0] / 2.83465).toFixed(2),
+      heightMM: (pageSize[1] / 2.83465).toFixed(2),
+    });
     
     const doc = new PDFDocument({
       size: pageSize, // Use actual thermal dimensions for thermal printers, A4/A5 for standard paper
@@ -465,6 +510,14 @@ export async function POST(request: NextRequest) {
       },
       autoFirstPage: true,
       bufferPages: false, // Disable page buffering to prevent multiple pages
+    });
+    
+    // Verify actual page dimensions after creation
+    console.log("📄 [PDF] Actual PDF page dimensions:", {
+      docPageWidth: doc.page.width,
+      docPageHeight: doc.page.height,
+      docPageWidthInches: (doc.page.width / 72).toFixed(2),
+      docPageHeightInches: (doc.page.height / 72).toFixed(2),
     });
 
     // Register fonts IMMEDIATELY after document creation to prevent Helvetica initialization
@@ -494,12 +547,12 @@ export async function POST(request: NextRequest) {
     };
     
     // Content positioning: for thermal printers, use full width; for standard paper, add padding
-    const contentPadding = isThermal ? (is58mm ? 5 : 8) : (isA5 ? 20 : 30); // Small padding for thermal to prevent edge cutoff
-    const contentX = contentPadding; // Start position for content (left edge + padding)
-    const availableContentWidth = contentWidth - (contentPadding * 2); // Width available for content
+    const contentPadding = isThermal ? 0 : (isA5 ? 20 : 30); // Small padding for thermal to prevent edge cutoff
+    const contentX = contentPadding + 10; // Start position for content (left edge + padding + 10px)
+    const availableContentWidth = contentWidth - (contentPadding * 2) - 10; // Width available for content (reduced by 10px left padding)
     
     // Track Y position
-    let y = contentPadding; // Start from top with padding
+    let y = contentPadding + 10; // Start from top with padding + 10px top padding
 
     // Helper to add text with wrapping
     const addText = (

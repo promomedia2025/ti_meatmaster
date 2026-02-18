@@ -74,6 +74,8 @@ export function AdminOrderDetailsModal({
   autoPrintOnAccept = false,
 }: AdminOrderDetailsModalProps) {
   const [paperSize, setPaperSize] = useState(getPrinterPaperSize());
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Define handlePrint using useCallback (must be before useEffect that uses it)
   const handlePrint = useCallback(async () => {
@@ -224,6 +226,45 @@ export function AdminOrderDetailsModal({
       alert("Σφάλμα κατά τη δημιουργία PDF. Παρακαλώ δοκιμάστε ξανά.");
     }
   }, [order, paperSize]);
+
+  // Preview PDF at thermal paper size
+  const handlePreview = useCallback(async () => {
+    if (!order) return;
+
+    try {
+      const response = await fetch("/api/admin/invoice/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order,
+          paperSize,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      setShowPreview(true);
+    } catch (error) {
+      console.error("❌ [PREVIEW] Error generating PDF:", error);
+      alert("Σφάλμα κατά τη δημιουργία προεπισκόπησης. Παρακαλώ δοκιμάστε ξανά.");
+    }
+  }, [order, paperSize]);
+
+  // Close preview and clean up URL
+  const handleClosePreview = useCallback(() => {
+    setShowPreview(false);
+    if (previewUrl) {
+      window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }, [previewUrl]);
 
   // Handle auto-print when accept is clicked
   useEffect(() => {
@@ -665,12 +706,20 @@ export function AdminOrderDetailsModal({
 
           {/* Action Buttons - Fixed at bottom */}
           <div className="p-6 pt-0 space-y-3 border-t border-gray-700 bg-[#1a1a1a] rounded-b-xl">
-            <Button
-              onClick={handlePrint}
-              className="w-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600 transition-all"
-            >
-              Εκτύπωση τιμολογίου
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={handlePreview}
+                className="bg-zinc-700 hover:bg-zinc-600 text-white border border-gray-600 transition-all"
+              >
+                Προεπισκόπηση
+              </Button>
+              <Button
+                onClick={handlePrint}
+                className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600 transition-all"
+              >
+                Εκτύπωση
+              </Button>
+            </div>
             <Button
               onClick={onClose}
               className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white transition-all"
@@ -680,6 +729,64 @@ export function AdminOrderDetailsModal({
           </div>
         </div>
       </div>
+
+      {/* Thermal Preview Modal */}
+      {showPreview && previewUrl && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 p-4">
+          <div className="relative bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-300">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Προεπισκόπηση Τιμολογίου - {paperSize === "80mm" ? "80mm" : paperSize === "58mm" ? "58mm" : paperSize}
+              </h2>
+              <Button
+                onClick={handleClosePreview}
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* PDF Preview */}
+            <div className="flex-1 overflow-auto p-4 bg-gray-100 flex items-start justify-center">
+              <div
+                className="bg-white shadow-lg"
+                style={{
+                  width: paperSize === "80mm" 
+                    ? `${(80 / 25.4) * 96}px` 
+                    : paperSize === "58mm"
+                    ? `${(58 / 25.4) * 96}px`
+                    : "100%",
+                  maxWidth: "100%",
+                  border: "2px solid #333",
+                }}
+              >
+                <iframe
+                  src={previewUrl}
+                  className="w-full"
+                  style={{
+                    height: "800px",
+                    border: "none",
+                  }}
+                  title="Invoice Preview"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-300 flex justify-end gap-2">
+              <Button
+                onClick={handleClosePreview}
+                className="bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Κλείσιμο
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
