@@ -433,6 +433,7 @@ export async function POST(request: NextRequest) {
     // For standard paper, use A4/A5 dimensions
     let pageSize: [number, number];
     let contentWidth: number;
+    let pageHeightWithBuffer: number;
     
     if (isThermal) {
       // Thermal printers: use actual thermal width, dynamic height
@@ -440,7 +441,7 @@ export async function POST(request: NextRequest) {
       const thermalPageWidth = is80mm ? 226.77 : 164.41;
       // Ensure minimum height to prevent landscape rotation
       const minPortraitHeight = thermalPageWidth;
-      const pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight);
+      pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight);
       pageSize = [thermalPageWidth, pageHeightWithBuffer];
       contentWidth = thermalPageWidth;
     } else {
@@ -448,7 +449,7 @@ export async function POST(request: NextRequest) {
       // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
       const minPortraitHeight = isA5 ? 419.53 : 595.28;
       const maxHeight = isA5 ? 595.28 : 842;
-      const pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
+      pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
       const pageWidth = isA5 ? 419.53 : 595.28;
       pageSize = [pageWidth, pageHeightWithBuffer];
       contentWidth = pageWidth;
