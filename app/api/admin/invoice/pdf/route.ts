@@ -336,7 +336,8 @@ export async function POST(request: NextRequest) {
         calculatedHeight: measureY + pagePadding,
       });
       
-      calculatedHeight = measureY + pagePadding;
+      // Add 10px top padding that we'll use when drawing
+      calculatedHeight = measureY + pagePadding + 10;
       // Ensure minimum height
       if (calculatedHeight < 100) calculatedHeight = 100;
       
@@ -442,11 +443,12 @@ export async function POST(request: NextRequest) {
         }
         
         // Use the re-measured height (with scaled fonts) but cap at maxHeight
-        // Use the actual measured Y position as the height
-        calculatedHeight = Math.min(maxHeight, remeasureY + pagePadding); // Use actual measured height
+        // Add 10px top padding that we'll use when drawing
+        calculatedHeight = Math.min(maxHeight, remeasureY + pagePadding + 10); // Use actual measured height + 10px top padding
       } else {
         // Use measured height - use actual measured Y position
-        calculatedHeight = measureY + pagePadding; // Use actual measured height
+        // Add 10px top padding that we'll use when drawing
+        calculatedHeight = measureY + pagePadding + 10; // Use actual measured height + 10px top padding
         if (calculatedHeight > maxHeight) {
           calculatedHeight = maxHeight;
         }
@@ -1025,7 +1027,8 @@ export async function POST(request: NextRequest) {
 
     // Verify final Y position and ensure page height is sufficient
     // Add extra buffer to ensure totals section is never cut off
-    const finalY = y + pagePadding;
+    // Note: y already includes the 10px top padding, so finalY should account for bottom padding only
+    const finalY = y + (isThermal ? 0 : pagePadding);
     const currentPageHeight = doc.page.height;
     
     // Log for debugging (can be removed in production)
