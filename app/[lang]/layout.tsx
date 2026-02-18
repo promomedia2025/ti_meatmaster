@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 import { i18n, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { FooterWrapper } from "@/components/footer-wrapper";
 
 export async function generateStaticParams() {
   return i18n.locales.map((locale) => ({ lang: locale }));
@@ -49,7 +50,7 @@ export default async function LangLayout({
                   <CartSidebarProvider>
                     <BetterNavbar lang={params.lang} dict={dict} />
                     <Suspense fallback={null}>{children}</Suspense>
-                    <Footer lang={params.lang} dict={dict} />
+                    <FooterWrapper lang={params.lang} dict={dict} />
                     <Analytics />
                     <Toaster position="top-right" richColors />
                   </CartSidebarProvider>
