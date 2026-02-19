@@ -636,6 +636,15 @@ export default function AdminDashboardPage() {
 
   const handleAcceptOrder = async (orderId: number) => {
     try {
+      // Stop notification sound when order is accepted
+      if (typeof window !== "undefined" && window.electron?.stopNotificationSound) {
+        try {
+          await window.electron.stopNotificationSound();
+        } catch (err) {
+          console.log("Could not stop notification sound:", err);
+        }
+      }
+
       const response = await fetch("/api/admin/orders/accept", {
         method: "POST",
         headers: {
