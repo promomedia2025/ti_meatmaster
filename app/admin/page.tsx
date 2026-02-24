@@ -38,6 +38,7 @@ interface AdminOrder {
   floor?: string | null;
   comments?: string | null;
   address_id?: number | null;
+  tip_amount?: number | string | null;
 }
 
 const PENDING_STATUS_ID = 2;

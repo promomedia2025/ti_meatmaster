@@ -56,6 +56,7 @@ interface AdminOrder {
   floor?: string | null;
   comments?: string | null;
   address_id?: number | null;
+  tip_amount?: number | string | null;
 }
 
 interface AdminOrderDetailsModalProps {
@@ -662,12 +663,13 @@ export function AdminOrderDetailsModal({
               </h3>
               <div className="space-y-2">
                 {order.order_totals && order.order_totals.length > 0 ? (
-                  order.order_totals
+                  <>
+                    {order.order_totals
                     .sort((a, b) => a.priority - b.priority)
                     .map((total) => (
                       <div
                         key={total.order_total_id}
-                        className="flex justify-between items-center py-2 border-b border-gray-700 last:border-0"
+                          className="flex justify-between items-center py-2 border-b border-gray-700"
                       >
                         <span className="text-gray-300">{total.title}:</span>
                         <span
@@ -680,8 +682,27 @@ export function AdminOrderDetailsModal({
                           {parseFloat(total.value).toFixed(2)} {order.currency}
                         </span>
                       </div>
-                    ))
+                      ))}
+                    {/* Display tip amount if it exists and is greater than 0 */}
+                    {order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0 && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700">
+                        <span className="text-gray-300">Φιλοδώρημα:</span>
+                        <span className="text-gray-300 font-semibold">
+                          {parseFloat(String(order.tip_amount)).toFixed(2)} {order.currency}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 ) : (
+                  <>
+                    {order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0 && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700">
+                        <span className="text-gray-300">Φιλοδώρημα:</span>
+                        <span className="text-gray-300 font-semibold">
+                          {parseFloat(String(order.tip_amount)).toFixed(2)} {order.currency}
+                        </span>
+                      </div>
+                    )}
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-300">Σύνολο:</span>
                     <span className="text-white font-semibold text-lg">
@@ -689,6 +710,7 @@ export function AdminOrderDetailsModal({
                       {order.currency}
                     </span>
                   </div>
+                  </>
                 )}
               </div>
             </div>
@@ -713,12 +735,12 @@ export function AdminOrderDetailsModal({
               >
                 Προεπισκόπηση
               </Button>
-              <Button
-                onClick={handlePrint}
+            <Button
+              onClick={handlePrint}
                 className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-gray-600 transition-all"
-              >
+            >
                 Εκτύπωση
-              </Button>
+            </Button>
             </div>
             <Button
               onClick={onClose}

@@ -43,7 +43,7 @@ interface AuthContextType {
     telephone: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: (updatedUserData?: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,16 +127,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Location tracking will be handled automatically by LocationProvider
 
+        // Create storage object without id field
+        const { id, ...userDataWithoutId } = userData;
+
         // Store based on remember preference
         if (remember) {
-          localStorage.setItem("user", JSON.stringify(userData));
+          localStorage.setItem("user", JSON.stringify(userDataWithoutId));
           sessionStorage.removeItem("user"); // Clear sessionStorage if remember me is checked
           console.log(
-            "💾 User data saved to localStorage (remember me checked)"
+            "💾 User data saved to localStorage (remember me checked, id removed)"
           );
         } else {
-          sessionStorage.setItem("user", JSON.stringify(userData));
-          console.log("💾 User data saved to sessionStorage (session only)");
+          sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
+          console.log("💾 User data saved to sessionStorage (session only, id removed)");
         }
 
         return { success: true };
@@ -196,9 +199,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Location tracking will be handled automatically by LocationProvider
 
+        // Create storage object without id field
+        const { id, ...userDataWithoutId } = userData;
+
         // Store in sessionStorage by default (not persistent)
-        sessionStorage.setItem("user", JSON.stringify(userData));
-        console.log("💾 User data saved to sessionStorage (registration)");
+        sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
+        console.log("💾 User data saved to sessionStorage (registration, id removed)");
 
         return { success: true };
       } else {
@@ -236,11 +242,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   // Refresh user data
-  const refreshUser = async () => {
+  const refreshUser = async (updatedUserData?: Partial<User>) => {
     try {
-      // You can implement user data refresh logic here
-      // This could make an API call to verify the current session
-      // For now, we'll leave it empty since we're not persisting user data locally
+      // If updated user data is provided, use it directly (works even if no existing user)
+      if (updatedUserData) {
+        // If we have an existing user, merge with it; otherwise use the provided data as the base
+        const updatedUser: User = user
+          ? { ...user, ...updatedUserData }
+          : (updatedUserData as User);
+        
+        setUser(updatedUser);
+
+        // Update storage with the new data
+        const storedUser =
+          localStorage.getItem("user") || sessionStorage.getItem("user");
+        const storageType = localStorage.getItem("user")
+          ? "localStorage"
+          : "sessionStorage";
+
+        if (storageType === "localStorage") {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        } else {
+          sessionStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+
+        console.log("✅ User data refreshed with provided data");
+        return;
+      }
+
+      // If no user ID and no updated data provided, can't refresh
+      if (!user?.id) {
+        console.log("⚠️ Cannot refresh user: no user ID");
+        return;
+      }
+
+      // Otherwise, try to fetch from storage (fallback)
+      const storedUser =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      const storageType = localStorage.getItem("user")
+        ? "localStorage"
+        : "sessionStorage";
+
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        console.log("✅ User data refreshed from", storageType);
+      } else {
+        console.log("⚠️ No stored user data found for refresh");
+      }
     } catch (error) {
       console.error("Error refreshing user:", error);
     }
@@ -260,8 +309,59 @@ export function AuthProvider({ children }: AuthProviderProps) {
           : "sessionStorage";
 
         if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
+          const storedUserData = JSON.parse(storedUser);
+          
+          // If stored data doesn't have id, verify session to get full user data
+          if (!storedUserData.id) {
+            try {
+              const verifyResponse = await fetch("/api/auth/user", {
+                method: "GET",
+                credentials: "include",
+              });
+              
+              const verifyData = await verifyResponse.json();
+              if (verifyData.success && verifyData.data?.user) {
+                const verifiedUser = verifyData.data.user;
+                const userData: User = {
+                  id: verifiedUser.id,
+                  email: verifiedUser.email,
+                  name: verifiedUser.name,
+                  first_name: verifiedUser.first_name,
+                  last_name: verifiedUser.last_name,
+                  phone: verifiedUser.phone || verifiedUser.telephone,
+                  telephone: verifiedUser.telephone,
+                  date_of_birth: verifiedUser.date_of_birth,
+                  address: verifiedUser.address,
+                  city: verifiedUser.city,
+                  postcode: verifiedUser.postcode,
+                  created_at: verifiedUser.created_at,
+                  updated_at: verifiedUser.updated_at,
+                };
+                setUser(userData);
+                console.log("✅ User data loaded and verified from session");
+              } else {
+                // Session invalid, clear storage
+                localStorage.removeItem("user");
+                sessionStorage.removeItem("user");
+                console.log("⚠️ Session invalid, cleared stored user data");
+              }
+            } catch (error) {
+              console.error("Error verifying session on load:", error);
+              // Clear corrupted data
+              localStorage.removeItem("user");
+              sessionStorage.removeItem("user");
+            }
+          } else {
+            // Legacy format with id, use it directly but remove id from storage
+            setUser(storedUserData);
+            const { id, ...userDataWithoutId } = storedUserData;
+            if (storageType === "localStorage") {
+              localStorage.setItem("user", JSON.stringify(userDataWithoutId));
+            } else {
+              sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
+            }
+            console.log("✅ User data loaded from storage (legacy format, id removed)");
+          }
 
           // Location tracking will be handled automatically by LocationProvider
         } else {

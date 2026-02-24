@@ -5,7 +5,7 @@ import fs from "fs";
 
 export const dynamic = "force-dynamic";
 
-// Helper functions
+// Helper functions (same as in the main invoice route)
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return "N/A";
   try {
@@ -61,14 +61,9 @@ const sanitizeString = (value: any): string => {
   return String(value);
 };
 
-// Prevent word breaking by replacing spaces with non-breaking spaces in critical words
 const preventWordBreak = (text: string): string => {
   if (!text) return text;
-  // Replace spaces within words with non-breaking spaces
-  // This prevents words like "Σύνολο" from breaking into "Συνολ" and "ο"
   return text.replace(/(\S+)\s+(\S+)/g, (match, word1, word2) => {
-    // For Greek words and short phrases, use non-breaking spaces
-    // Check if it's a short phrase (less than 20 chars) or contains Greek
     if (match.length < 20 || /[\u0370-\u03FF]/.test(match)) {
       return `${word1}\u00A0${word2}`;
     }
@@ -76,10 +71,8 @@ const preventWordBreak = (text: string): string => {
   });
 };
 
-// Protect specific important words/phrases from breaking
 const protectWords = (text: string): string => {
   if (!text) return text;
-  // Protect common invoice terms
   const protectedTerms: { [key: string]: string } = {
     "Σύνολο": "Σύνολο",
     "Σύνοψη Παραγγελίας": "Σύνοψη\u00A0Παραγγελίας",
@@ -98,7 +91,6 @@ const protectWords = (text: string): string => {
   return result;
 };
 
-// Load Roboto fonts
 const loadFonts = () => {
   const basePath = process.cwd();
   const staticFontBase = path.join(basePath, "public", "fonts", "static");
@@ -123,37 +115,106 @@ const loadFonts = () => {
   return fonts;
 };
 
+// Sample order data for test print
+const createSampleOrder = () => {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+  
+  return {
+    order_id: "TEST-001",
+    customer_name: "Δοκιμαστικός Πελάτης",
+    telephone: "2101234567",
+    order_type: "delivery",
+    payment: "cod",
+    order_date: dateStr,
+    order_time: timeStr,
+    location_name: "Οδός Παράδειγμα 123, Αθήνα 10431",
+    floor: "3ος",
+    bell_name: "ΓΙΑΝΝΗΣ",
+    comments: "Παρακαλώ αφήστε το μπροστά στην πόρτα",
+    comment: "Αυτή είναι μια δοκιμαστική παραγγελία για έλεγχο εκτύπωσης",
+    currency: "EUR",
+    order_menus: [
+      {
+        name: "Μπέργκερ Κλασικό",
+        quantity: 2,
+        subtotal: "15.00",
+        comment: "Χωρίς κρεμμύδια",
+        menu_options: [
+          {
+            order_option_name: "Μεγάλο",
+            quantity: 1,
+            order_option_price: "2.00",
+          },
+          {
+            order_option_name: "Πατάτες",
+            quantity: 1,
+            order_option_price: "3.50",
+          },
+        ],
+      },
+      {
+        name: "Πίτσα Μαργαρίτα",
+        quantity: 1,
+        subtotal: "12.50",
+        menu_options: [
+          {
+            order_option_name: "Μεγάλη",
+            quantity: 1,
+            order_option_price: "2.50",
+          },
+        ],
+      },
+      {
+        name: "Κοκα-Κόλα",
+        quantity: 2,
+        subtotal: "4.00",
+        menu_options: [],
+      },
+    ],
+    order_totals: [
+      {
+        code: "subtotal",
+        title: "Υποσύνολο",
+        value: "31.50",
+        priority: 1,
+      },
+      {
+        code: "delivery",
+        title: "Κόστος Παράδοσης",
+        value: "3.00",
+        priority: 2,
+      },
+      {
+        code: "total",
+        title: "Σύνολο",
+        value: "34.50",
+        priority: 3,
+      },
+    ],
+    order_total: "34.50",
+    tip_amount: "2.00",
+  };
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { order, paperSize = "A4" } = body;
+    const { paperSize = "A4" } = body;
 
-    if (!order) {
-      return NextResponse.json(
-        { success: false, error: "Order data is required" },
-        { status: 400 }
-      );
-    }
+    // Create sample order data
+    const order = createSampleOrder();
 
-    console.log("📄 [PDF] Building invoice for order:", {
-      orderId: order.order_id,
-      orderType: order.order_type,
-      payment: order.payment,
-      hasMenus: !!order.order_menus,
-      menuCount: order.order_menus?.length || 0,
-      paperSize: paperSize,
-    });
+    console.log("📄 [TEST PDF] Building test invoice with paper size:", paperSize);
 
     const isThermal = paperSize === "80mm" || paperSize === "58mm";
     const is80mm = paperSize === "80mm";
     const is58mm = paperSize === "58mm";
     const isA5 = paperSize === "A5";
     
-    // Convert mm to points (1mm = 2.83465 points)
-    // For thermal printers, width is fixed, height will be dynamic
     const thermalWidth = is80mm ? 226.77 : is58mm ? 198.33 : 226.77;
     
-    // Load fonts - MUST have Roboto fonts for pdfkit to work in Next.js
     const fonts = loadFonts();
     if (!fonts.normal) {
       return NextResponse.json(
@@ -164,23 +225,20 @@ export async function POST(request: NextRequest) {
     
     const fontFamily = "Roboto";
     
-    // Base font size based on paper size (increased for better readability)
     let baseFontSize = Math.round((is58mm ? 7 : is80mm ? 8 : paperSize === "A5" ? 9 : 10) * 1.4);
     let titleFontSize = Math.round((is58mm ? 10 : is80mm ? 12 : paperSize === "A5" ? 14 : 16) * 1.4);
     let headerFontSize = Math.round((is58mm ? 8 : is80mm ? 10 : paperSize === "A5" ? 11 : 12) * 1.4);
     
-    const pagePadding = isThermal ? (is58mm ? 10 : 12) : 45; // Slightly increased for harmony
-    let lineHeight = baseFontSize * 1.3; // Increased for better readability with larger fonts
-    let sectionSpacing = isThermal ? (is58mm ? 12 : 14) : 16; // Increased proportionally to font sizes
-    let rowSpacing = isThermal ? (is58mm ? 4 : 5) : 6; // Increased proportionally
+    const pagePadding = isThermal ? (is58mm ? 10 : 12) : 45;
+    let lineHeight = baseFontSize * 1.3;
+    let sectionSpacing = isThermal ? (is58mm ? 12 : 14) : 16;
+    let rowSpacing = isThermal ? (is58mm ? 4 : 5) : 6;
     
-    // Measure content height for ALL paper sizes to ensure single page
-    let calculatedHeight = 2000; // Default large height
-    let calculatedWidth: number | string = paperSize === "A5" ? 420 : 595; // A5 or A4 width in points
+    // Measure content height (same logic as main invoice route)
+    let calculatedHeight = 2000;
+    let calculatedWidth: number | string = paperSize === "A5" ? 420 : 595;
     
-    // Always measure content height to ensure single page
     {
-      // Create a measurement document to calculate exact height
       const measureWidth = isThermal ? thermalWidth : (paperSize === "A5" ? 420 : 595);
       const measureDoc = new PDFDocument({
         size: [measureWidth, 2000],
@@ -192,8 +250,6 @@ export async function POST(request: NextRequest) {
         },
       });
       
-      // Register fonts IMMEDIATELY after document creation
-      // Register each font variant separately to avoid variable font detection
       if (fonts.normal) {
         measureDoc.registerFont("Roboto", fonts.normal);
       }
@@ -207,26 +263,17 @@ export async function POST(request: NextRequest) {
         measureDoc.registerFont("Roboto-BoldItalic", fonts.boldItalic);
       }
       
-      // Set font immediately to prevent Helvetica initialization
       measureDoc.font("Roboto");
       
-      let measureY = 0; // Start from 0, no top margin
+      let measureY = 0;
       const textWidth = measureDoc.page.width - measureDoc.page.margins.left - measureDoc.page.margins.right;
       
-      // Track section heights for debugging
-      const sectionHeights: Record<string, number> = {};
-      
-      // Measure title
       const titleHeight = measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth });
       measureY += titleHeight + sectionSpacing;
-      sectionHeights.title = titleHeight + sectionSpacing;
       
-      // Measure customer info (left column) and order info (right column)
-      // Use actual text measurement to account for wrapping
       const leftColumnWidth = textWidth / 2;
       const leftColumnHeight = (() => {
-        let h = lineHeight; // "Πελάτης" label
-        // Measure actual customer name height (may wrap)
+        let h = lineHeight;
         h += measureDoc.heightOfString(sanitizeString(order.customer_name) || "N/A", { 
           width: leftColumnWidth, 
           lineGap: 2 
@@ -239,47 +286,34 @@ export async function POST(request: NextRequest) {
         }
         const isDelivery = order.order_type === "delivery" || order.order_type === "Delivery" || order.order_type === "DELIVERY";
         if (isDelivery) {
-          h += rowSpacing + lineHeight; // "Διεύθυνση Παράδοσης" label
-          // Measure actual address height (may wrap to multiple lines)
+          h += rowSpacing + lineHeight;
           const addressText = sanitizeString(order.location_name) || "N/A";
           h += measureDoc.heightOfString(addressText, { 
             width: leftColumnWidth
           });
-          h += 15; // Fixed spacing after address (matching rendering)
-          // Floor, bell, and comments - use lineHeight for consistency
           if (order.floor) {
             h += lineHeight;
           }
           if (order.bell_name) {
             h += lineHeight;
           }
-          if (order.comments) {
-            const commentsText = sanitizeString(order.comments);
-            h += measureDoc.heightOfString(commentsText, { width: leftColumnWidth });
-          }
         }
         return h;
       })();
       
-      // Right column: Payment, Order Type, Date (these are short, unlikely to wrap)
-      const rightColumnHeight = 10 + lineHeight + // Payment label (10px) + value
-                                 20 + // spacing between sections
-                                 10 + lineHeight + // Order Type label (10px) + value
-                                 20 + // spacing between sections
-                                 10 + lineHeight; // Date label (10px) + value
+      const rightColumnHeight = lineHeight + lineHeight +
+                                 lineHeight * 1.4 +
+                                 lineHeight + lineHeight +
+                                 lineHeight * 1.4 +
+                                 25 +
+                                 lineHeight + lineHeight;
       const customerInfoHeight = Math.max(leftColumnHeight, rightColumnHeight) + sectionSpacing;
       measureY += customerInfoHeight;
-      sectionHeights.customerInfo = customerInfoHeight;
       
-      // Push order items section 25px down
-      const itemsSectionSpacing = 45;
-      measureY += itemsSectionSpacing;
-      sectionHeights.itemsSectionSpacing = itemsSectionSpacing;
+      measureY += 45;
       
-      // Measure items table
-      const itemsHeaderHeight = lineHeight + rowSpacing; // "Προϊόντα" header
+      const itemsHeaderHeight = lineHeight + rowSpacing;
       measureY += itemsHeaderHeight;
-      sectionHeights.itemsHeader = itemsHeaderHeight;
       
       let itemsTotalHeight = 0;
       if (order.order_menus && order.order_menus.length > 0) {
@@ -301,84 +335,56 @@ export async function POST(request: NextRequest) {
           const fullText = [menuText, optionsText, commentText].filter(Boolean).join("\n");
           
           const rowHeight = measureDoc.heightOfString(fullText, { width: textWidth * 0.6, lineGap: 2 });
-          const itemRowHeight = Math.max(rowHeight, lineHeight) + 10; // Fixed 10px spacing between items
+          const itemRowHeight = Math.max(rowHeight, lineHeight) + 10;
           itemsTotalHeight += itemRowHeight;
           measureY += itemRowHeight;
         });
       }
-      sectionHeights.items = itemsTotalHeight;
       
       measureY += sectionSpacing;
-      sectionHeights.afterItemsSpacing = sectionSpacing;
       
-      // Measure comment - moved above totals
       let commentHeight = 0;
       if (order.comment) {
-        commentHeight = lineHeight; // "Σχόλιο" label
+        commentHeight = lineHeight;
         commentHeight += measureDoc.heightOfString(sanitizeString(order.comment), { width: textWidth });
-        commentHeight += sectionSpacing; // Spacing after comment before totals
+        commentHeight += sectionSpacing;
         measureY += commentHeight;
       }
-      sectionHeights.comment = commentHeight;
       
-      // Measure totals - right below order items (or comment if present)
-      const totalsHeaderHeight = lineHeight + rowSpacing; // "Σύνοψη Παραγγελίας" header
+      const totalsHeaderHeight = lineHeight + rowSpacing;
       measureY += totalsHeaderHeight;
       let totalsRowsCount = order.order_totals && order.order_totals.length > 0
         ? order.order_totals.length
         : 1;
-      // Add tip_amount row if it exists and is greater than 0
       if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
         totalsRowsCount += 1;
       }
       const totalsRowsHeight = lineHeight * totalsRowsCount;
       measureY += totalsRowsHeight;
-      sectionHeights.totals = totalsHeaderHeight + totalsRowsHeight;
       
       // Add thank you message height
       measureY += rowSpacing + lineHeight; // Spacing + thank you message
-      sectionHeights.thankYou = rowSpacing + lineHeight;
       
-      // Log section breakdown
-      const totalMeasured = Object.values(sectionHeights).reduce((sum, h) => sum + h, 0);
-      console.log("📏 [PDF] Content height breakdown:", {
-        sections: sectionHeights,
-        totalMeasured: totalMeasured,
-        measureY: measureY,
-        pagePadding: pagePadding,
-        calculatedHeight: measureY + pagePadding,
-      });
-      
-      // Calculate finalY equivalent (what finalY will be after rendering)
-      // finalY = y, where y includes 10px top padding, no bottom padding
-      // So: finalY = measureY
-      calculatedHeight = measureY;
-      // Ensure minimum height
+      calculatedHeight = measureY + pagePadding + 10;
       if (calculatedHeight < 100) calculatedHeight = 100;
       
-      // Maximum height: A4 paper (842 points) for all sizes
       const maxHeight = 842;
       let scaleFactor = 1.0;
       if (calculatedHeight > maxHeight) {
         scaleFactor = maxHeight / calculatedHeight;
-        // Adjust font sizes proportionally to fit comfortably
         baseFontSize = Math.max(7, Math.round(baseFontSize * scaleFactor));
         titleFontSize = Math.max(10, Math.round(titleFontSize * scaleFactor));
         headerFontSize = Math.max(8, Math.round(headerFontSize * scaleFactor));
-        // Recalculate lineHeight and spacing with new font sizes
-        lineHeight = baseFontSize * 1.3; // Increased for harmony with larger fonts
+        lineHeight = baseFontSize * 1.3;
         sectionSpacing = Math.max(10, Math.round(sectionSpacing * scaleFactor));
         rowSpacing = Math.max(4, Math.round(rowSpacing * scaleFactor));
         
-        // Re-measure with scaled fonts to get accurate height
-        // This ensures the page height matches the actual scaled content
-        let remeasureY = 0; // Start from 0, no top margin
+        let remeasureY = 0;
         remeasureY += measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth }) + sectionSpacing;
         
-        // Re-measure customer info with actual text measurement
         const remeasureLeftWidth = textWidth / 2;
         const remeasureLeftHeight = (() => {
-          let h = lineHeight; // "Πελάτης" label
+          let h = lineHeight;
           h += measureDoc.heightOfString(sanitizeString(order.customer_name) || "N/A", { 
             width: remeasureLeftWidth, 
             lineGap: 2 
@@ -391,37 +397,30 @@ export async function POST(request: NextRequest) {
           }
           const isDelivery = order.order_type === "delivery" || order.order_type === "Delivery" || order.order_type === "DELIVERY";
           if (isDelivery) {
-            h += rowSpacing + lineHeight; // "Διεύθυνση Παράδοσης" label
+            h += rowSpacing + lineHeight;
             const addressText = sanitizeString(order.location_name) || "N/A";
             h += measureDoc.heightOfString(addressText, { 
               width: remeasureLeftWidth
             });
-            h += 15; // Fixed spacing after address (matching rendering)
-            // Floor, bell, and comments - use lineHeight for consistency
             if (order.floor) {
               h += lineHeight;
             }
             if (order.bell_name) {
               h += lineHeight;
             }
-            if (order.comments) {
-              const commentsText = sanitizeString(order.comments);
-              h += measureDoc.heightOfString(commentsText, { width: remeasureLeftWidth });
-            }
           }
           return h;
         })();
-        const remeasureRightHeight = 10 + lineHeight + // Payment label (10px) + value
-                                      20 + // spacing between sections
-                                      10 + lineHeight + // Order Type label (10px) + value
-                                      20 + // spacing between sections
-                                      10 + lineHeight; // Date label (10px) + value
+        const remeasureRightHeight = lineHeight + lineHeight +
+                                      lineHeight * 1.4 +
+                                      lineHeight + lineHeight +
+                                      lineHeight * 1.4 +
+                                      25 +
+                                      lineHeight + lineHeight;
         remeasureY += Math.max(remeasureLeftHeight, remeasureRightHeight) + sectionSpacing;
         
-        // Push order items section 25px down
         remeasureY += 25;
         
-        // Re-measure items
         remeasureY += lineHeight + rowSpacing;
         if (order.order_menus && order.order_menus.length > 0) {
           order.order_menus.forEach((menu: any) => {
@@ -438,71 +437,46 @@ export async function POST(request: NextRequest) {
             const menuText = sanitizeString(menu.name);
             const commentText = menu.comment ? sanitizeString(menu.comment) : "";
             const optionsText = options.length > 0 ? options.join("\n") : "";
-            
-            // Calculate individual component heights (matching actual rendering)
-            // Menu text uses name column width, but options can use wider width
-            const nameColumnWidth = textWidth * 0.6; // Approximate name column width
-            const priceColumnWidth = isThermal ? 65 : 70;
-            // Calculate options width: name column + price column - padding
-            const optionsWidth = nameColumnWidth + (priceColumnWidth * 1.2) - 15; // Wider width for options
-            
-            const menuTextHeight = measureDoc.heightOfString(menuText, { width: nameColumnWidth });
-            const optionsFontSize = baseFontSize - (isThermal ? (is58mm ? 1.5 : 1) : 1);
-            const optionsHeight = optionsText 
-              ? measureDoc.font("Roboto").fontSize(optionsFontSize).heightOfString(optionsText, { width: optionsWidth })
-              : 0;
-            const commentFontSize = baseFontSize - (isThermal ? (is58mm ? 1.5 : 1) : 1);
-            const commentHeight = commentText
-              ? measureDoc.font("Roboto").fontSize(commentFontSize).heightOfString(commentText, { width: optionsWidth })
-              : 0;
-            
-            const actualItemHeight = menuTextHeight + optionsHeight + commentHeight;
-            remeasureY += Math.max(actualItemHeight, lineHeight) + 5; // 5px spacing between items
+            const fullText = [menuText, optionsText, commentText].filter(Boolean).join("\n");
+            const rowHeight = measureDoc.heightOfString(fullText, { width: textWidth * 0.6, lineGap: 2 });
+            remeasureY += Math.max(rowHeight, lineHeight) + 10;
           });
         }
         
         remeasureY += sectionSpacing;
         
-        // Re-measure comment - moved above totals
         if (order.comment) {
-          remeasureY += lineHeight; // "Σχόλιο" label
+          remeasureY += lineHeight;
           remeasureY += measureDoc.heightOfString(sanitizeString(order.comment), { width: textWidth });
-          remeasureY += sectionSpacing; // Spacing after comment before totals
+          remeasureY += sectionSpacing;
         }
         
-        // Re-measure totals - right below order items (or comment if present)
         remeasureY += lineHeight + rowSpacing;
         if (order.order_totals && order.order_totals.length > 0) {
           let totalsRowsCount = order.order_totals.length;
-          // Add tip_amount row if it exists and is greater than 0
           if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
             totalsRowsCount += 1;
           }
           remeasureY += lineHeight * totalsRowsCount;
         } else {
-          let totalsRowsCount = 1; // "Σύνολο" row
-          // Add tip_amount row if it exists and is greater than 0
+          let totalsRowsCount = 1;
           if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
             totalsRowsCount += 1;
           }
           remeasureY += lineHeight * totalsRowsCount;
         }
         
-        // Calculate finalY equivalent (what finalY will be after rendering)
-        // finalY = y, where y includes 10px top padding, no bottom padding
-        // So: finalY = remeasureY
-        calculatedHeight = Math.min(maxHeight, remeasureY);
+        // Add thank you message height
+        remeasureY += rowSpacing + lineHeight; // Spacing + thank you message
+        
+        calculatedHeight = Math.min(maxHeight, remeasureY + 10 + (isThermal ? 10 : 20)); // 10px top + small bottom padding
       } else {
-        // Calculate finalY equivalent (what finalY will be after rendering)
-        // finalY = y, where y includes 10px top padding, no bottom padding
-        // So: finalY = measureY
-        calculatedHeight = measureY;
+        calculatedHeight = measureY + pagePadding + 10;
         if (calculatedHeight > maxHeight) {
           calculatedHeight = maxHeight;
         }
       }
       
-      // Set calculated width
       if (!isThermal) {
         calculatedWidth = paperSize === "A5" ? 420 : 595;
       } else {
@@ -510,26 +484,17 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // For thermal printers, use actual thermal page dimensions
-    // For standard paper, use A4/A5 dimensions
     let pageSize: [number, number];
     let contentWidth: number;
     let pageHeightWithBuffer: number;
     
     if (isThermal) {
-      // Thermal printers: use actual thermal width, dynamic height
-      // 80mm = 226.77 points, 58mm = 164.41 points
       const thermalPageWidth = is80mm ? 226.77 : 164.41;
-      // Use calculatedHeight directly (which is based on actual measured content)
-      // Ensure minimum height to prevent landscape rotation
       const minPortraitHeight = thermalPageWidth;
-      pageHeightWithBuffer = calculatedHeight;
+      pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight);
       pageSize = [thermalPageWidth, pageHeightWithBuffer];
       contentWidth = thermalPageWidth;
     } else {
-      // Standard paper sizes: A4 or A5
-      // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
-      // Use calculatedHeight directly (which is based on actual measured content)
       const minPortraitHeight = isA5 ? 419.53 : 595.28;
       const maxHeight = isA5 ? 595.28 : 842;
       pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
@@ -538,40 +503,18 @@ export async function POST(request: NextRequest) {
       contentWidth = pageWidth;
     }
     
-    // Log page dimensions for debugging
-    console.log("📄 [PDF] Page dimensions:", {
-      paperSize,
-      pageSizeArray: pageSize,
-      widthPoints: pageSize[0],
-      heightPoints: pageSize[1],
-      widthInches: (pageSize[0] / 72).toFixed(2),
-      heightInches: (pageSize[1] / 72).toFixed(2),
-      widthMM: (pageSize[0] / 2.83465).toFixed(2),
-      heightMM: (pageSize[1] / 2.83465).toFixed(2),
-    });
-    
     const doc = new PDFDocument({
-      size: pageSize, // Use actual thermal dimensions for thermal printers, A4/A5 for standard paper
+      size: pageSize,
       margins: {
-        top: isThermal ? 0 : pagePadding, // No top margin for thermal
+        top: isThermal ? 0 : pagePadding,
         bottom: isThermal ? 0 : pagePadding,
-        left: 0, // No left margin - content will be positioned manually
+        left: 0,
         right: 0,
       },
       autoFirstPage: true,
-      bufferPages: false, // Disable page buffering to prevent multiple pages
-    });
-    
-    // Verify actual page dimensions after creation
-    console.log("📄 [PDF] Actual PDF page dimensions:", {
-      docPageWidth: doc.page.width,
-      docPageHeight: doc.page.height,
-      docPageWidthInches: (doc.page.width / 72).toFixed(2),
-      docPageHeightInches: (doc.page.height / 72).toFixed(2),
+      bufferPages: false,
     });
 
-    // Register fonts IMMEDIATELY after document creation to prevent Helvetica initialization
-    // Register each font variant separately to avoid variable font detection
     if (fonts.normal) {
       doc.registerFont("Roboto", fonts.normal);
     }
@@ -585,73 +528,19 @@ export async function POST(request: NextRequest) {
       doc.registerFont("Roboto-BoldItalic", fonts.boldItalic);
     }
     
-    // Set font immediately to prevent Helvetica initialization
     doc.font("Roboto");
     
-    // Prevent automatic page creation - ensure single page only
     const originalAddPage = doc.addPage.bind(doc);
     doc.addPage = function() {
-      // Prevent adding new pages - we want only one page
-      console.warn("⚠️ [PDF] Attempted to add new page, but single-page mode is enforced");
+      console.warn("⚠️ [TEST PDF] Attempted to add new page, but single-page mode is enforced");
       return this;
     };
     
-    // Content positioning: for thermal printers, use full width; for standard paper, add padding
-    const contentPadding = isThermal ? 0 : (isA5 ? 20 : 30); // Small padding for thermal to prevent edge cutoff
-    const contentX = contentPadding + 10; // Start position for content (left edge + padding + 10px)
-    const availableContentWidth = contentWidth - (contentPadding * 2) - 10; // Width available for content (reduced by 10px left padding)
+    const contentPadding = isThermal ? 0 : (isA5 ? 20 : 30);
+    const contentX = contentPadding + 10;
+    const availableContentWidth = contentWidth - (contentPadding * 2) - 10;
     
-    // Track Y position
-    let y = contentPadding + 10; // Start from top with padding + 10px top padding
-
-    // Helper to add text with wrapping
-    const addText = (
-      text: string,
-      options: {
-        fontSize?: number;
-        bold?: boolean;
-        italic?: boolean;
-        align?: "left" | "center" | "right";
-        marginBottom?: number;
-      } = {}
-    ) => {
-      const {
-        fontSize = baseFontSize,
-        bold = false,
-        italic = false,
-        align = "left",
-        marginBottom = rowSpacing,
-      } = options;
-
-      doc.font("Roboto")
-        .fontSize(fontSize)
-        .fillColor("#000000");
-
-      if (bold && fonts.bold) {
-        doc.font("Roboto-Bold");
-      } else if (italic && fonts.italic) {
-        doc.font("Roboto-Italic");
-      } else {
-        doc.font("Roboto");
-      }
-
-      const textY = y;
-      
-      doc.text(text, contentX, textY, {
-        width: availableContentWidth,
-        align: align,
-        lineGap: 2,
-      });
-
-      // Calculate actual height used
-      const height = doc.heightOfString(text, {
-        width: availableContentWidth,
-        lineGap: 2,
-      });
-
-      y += height + marginBottom;
-      return y;
-    };
+    let y = contentPadding + 10;
 
     // Title
     const titleText = protectWords(`Παραγγελία #${sanitizeString(order.order_id)}`);
@@ -672,10 +561,7 @@ export async function POST(request: NextRequest) {
       order.order_type === "Delivery" ||
       order.order_type === "DELIVERY";
 
-    // Left column: Customer info (for A4/A5, use two columns; for thermal, single column)
     const leftColumnWidth = isThermal ? availableContentWidth : (availableContentWidth / 2);
-    
-    // Save the starting Y position for the right column
     const customerSectionStartY = y;
     
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
@@ -683,7 +569,6 @@ export async function POST(request: NextRequest) {
       .text(protectWords("Πελάτης"), contentX, y);
     y += lineHeight;
 
-    // Customer name with proper wrapping
     const customerNameHeight = doc.heightOfString(sanitizeString(order.customer_name) || "N/A", { 
       width: leftColumnWidth, 
       lineGap: 2 
@@ -709,13 +594,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (isDelivery) {
-      y += rowSpacing; // Spacing before delivery address section
+      y += rowSpacing;
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
         .text(protectWords("Διεύθυνση Παράδοσης"), contentX, y);
       y += lineHeight;
 
-      // Address with proper wrapping
       const addressText = sanitizeString(order.location_name) || "N/A";
       doc.font("Roboto")
         .fontSize(baseFontSize)
@@ -748,36 +632,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For thermal printers, add payment, order type, and date in the left column
     if (isThermal) {
       y += rowSpacing;
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
         .fillColor("#000000")
         .text(protectWords("Πληρωμή"), contentX, y);
-      y += 15; // 10px spacing between label and value
+      y += lineHeight;
       doc.font("Roboto")
         .fontSize(baseFontSize)
         .fillColor("#000000")
         .text(getPaymentMethodName(order.payment), contentX, y);
-      y += 20; // 20px spacing between sections
+      y += 10;
 
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
         .fillColor("#000000")
         .text(protectWords("Τύπος παραγγελίας"), contentX, y);
-      y += 15; // 10px spacing between label and value
+      y += lineHeight;
       doc.font("Roboto")
         .fontSize(baseFontSize)
         .fillColor("#000000")
         .text(getOrderTypeName(order.order_type), contentX, y);
-      y += 20; // 20px spacing between sections
+      y += 10;
 
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
         .fillColor("#000000")
         .text(protectWords("Ημερομηνία"), contentX, y);
-      y += 20; // 10px spacing between label and value
+      y += lineHeight;
       doc.font("Roboto")
         .fontSize(baseFontSize)
         .fillColor("#000000")
@@ -789,26 +672,10 @@ export async function POST(request: NextRequest) {
       y += sectionSpacing;
     }
 
-    // Right column: Payment and order info (only for A4/A5, not thermal)
     if (!isThermal) {
-      // For A4/A5, use two-column layout
       const rightColumnX = contentX + leftColumnWidth;
-      const rightColumnWidth = leftColumnWidth; // Same width as left column
-      let rightY = customerSectionStartY; // Start at same Y as left column ("Πελάτης" label)
-
-      // Debug log
-      console.log("🔍 [PDF] Right column positioning:", {
-        contentX,
-        leftColumnWidth,
-        rightColumnX,
-        rightColumnWidth,
-        contentWidth,
-        availableContentWidth,
-        rightColumnEnd: rightColumnX + rightColumnWidth,
-        contentEnd: contentX + availableContentWidth,
-        isThermal,
-        paperSize
-      });
+      const rightColumnWidth = leftColumnWidth;
+      let rightY = customerSectionStartY;
 
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
@@ -817,7 +684,7 @@ export async function POST(request: NextRequest) {
           width: rightColumnWidth,
           align: "right" 
         });
-      rightY += 10; // 10px spacing between label and value
+      rightY += lineHeight;
 
       doc.font("Roboto")
         .fontSize(baseFontSize)
@@ -826,9 +693,8 @@ export async function POST(request: NextRequest) {
           width: rightColumnWidth,
           align: "right" 
         });
-      rightY += 20; // 20px spacing between sections
+      rightY += lineHeight + 10;
       
-      // Move "Τύπος παραγγελίας" slightly left to prevent line breaking
       const orderTypeX = rightColumnX;
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(12)
@@ -837,7 +703,7 @@ export async function POST(request: NextRequest) {
           width: rightColumnWidth,
           align: "right" 
         });
-      rightY += 10; // 10px spacing between label and value
+      rightY += lineHeight;
 
       doc.font("Roboto")
         .fontSize(16)
@@ -846,7 +712,7 @@ export async function POST(request: NextRequest) {
           width: rightColumnWidth,
           align: "right"
         });
-      rightY += 20; // 20px spacing between sections
+      rightY += lineHeight + 10;
 
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
@@ -855,7 +721,7 @@ export async function POST(request: NextRequest) {
           width: rightColumnWidth,
           align: "right" 
         });
-      rightY += 10; // 10px spacing between label and value
+      rightY += lineHeight;
 
       doc.font("Roboto")
         .fontSize(baseFontSize)
@@ -870,28 +736,21 @@ export async function POST(request: NextRequest) {
           }
         );
       
-      // Use the maximum Y from both columns
       y = Math.max(y, rightY) + sectionSpacing;
     }
 
-    // Push order items section 25px down
     y += 25;
 
-    // Table header
-    // For thermal printers, allocate more space to price column to prevent cutoff
-    const priceColumnWidth = isThermal ? 65 : 70; // Increased from 50 to 65 for thermal
-    // Reduce name column width to give more space to price column
-    const nameColumnReduction = isThermal ? 25 : 30; // Reduced name width to give more space to prices
+    const priceColumnWidth = isThermal ? 65 : 70;
+    const nameColumnReduction = isThermal ? 25 : 30;
     const tableColWidths = {
       qty: isThermal ? 30 : 50,
-      name: availableContentWidth - (isThermal ? (30 + priceColumnWidth) : (50 + priceColumnWidth)) - nameColumnReduction, // Reduced name width to give more space to prices
+      name: availableContentWidth - (isThermal ? (30 + priceColumnWidth) : (50 + priceColumnWidth)) - nameColumnReduction,
       price: priceColumnWidth,
     };
 
-    // Ensure we don't exceed available width
     const totalTableWidth = tableColWidths.qty + tableColWidths.name + tableColWidths.price;
     if (totalTableWidth > availableContentWidth) {
-      // If we exceed, reduce name width proportionally
       tableColWidths.name = availableContentWidth - tableColWidths.qty - tableColWidths.price;
     }
 
@@ -901,17 +760,15 @@ export async function POST(request: NextRequest) {
     doc.text("Προϊόν", contentX + tableColWidths.qty, y, {
       width: tableColWidths.name,
     });
-    // Position "Σύνολο" header - ensure it fits within the price column with 10px right padding
     const sumColumnX = contentX + tableColWidths.qty + tableColWidths.name;
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(headerFontSize)
       .text(protectWords("Σύνολο"), sumColumnX, y, {
-        width: tableColWidths.price - 10, // 10px right padding
+        width: tableColWidths.price - 10,
         align: "right",
       });
     y += lineHeight;
 
-    // Table rows
     if (order.order_menus && order.order_menus.length > 0) {
       order.order_menus.forEach((menu: any) => {
         const options: string[] = [];
@@ -934,7 +791,6 @@ export async function POST(request: NextRequest) {
         const commentText = menu.comment ? sanitizeString(menu.comment) : "";
         const optionsText = options.length > 0 ? options.join("\n") : "";
 
-        // Quantity
         doc.font("Roboto")
           .fontSize(baseFontSize)
           .text(
@@ -944,14 +800,12 @@ export async function POST(request: NextRequest) {
             { width: tableColWidths.qty, align: "center" }
           );
 
-        // Product name (bold) - rendered first
         doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
           .fontSize(baseFontSize)
           .text(menuText, contentX + tableColWidths.qty, y, {
             width: tableColWidths.name,
           });
 
-        // Calculate heights with correct font sizes to prevent overlap
         const menuTextHeight = doc.heightOfString(menuText, {
           width: tableColWidths.name,
         });
@@ -993,7 +847,6 @@ export async function POST(request: NextRequest) {
               width: optionsWidth,
             });
         }
-        // Price with 10px right padding
         const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
         doc.font("Roboto")
           .fontSize(baseFontSize)
@@ -1001,7 +854,7 @@ export async function POST(request: NextRequest) {
             `${formatCurrency(menu.subtotal)} ${currencyDisplay}`,
             contentX + tableColWidths.qty + tableColWidths.name,
             y,
-            { width: tableColWidths.price - 10, align: "right" } // 10px right padding
+            { width: tableColWidths.price - 10, align: "right" }
           );
 
         // Calculate actual height used by this item (sum of all components)
@@ -1013,7 +866,6 @@ export async function POST(request: NextRequest) {
 
     y += sectionSpacing;
 
-    // Comment - moved above totals section
     if (order.comment) {
       doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
         .fontSize(headerFontSize)
@@ -1029,13 +881,11 @@ export async function POST(request: NextRequest) {
         width: availableContentWidth,
       });
       
-      y += sectionSpacing; // Spacing after comment before totals
+      y += sectionSpacing;
     }
 
-    // Totals - right below order items (or comment if present)
-    // Move totals prices 25px to the left from table price column with 10px right padding
     const totalsPriceX = contentX + tableColWidths.qty + tableColWidths.name - 25;
-    const totalsPriceWidth = tableColWidths.price + 25 - 10; // Increase width to accommodate the shift, minus 10px for right padding
+    const totalsPriceWidth = tableColWidths.price + 25 - 10;
     
     doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
       .fontSize(headerFontSize)
@@ -1066,7 +916,6 @@ export async function POST(request: NextRequest) {
           y += lineHeight;
         });
       
-      // Add tip amount if it exists and is greater than 0
       if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
         const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
         doc.font("Roboto")
@@ -1085,7 +934,6 @@ export async function POST(request: NextRequest) {
         y += lineHeight;
       }
     } else {
-      // Add tip amount if it exists and is greater than 0 (before the total)
       if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
         const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
         doc.font("Roboto")
@@ -1132,30 +980,13 @@ export async function POST(request: NextRequest) {
       });
     y += lineHeight;
 
-    // Verify final Y position and ensure page height is sufficient
-    // Note: y already includes the 10px top padding, no bottom padding
-    const finalY = y;
-    const currentPageHeight = doc.page.height;
-    
-    // Log for debugging (can be removed in production)
-    console.log("📏 [PDF] Final measurements:", {
-      finalY,
-      currentPageHeight,
-      calculatedHeight,
-      pageHeightWithBuffer,
-      hasTotals: !!(order.order_totals?.length || order.order_total),
-    });
-    
-    // Finalize PDF
     doc.end();
 
-    // Collect PDF buffer
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(chunk));
     
     return new Promise<NextResponse>((resolve, reject) => {
       doc.on("end", () => {
-        // Convert Buffer chunks to Uint8Array
         const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
         const pdfArray = new Uint8Array(totalLength);
         let offset = 0;
@@ -1168,14 +999,14 @@ export async function POST(request: NextRequest) {
           new NextResponse(pdfArray, {
             headers: {
               "Content-Type": "application/pdf",
-              "Content-Disposition": `attachment; filename="invoice-${order.order_id}.pdf"`,
+              "Content-Disposition": `attachment; filename="test-invoice.pdf"`,
             },
           })
         );
       });
 
       doc.on("error", (error) => {
-        console.error("❌ [PDF] Error generating PDF:", error);
+        console.error("❌ [TEST PDF] Error generating PDF:", error);
         reject(
           NextResponse.json(
             {
@@ -1188,7 +1019,7 @@ export async function POST(request: NextRequest) {
       });
     });
   } catch (error) {
-    console.error("❌ [PDF] Error generating PDF:", error);
+    console.error("❌ [TEST PDF] Error generating PDF:", error);
     return NextResponse.json(
       {
         success: false,

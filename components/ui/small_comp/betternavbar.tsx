@@ -50,7 +50,7 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
   const { coordinates, refreshAddress } = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, refreshUser } = useAuth();
   const navbarRef = useRef<HTMLDivElement>(null);
 
   // --- HELPER FUNCTIONS FOR USER DATA ---
@@ -92,6 +92,121 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
       setIsAuthModalOpen(false);
     }
   }, [pathname]);
+
+  // Handle Google OAuth callback - run immediately on mount
+  useEffect(() => {
+    // Read from window.location directly to ensure we get the params
+    if (typeof window === "undefined") {
+      console.log("⚠️ [BETTERNAVBAR] Window not available");
+      return;
+    }
+    
+    console.log("🔍 [BETTERNAVBAR] OAuth callback useEffect running, current URL:", window.location.href);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleAuth = urlParams.get("google_auth");
+    const error = urlParams.get("error");
+    const userDataParam = urlParams.get("user_data");
+
+    console.log("🔍 [BETTERNAVBAR] OAuth callback check:", {
+      googleAuth,
+      hasError: !!error,
+      hasUserData: !!userDataParam,
+      userDataParamLength: userDataParam?.length,
+      fullUrl: window.location.href,
+      allParams: Object.fromEntries(urlParams.entries()),
+    });
+
+    if (googleAuth === "success") {
+      // Store user data if provided in URL (this is the structure from backend without id)
+      if (userDataParam) {
+        try {
+          const userDataWithoutId = JSON.parse(decodeURIComponent(userDataParam));
+          
+          console.log("🔍 [BETTERNAVBAR] Parsed user data from URL:", userDataWithoutId);
+          
+          // Store this structure in localStorage (without id)
+          localStorage.setItem("user", JSON.stringify(userDataWithoutId));
+          sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
+          
+          // Verify it was stored
+          const stored = localStorage.getItem("user");
+          console.log("✅ [BETTERNAVBAR] Google OAuth user data stored (without id):", userDataWithoutId);
+          console.log("✅ [BETTERNAVBAR] Verification - stored in localStorage:", stored);
+          
+          if (!stored) {
+            console.error("❌ [BETTERNAVBAR] CRITICAL: Data was not stored in localStorage!");
+          }
+        } catch (e) {
+          console.error("❌ [BETTERNAVBAR] Error parsing user data from OAuth callback:", e);
+          console.error("❌ [BETTERNAVBAR] Raw userDataParam:", userDataParam);
+        }
+      } else {
+        console.error("❌ [BETTERNAVBAR] No user_data parameter found in URL!");
+        console.log("❌ [BETTERNAVBAR] All URL params:", Object.fromEntries(urlParams.entries()));
+      }
+      
+      // Verify session (CRITICAL!) to get full user data including id
+      const verifySession = async () => {
+        try {
+          const verifyResponse = await fetch("/api/auth/user", {
+            method: "GET",
+            credentials: "include", // Must include this!
+          });
+
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyData.success && verifyData.data?.user) {
+            // Transform to match User interface format
+            const verifiedUser = verifyData.data.user;
+            const userData = {
+              id: verifiedUser.id,
+              email: verifiedUser.email,
+              first_name: verifiedUser.first_name,
+              last_name: verifiedUser.last_name,
+              telephone: verifiedUser.telephone || "",
+              phone: verifiedUser.telephone || "",
+              name: verifiedUser.name || `${verifiedUser.first_name} ${verifiedUser.last_name}`.trim(),
+              date_of_birth: verifiedUser.date_of_birth,
+              address: verifiedUser.address,
+              city: verifiedUser.city,
+              postcode: verifiedUser.postcode,
+              created_at: verifiedUser.created_at,
+              updated_at: verifiedUser.updated_at,
+            };
+            
+            // Update auth context with verified user (includes id)
+            refreshUser(userData);
+            
+            // Close modal
+            setIsAuthModalOpen(false);
+            
+            // Remove query params
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, "", newUrl);
+          } else {
+            console.error("❌ [BETTERNAVBAR] Session verification failed:", verifyData);
+            setIsAuthModalOpen(true);
+            setAuthMode("login");
+          }
+        } catch (error) {
+          console.error("❌ [BETTERNAVBAR] Error verifying session:", error);
+          setIsAuthModalOpen(true);
+          setAuthMode("login");
+        }
+      };
+      
+      verifySession();
+    } else if (error) {
+      // Show error message
+      console.error("❌ [BETTERNAVBAR] Google OAuth error:", error);
+      setIsAuthModalOpen(true);
+      setAuthMode("login");
+      // Remove error from URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []); // Run once on mount to check URL params
 
   // Handle scroll to show/hide background
   useEffect(() => {

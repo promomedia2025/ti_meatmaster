@@ -32,6 +32,7 @@ interface AdminOrder {
   floor?: string | null;
   comments?: string | null;
   address_id?: number | null;
+  tip_amount?: number | string | null;
 }
 
 export default function AdminOrdersPage() {

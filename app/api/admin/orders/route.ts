@@ -60,11 +60,14 @@ export async function GET(request: NextRequest) {
       ? data.data.map((item: any) => {
           const attrs = item.attributes || {};
 
-          // Extract bell_name, floor, comments, and address_id - they should be directly in attrs
+          // Extract bell_name, floor, comments, address_id, and tip_amount - they should be directly in attrs
           const bell_name = attrs.bell_name || null;
           const floor = attrs.floor || null;
           const comments = attrs.comments || null;
           const address_id = attrs.address_id || null;
+          const tip_amount = attrs.tip_amount !== undefined && attrs.tip_amount !== null 
+            ? (typeof attrs.tip_amount === 'string' ? parseFloat(attrs.tip_amount) : attrs.tip_amount)
+            : null;
 
           return {
             order_id: attrs.order_id,
@@ -96,6 +99,7 @@ export async function GET(request: NextRequest) {
             floor: floor,
             comments: comments,
             address_id: address_id,
+            tip_amount: tip_amount,
           };
         })
       : [];

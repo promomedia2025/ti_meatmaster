@@ -15,6 +15,7 @@ import {
   Loader2,
   ArrowLeft,
   Save,
+  Trash2,
 } from "lucide-react";
 
 interface UserProfile {
@@ -34,6 +35,9 @@ export default function UserProfilePage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const isInitialized = useRef(false);
 
   const [formData, setFormData] = useState<UserProfile>({
@@ -135,14 +139,70 @@ export default function UserProfilePage() {
         throw new Error(result?.error || "Αποτυχία αποθήκευσης");
       }
 
+      // Extract updated user data from response
+      const updatedUserData = result.data?.data || result.data || {};
+      
+      // Update user context with the new data
+      await refreshUser({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        telephone: formData.telephone,
+        phone: formData.telephone,
+        ...updatedUserData,
+      });
+
       toast.success("Επιτυχία", { description: "Το προφίλ ενημερώθηκε" });
-      await refreshUser(); 
       setHasUnsavedChanges(false);
     } catch (error) {
       toast.error("Σφάλμα", { description: "Σφάλμα κατά την αποθήκευση" });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const deleteAccount = async (password: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/auth/user", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          password: password,
+          require_password: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data?.error || "Αποτυχία διαγραφής λογαριασμού");
+      }
+
+      // Account deleted, clear user data from storage
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
+
+      // Redirect to home page
+      toast.success("Επιτυχία", { description: "Ο λογαριασμός διαγράφηκε επιτυχώς" });
+      window.location.href = "/";
+    } catch (error) {
+      toast.error("Σφάλμα", {
+        description: error instanceof Error ? error.message : "Σφάλμα κατά τη διαγραφή του λογαριασμού",
+      });
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (!deletePassword) {
+      toast.error("Σφάλμα", { description: "Παρακαλώ εισάγετε τον κωδικό πρόσβασης" });
+      return;
+    }
+    deleteAccount(deletePassword);
   };
 
   const renderEditableField = (
@@ -273,7 +333,84 @@ export default function UserProfilePage() {
           {renderEditableField("Email", "email", "email", <Mail className="w-4 h-4" />)}
           {renderEditableField("Τηλέφωνο", "telephone", "tel", <Phone className="w-4 h-4" />)}
         </div>
+
+        {/* Delete Account Section */}
+        <div className="mt-8 pt-8 border-t border-zinc-800">
+          <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-6">
+            <h3 className="text-red-400 font-semibold mb-2">Ζώνη Κινδύνου</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              Η διαγραφή του λογαριασμού σας είναι μόνιμη και δεν μπορεί να αναιρεθεί.
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-800/50 text-red-400 text-sm font-medium hover:bg-red-900/40 hover:border-red-700 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Διαγραφή λογαριασμού
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold text-white mb-2">Διαγραφή λογαριασμού</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Για να επιβεβαιώσετε τη διαγραφή, παρακαλώ εισάγετε τον κωδικό πρόσβασης σας.
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
+                Κωδικός πρόσβασης
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full bg-black text-white px-4 py-2 rounded-lg border border-zinc-700 focus:border-red-500 focus:outline-none transition-all"
+                placeholder="Εισάγετε τον κωδικό πρόσβασης"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleDeleteAccount();
+                  if (e.key === "Escape") {
+                    setShowDeleteModal(false);
+                    setDeletePassword("");
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || !deletePassword}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:bg-red-900/30 disabled:text-red-700 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Διαγραφή...</span>
+                  </>
+                ) : (
+                  "Διαγραφή λογαριασμού"
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword("");
+                }}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-400 font-medium hover:bg-zinc-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Ακύρωση
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@
  * - VIVA_CLIENT_ID: Your Viva Payments OAuth2 Client ID
  * - VIVA_CLIENT_SECRET: Your Viva Payments OAuth2 Client Secret
  * - VIVA_SOURCE_CODE: Your Viva Payments source code
- * - VIVA_ENVIRONMENT: 'demo' or 'live' (default: 'demo')
+ * - VIVA_ENVIRONMENT: 'demo', 'live', or 'production' (default: 'demo')
  * - VIVA_SUCCESS_URL: URL to redirect after successful payment
  * - VIVA_FAILURE_URL: URL to redirect after failed payment
  */
@@ -53,7 +53,7 @@ export interface VivaPaymentCallback {
  */
 function getVivaApiUrl(): string {
   const environment = process.env.VIVA_ENVIRONMENT || "demo";
-  if (environment === "live") {
+  if (environment === "live" || environment === "production") {
     return "https://api.vivapayments.com";
   }
   return "https://demo-api.vivapayments.com";
@@ -64,7 +64,7 @@ function getVivaApiUrl(): string {
  */
 function getVivaCheckoutUrl(): string {
   const environment = process.env.VIVA_ENVIRONMENT || "demo";
-  if (environment === "live") {
+  if (environment === "live" || environment === "production") {
     return "https://www.vivapayments.com";
   }
   return "https://demo.vivapayments.com";
@@ -75,7 +75,7 @@ function getVivaCheckoutUrl(): string {
  */
 function getVivaAccountsUrl(): string {
   const environment = process.env.VIVA_ENVIRONMENT || "demo";
-  if (environment === "live") {
+  if (environment === "live" || environment === "production") {
     return "https://accounts.vivapayments.com";
   }
   return "https://demo-accounts.vivapayments.com";
