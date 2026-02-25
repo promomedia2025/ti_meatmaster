@@ -95,27 +95,14 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
 
   // Handle Google OAuth callback - run immediately on mount
   useEffect(() => {
-    // Read from window.location directly to ensure we get the params
     if (typeof window === "undefined") {
-      console.log("⚠️ [BETTERNAVBAR] Window not available");
       return;
     }
-    
-    console.log("🔍 [BETTERNAVBAR] OAuth callback useEffect running, current URL:", window.location.href);
     
     const urlParams = new URLSearchParams(window.location.search);
     const googleAuth = urlParams.get("google_auth");
     const error = urlParams.get("error");
     const userDataParam = urlParams.get("user_data");
-
-    console.log("🔍 [BETTERNAVBAR] OAuth callback check:", {
-      googleAuth,
-      hasError: !!error,
-      hasUserData: !!userDataParam,
-      userDataParamLength: userDataParam?.length,
-      fullUrl: window.location.href,
-      allParams: Object.fromEntries(urlParams.entries()),
-    });
 
     if (googleAuth === "success") {
       // Store user data if provided in URL (this is the structure from backend without id)
@@ -123,27 +110,12 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
         try {
           const userDataWithoutId = JSON.parse(decodeURIComponent(userDataParam));
           
-          console.log("🔍 [BETTERNAVBAR] Parsed user data from URL:", userDataWithoutId);
-          
           // Store this structure in localStorage (without id)
           localStorage.setItem("user", JSON.stringify(userDataWithoutId));
           sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
-          
-          // Verify it was stored
-          const stored = localStorage.getItem("user");
-          console.log("✅ [BETTERNAVBAR] Google OAuth user data stored (without id):", userDataWithoutId);
-          console.log("✅ [BETTERNAVBAR] Verification - stored in localStorage:", stored);
-          
-          if (!stored) {
-            console.error("❌ [BETTERNAVBAR] CRITICAL: Data was not stored in localStorage!");
-          }
         } catch (e) {
-          console.error("❌ [BETTERNAVBAR] Error parsing user data from OAuth callback:", e);
-          console.error("❌ [BETTERNAVBAR] Raw userDataParam:", userDataParam);
+          // Error parsing user data
         }
-      } else {
-        console.error("❌ [BETTERNAVBAR] No user_data parameter found in URL!");
-        console.log("❌ [BETTERNAVBAR] All URL params:", Object.fromEntries(urlParams.entries()));
       }
       
       // Verify session (CRITICAL!) to get full user data including id
@@ -185,12 +157,10 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, "", newUrl);
           } else {
-            console.error("❌ [BETTERNAVBAR] Session verification failed:", verifyData);
             setIsAuthModalOpen(true);
             setAuthMode("login");
           }
         } catch (error) {
-          console.error("❌ [BETTERNAVBAR] Error verifying session:", error);
           setIsAuthModalOpen(true);
           setAuthMode("login");
         }
@@ -199,7 +169,6 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
       verifySession();
     } else if (error) {
       // Show error message
-      console.error("❌ [BETTERNAVBAR] Google OAuth error:", error);
       setIsAuthModalOpen(true);
       setAuthMode("login");
       // Remove error from URL

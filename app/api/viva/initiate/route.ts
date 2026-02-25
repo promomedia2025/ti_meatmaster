@@ -53,12 +53,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get base URL for callback URLs
-    const baseUrl = "https://ti-espitiko-six.vercel.app";
+    // Get base URL for callback URLs (use request origin for dynamic URL)
+    const baseUrl = request.nextUrl.origin;
     const language = lang || "el";
-    // Use authorize route as configured in Viva Payments
-    const successUrl = `${baseUrl}/${language}/authorize`;
-    const failureUrl = `${baseUrl}/${language}/authorize`;
+    // Point to authorize route (configured in Viva Payments bank settings)
+    // Viva will redirect to this route after payment processing
+    const successUrl = `${baseUrl}/${language}/viva/authorize`;
+    const failureUrl = `${baseUrl}/${language}/viva/authorize`;
 
     // Create payment session
     const paymentSession = await createVivaPaymentSession({

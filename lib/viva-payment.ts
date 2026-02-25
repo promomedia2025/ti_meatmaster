@@ -429,13 +429,6 @@ export async function getVivaTransaction(
 
     const transactionData = await response.json();
 
-    console.log("✅ [VIVA TRANSACTION] Transaction data received:", {
-      transactionId: transactionData.TransactionId || transactionData.transactionId,
-      orderCode: transactionData.OrderCode || transactionData.orderCode,
-      statusId: transactionData.StatusId || transactionData.statusId,
-      amount: transactionData.Amount || transactionData.amount,
-    });
-
     // Extract transaction details from API response
     // Viva API response format may vary, so we check multiple possible field names
     const apiTransactionId =
@@ -445,35 +438,43 @@ export async function getVivaTransaction(
       transactionData.id ||
       transactionId;
     
+    // Use merchantTrns as the primary source for orderId (this is what we sent when creating the order)
     const apiOrderId =
-      transactionData.OrderCode ||
-      transactionData.orderCode ||
       transactionData.MerchantTrns ||
       transactionData.merchantTrns ||
+      transactionData.OrderCode ||
+      transactionData.orderCode ||
       transactionData.OrderId ||
       transactionData.orderId ||
       "";
-
+    
     const statusId =
       transactionData.StatusId ||
       transactionData.statusId ||
       transactionData.Status ||
       transactionData.status ||
       "";
-
-    const amountInCents =
-      transactionData.Amount ||
-      transactionData.amount ||
-      transactionData.AmountInCents ||
-      transactionData.amountInCents ||
-      0;
-
-    const currency =
+    
+    // Extract currency code - Viva may return numeric ISO 4217 code (978 for EUR)
+    const currencyCodeRaw =
       transactionData.CurrencyCode ||
       transactionData.currencyCode ||
       transactionData.Currency ||
       transactionData.currency ||
       "EUR";
+    
+    // Convert numeric currency code to currency symbol/string
+    // 978 is ISO 4217 numeric code for EUR
+    let currency = "EUR";
+    if (currencyCodeRaw === "978" || currencyCodeRaw === 978) {
+      currency = "EUR";
+    } else if (typeof currencyCodeRaw === "string" && currencyCodeRaw.length === 3) {
+      // If it's already a 3-letter code (EUR, USD, etc.), use it directly
+      currency = currencyCodeRaw.toUpperCase();
+    } else {
+      // Default to EUR
+      currency = "EUR";
+    }
 
     const message =
       transactionData.Message ||
@@ -522,13 +523,30 @@ export async function getVivaTransaction(
       status = "failed";
     }
 
-    // Convert amount from cents to main currency unit
-    const amountInMainUnit =
-      amountInCents && amountInCents !== 0
-        ? typeof amountInCents === "number"
-          ? amountInCents / 100
-          : parseFloat(amountInCents) / 100
-        : 0;
+    // Handle amount conversion
+    // originalAmount is already in main currency unit (EUR), not in cents
+    // Amount is in cents and needs to be divided by 100
+    let amountInMainUnit = 0;
+    
+    if (transactionData.OriginalAmount !== undefined || transactionData.originalAmount !== undefined) {
+      // originalAmount is already in EUR, use it directly
+      const originalAmount = transactionData.OriginalAmount || transactionData.originalAmount;
+      amountInMainUnit = typeof originalAmount === "number" 
+        ? originalAmount 
+        : parseFloat(originalAmount);
+    } else if (transactionData.Amount !== undefined || transactionData.amount !== undefined) {
+      // Amount is in cents, convert to main currency unit
+      const amountInCents = transactionData.Amount || transactionData.amount;
+      amountInMainUnit = typeof amountInCents === "number"
+        ? amountInCents / 100
+        : parseFloat(amountInCents) / 100;
+    } else if (transactionData.AmountInCents !== undefined || transactionData.amountInCents !== undefined) {
+      // AmountInCents is in cents, convert to main currency unit
+      const amountInCents = transactionData.AmountInCents || transactionData.amountInCents;
+      amountInMainUnit = typeof amountInCents === "number"
+        ? amountInCents / 100
+        : parseFloat(amountInCents) / 100;
+    }
 
     const result: VivaPaymentCallback = {
       transactionId: apiTransactionId,
