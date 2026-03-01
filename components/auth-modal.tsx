@@ -4,10 +4,16 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { useAuth } from "@/lib/auth-context";
 import { useState, useEffect } from "react";
 import React from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -37,15 +43,21 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // OTP verification state
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [otpError, setOtpError] = useState("");
+
   // Validation Helpers
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const isValidPhone = (phone: string) => {
-    // Check if it has at least 10 digits (handling +30 or spaces)
+    // Check if it has exactly 10 digits (handling +30 or spaces)
     const digits = phone.replace(/\D/g, "");
-    return digits.length >= 10;
+    return digits.length === 10;
   };
 
   // Update current mode when prop changes
@@ -133,7 +145,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
     }
 
     if (!isValidPhone(telephone)) {
-      setError("Παρακαλώ εισάγετε έγκυρο αριθμό τηλεφώνου (τουλάχιστον 10 ψηφία)");
+      setError("Παρακαλώ εισάγετε έγκυρο αριθμό τηλεφώνου (10 ψηφία)");
       setIsSubmitting(false);
       return;
     }
@@ -166,16 +178,105 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
         passwordConfirmation,
         telephone
       );
+      console.log("🔍 Registration result:", result);
       if (result.success) {
-        onClose();
-        resetForm();
+        // Show OTP modal instead of closing
+        console.log("✅ Registration successful, showing OTP modal");
+        setShowOTPModal(true);
+        setError("");
       } else {
+        console.log("❌ Registration failed:", result.error);
         setError(result.error || "Η εγγραφή απέτυχε");
       }
     } catch (error) {
+      console.error("❌ Registration error:", error);
       setError("Παρουσιάστηκε απροσδόκητο σφάλμα");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError("");
+
+    if (otp.length !== 6) {
+      setOtpError("Παρακαλώ εισάγετε τον 6ψήφιο κωδικό");
+      return;
+    }
+
+    setIsVerifyingOTP(true);
+
+    try {
+      const response = await fetch("/api/auth/customer/verify-activation", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: registerEmail, otp }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Sign the user in after successful verification
+        toast.success("Η επιβεβαίωση ολοκληρώθηκε επιτυχώς!");
+        
+        // Fetch user data and set it in auth context
+        const userResponse = await fetch("/api/auth/user", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const userData = await userResponse.json();
+        if (userData.success && userData.data?.user) {
+          const verifiedUser = userData.data.user;
+          
+          // Store user data in sessionStorage so auth context picks it up
+          const userToStore = {
+            email: verifiedUser.email,
+            name: verifiedUser.name,
+            first_name: verifiedUser.first_name,
+            last_name: verifiedUser.last_name,
+            phone: verifiedUser.phone || verifiedUser.telephone,
+            telephone: verifiedUser.telephone,
+            date_of_birth: verifiedUser.date_of_birth,
+            address: verifiedUser.address,
+            city: verifiedUser.city,
+            postcode: verifiedUser.postcode,
+            created_at: verifiedUser.created_at,
+            updated_at: verifiedUser.updated_at,
+          };
+          
+          sessionStorage.setItem("user", JSON.stringify(userToStore));
+          
+          // Close modal and reset
+          onClose();
+          resetForm();
+          setShowOTPModal(false);
+          setOtp("");
+          
+          // Trigger a small delay then reload to ensure auth context picks up the user
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        } else {
+          // Still close modal even if user fetch fails
+          onClose();
+          resetForm();
+          setShowOTPModal(false);
+          setOtp("");
+        }
+      } else {
+        setOtpError(
+          data.error || "Μη έγκυρος κωδικός. Παρακαλώ δοκιμάστε ξανά."
+        );
+      }
+    } catch (error) {
+      setOtpError("Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά.");
+    } finally {
+      setIsVerifyingOTP(false);
     }
   };
 
@@ -190,6 +291,9 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
     setPasswordConfirmation("");
     setTelephone("");
     setError("");
+    setShowOTPModal(false);
+    setOtp("");
+    setOtpError("");
   };
 
   return (
@@ -204,11 +308,15 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
-            {currentMode === "login" ? "Σύνδεση" : "Δημιουργία λογαριασμού"}
+            {showOTPModal && currentMode === "register"
+              ? "Επιβεβαίωση Email"
+              : currentMode === "login"
+              ? "Σύνδεση"
+              : "Δημιουργία λογαριασμού"}
           </h2>
         </div>
 
-        {currentMode === "login" ? (
+        {currentMode === "login" && !showOTPModal ? (
           <>
             <div className="space-y-3 mb-6">
               <form onSubmit={handleLoginSubmit} noValidate>
@@ -330,6 +438,52 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
               </div>
             </div>
           </>
+        ) : showOTPModal && currentMode === "register" ? (
+          <div>
+            <div className="mb-6">
+              <p className="text-zinc-400 text-sm">
+                Παρακαλώ ελέγξτε το mail σας για τον 6ψήφιο κωδικό επιβεβαίωσης
+              </p>
+            </div>
+
+            <form onSubmit={handleOTPSubmit} noValidate>
+              <div className="mb-6">
+                <div className="flex justify-center mb-4">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={(value) => {
+                      setOtp(value);
+                      setOtpError("");
+                    }}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={1} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={2} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={3} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={4} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={5} className="bg-black border-zinc-800 text-white" />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                {otpError && (
+                  <p className="text-red-400 text-sm mt-3 bg-red-900/10 p-2 rounded border border-red-900/20 animate-in fade-in slide-in-from-top-1">
+                    {otpError}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isVerifyingOTP || otp.length !== 6}
+                className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white h-12 mb-2 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
+              >
+                {isVerifyingOTP ? "Επαληθεύεται..." : "Επιβεβαίωση"}
+              </Button>
+            </form>
+          </div>
         ) : (
           <form onSubmit={handleRegisterSubmit} noValidate>
             <div className="text-left mb-6">
@@ -372,7 +526,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
                 />
                 <Input
                   type="tel"
-                  placeholder="Τηλέφωνο"
+                  placeholder="Τηλέφωνο (10 ψηφία)"
                   value={telephone}
                   onChange={(e) => setTelephone(e.target.value)}
                   className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"

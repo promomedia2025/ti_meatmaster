@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email } = body;
+    const { email, otp } = body;
 
-    if (!email) {
+    if (!email || !otp) {
       return NextResponse.json(
-        { success: false, error: "Email is required" },
+        { success: false, error: "Email and OTP are required" },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Make the request to the external API from the server
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/customer/forgot-password`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/customer/verify-reset-otp`,
       {
         method: "POST",
         credentials: "include",
@@ -33,35 +33,36 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
           ...(csrfToken && { "X-CSRF-TOKEN": csrfToken }),
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, otp }),
       }
     );
 
     const data = await response.json();
 
     // Debug: Log all response data from external API
-    console.log("🔍 Forgot password API response status:", response.status);
+    console.log("🔍 Verify reset OTP API response status:", response.status);
     console.log(
-      "🔍 Forgot password API response data:",
+      "🔍 Verify reset OTP API response data:",
       JSON.stringify(data, null, 2)
     );
 
-    if (response.ok) {
+    if (response.ok && data.success) {
       return NextResponse.json({
         success: true,
-        data: data,
+        code: data.code,
+        redirect_url: data.redirect_url,
       });
     } else {
       return NextResponse.json(
         {
           success: false,
-          error: data.message || data.error || "Failed to send reset email",
+          error: data.message || data.error || "OTP verification failed",
         },
         { status: response.status }
       );
     }
   } catch (error) {
-    console.error("Forgot password API error:", error);
+    console.error("Verify reset OTP API error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

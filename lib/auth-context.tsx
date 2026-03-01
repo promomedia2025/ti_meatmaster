@@ -185,27 +185,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const result = await response.json();
       if (result.success) {
-        // Store user data (adjust based on actual API response structure)
-
-        const userData: User = {
-          id: result.data.data?.user?.id || 1,
-          email: result.data.data?.user?.email || email,
-          name: result.data.data?.user?.name,
-          first_name: result.data.data?.user?.first_name || first_name,
-          last_name: result.data.data?.user?.last_name || last_name,
-        };
-
-        setUser(userData);
-
-        // Location tracking will be handled automatically by LocationProvider
-
-        // Create storage object without id field
-        const { id, ...userDataWithoutId } = userData;
-
-        // Store in sessionStorage by default (not persistent)
-        sessionStorage.setItem("user", JSON.stringify(userDataWithoutId));
-        console.log("💾 User data saved to sessionStorage (registration, id removed)");
-
+        // Don't sign in immediately - user needs to verify email with OTP first
+        // Just return success so the OTP modal can be shown
         return { success: true };
       } else {
         return { success: false, error: result.error || "Registration failed" };
@@ -337,7 +318,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   created_at: verifiedUser.created_at,
                   updated_at: verifiedUser.updated_at,
                 };
-                setUser(userData);
+          setUser(userData);
                 console.log("✅ User data loaded and verified from session");
               } else {
                 // Session invalid, clear storage

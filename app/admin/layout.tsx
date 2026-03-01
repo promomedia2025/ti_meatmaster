@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminGlobalNotifications } from "@/components/admin-global-notifications";
 import { useAdminAuth } from "@/lib/admin-auth";
 import { usePathname } from "next/navigation";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function AdminLayout({
   children,
@@ -43,6 +44,7 @@ export default function AdminLayout({
         <AdminSidebar />
         <div className="flex-1 lg:ml-64">{children}</div>
       </div>
+      <Toaster position="top-right" richColors />
     </PusherProvider>
   );
 }

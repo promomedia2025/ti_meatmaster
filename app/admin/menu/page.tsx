@@ -11,6 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MenuSpecialForm } from "@/components/admin/menu-special-form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface MenuItem {
   menu_id: number;
@@ -58,6 +62,9 @@ export default function AdminMenuPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOptions, setMenuOptions] = useState<MenuOption[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"options" | "special" | "edit">("options");
+  const [priceValue, setPriceValue] = useState<string>("");
+  const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
   const itemsPerPage = 15;
 
   // Fetch categories
@@ -181,6 +188,8 @@ export default function AdminMenuPage() {
   const handleMenuItemClick = async (item: MenuItem) => {
     setSelectedMenuItem(item);
     setIsModalOpen(true);
+    setActiveTab("options");
+    setPriceValue(item.menu_price.toString());
     setOptionsLoading(true);
     setMenuOptions([]);
 
@@ -296,6 +305,58 @@ export default function AdminMenuPage() {
           ),
         }))
       );
+    }
+  };
+
+  // Handle price update
+  const handleUpdatePrice = async () => {
+    if (!selectedMenuItem) return;
+
+    const priceNum = parseFloat(priceValue);
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast.error("Παρακαλώ εισάγετε έγκυρη τιμή");
+      return;
+    }
+
+    setIsUpdatingPrice(true);
+    try {
+      const response = await fetch(
+        `/api/admin/menu-items/${selectedMenuItem.menu_id}/price`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ price: priceNum }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the menu item in the list
+        setMenuItems((prev) =>
+          prev.map((item) =>
+            item.menu_id === selectedMenuItem.menu_id
+              ? { ...item, menu_price: priceNum }
+              : item
+          )
+        );
+        // Update the selected menu item
+        setSelectedMenuItem({
+          ...selectedMenuItem,
+          menu_price: priceNum,
+        });
+        toast.success("Η τιμή ενημερώθηκε επιτυχώς");
+      } else {
+        toast.error(result.error || "Αποτυχία ενημέρωσης τιμής");
+      }
+    } catch (error) {
+      console.error("Error updating price:", error);
+      toast.error("Σφάλμα κατά την ενημέρωση της τιμής");
+    } finally {
+      setIsUpdatingPrice(false);
     }
   };
 
@@ -576,6 +637,8 @@ export default function AdminMenuPage() {
                   setIsModalOpen(false);
                   setSelectedMenuItem(null);
                   setMenuOptions([]);
+                  setActiveTab("options");
+                  setPriceValue("");
                 }}
                 className="text-gray-400 hover:text-white transition-colors"
               >
@@ -583,121 +646,204 @@ export default function AdminMenuPage() {
               </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-gray-700">
+              <button
+                onClick={() => setActiveTab("options")}
+                className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                  activeTab === "options"
+                    ? "text-white border-b-2 border-[var(--brand-border)]"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Menu Options
+              </button>
+              <button
+                onClick={() => setActiveTab("special")}
+                className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                  activeTab === "special"
+                    ? "text-white border-b-2 border-[var(--brand-border)]"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Προσθηκη προσφοράς
+              </button>
+              <button
+                onClick={() => setActiveTab("edit")}
+                className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                  activeTab === "edit"
+                    ? "text-white border-b-2 border-[var(--brand-border)]"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Επεξεργασια
+              </button>
+            </div>
+
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              {optionsLoading ? (
-                <div className="space-y-6">
-                  {[...Array(3)].map((_, index) => (
-                    <div
-                      key={index}
-                      className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
-                    >
-                      <Skeleton className="h-6 w-32 mb-4" />
-                      <div className="space-y-3">
-                        {[...Array(2)].map((_, optIndex) => (
-                          <div
-                            key={optIndex}
-                            className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <Skeleton className="h-5 w-40 mb-1" />
-                                <div className="flex items-center gap-4">
-                                  <Skeleton className="h-4 w-16" />
-                                  <Skeleton className="h-4 w-16" />
-                                  <Skeleton className="h-4 w-12" />
+              {activeTab === "options" ? (
+                <>
+                  {optionsLoading ? (
+                    <div className="space-y-6">
+                      {[...Array(3)].map((_, index) => (
+                        <div
+                          key={index}
+                          className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                        >
+                          <Skeleton className="h-6 w-32 mb-4" />
+                          <div className="space-y-3">
+                            {[...Array(2)].map((_, optIndex) => (
+                              <div
+                                key={optIndex}
+                                className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1">
+                                    <Skeleton className="h-5 w-40 mb-1" />
+                                    <div className="flex items-center gap-4">
+                                      <Skeleton className="h-4 w-16" />
+                                      <Skeleton className="h-4 w-16" />
+                                      <Skeleton className="h-4 w-12" />
+                                    </div>
+                                  </div>
+                                  <Skeleton className="h-8 w-20" />
                                 </div>
                               </div>
-                              <Skeleton className="h-8 w-20" />
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : menuOptions.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No menu options found</p>
-                </div>
+                  ) : menuOptions.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">No menu options found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {menuOptions.map((menuOption) => (
+                        <div
+                          key={menuOption.menu_option_id}
+                          className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
+                        >
+                          <h3 className="text-lg font-semibold text-white mb-4">
+                            {menuOption.option_name}
+                          </h3>
+                          {menuOption.values && menuOption.values.length > 0 ? (
+                            <div className="space-y-3">
+                              {menuOption.values.map((optionValue) => (
+                                <div
+                                  key={optionValue.menu_option_value_id}
+                                  className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <h4 className="text-base font-medium text-white mb-1">
+                                        {optionValue.name}
+                                      </h4>
+                                      <div className="flex items-center gap-4 text-sm">
+                                        <span className="text-gray-400">
+                                          Price:
+                                        </span>
+                                        <span className="text-white font-semibold">
+                                          €{optionValue.price.toFixed(2)}
+                                        </span>
+                                        <span className="text-gray-400">ID:</span>
+                                        <span className="text-gray-300">
+                                          #{optionValue.menu_option_value_id}
+                                        </span>
+                                      </div>
+                                      {optionValue.is_default && (
+                                        <span className="inline-block mt-2 px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span
+                                        className={`text-sm ${
+                                          optionValue.is_enabled
+                                            ? "text-green-400"
+                                            : "text-red-400"
+                                        }`}
+                                      >
+                                        {optionValue.is_enabled
+                                          ? "Active"
+                                          : "Inactive"}
+                                      </span>
+                                      <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={optionValue.is_enabled}
+                                          onChange={() =>
+                                            handleToggleOptionValueStatus(
+                                              optionValue.menu_option_value_id,
+                                              optionValue.is_enabled
+                                            )
+                                          }
+                                          className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--brand-border)]"></div>
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-gray-400 text-sm">
+                              No option values available
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : activeTab === "special" ? (
+                <MenuSpecialForm menuId={selectedMenuItem.menu_id} />
               ) : (
                 <div className="space-y-6">
-                  {menuOptions.map((menuOption) => (
-                    <div
-                      key={menuOption.menu_option_id}
-                      className="bg-[#2a2a2a] rounded-lg p-4 border border-gray-700"
-                    >
-                      <h3 className="text-lg font-semibold text-white mb-4">
-                        {menuOption.option_name}
-                      </h3>
-                      {menuOption.values && menuOption.values.length > 0 ? (
-                        <div className="space-y-3">
-                          {menuOption.values.map((optionValue) => (
-                            <div
-                              key={optionValue.menu_option_value_id}
-                              className="bg-[#1a1a1a] rounded-lg p-3 border border-gray-700"
-                            >
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1">
-                                  <h4 className="text-base font-medium text-white mb-1">
-                                    {optionValue.name}
-                                  </h4>
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="text-gray-400">
-                                      Price:
-                                    </span>
-                                    <span className="text-white font-semibold">
-                                      €{optionValue.price.toFixed(2)}
-                                    </span>
-                                    <span className="text-gray-400">ID:</span>
-                                    <span className="text-gray-300">
-                                      #{optionValue.menu_option_value_id}
-                                    </span>
-                                  </div>
-                                  {optionValue.is_default && (
-                                    <span className="inline-block mt-2 px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
-                                      Default
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span
-                                    className={`text-sm ${
-                                      optionValue.is_enabled
-                                        ? "text-green-400"
-                                        : "text-red-400"
-                                    }`}
-                                  >
-                                    {optionValue.is_enabled
-                                      ? "Active"
-                                      : "Inactive"}
-                                  </span>
-                                  <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={optionValue.is_enabled}
-                                      onChange={() =>
-                                        handleToggleOptionValueStatus(
-                                          optionValue.menu_option_value_id,
-                                          optionValue.is_enabled
-                                        )
-                                      }
-                                      className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--brand-border)]"></div>
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                  <div className="bg-[#2a2a2a] rounded-lg p-6 border border-gray-700">
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Επεξεργασία Τιμής
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Τρέχουσα Τιμή
+                        </label>
+                        <div className="text-2xl font-bold text-white">
+                          €{selectedMenuItem.menu_price.toFixed(2)}
                         </div>
-                      ) : (
-                        <p className="text-gray-400 text-sm">
-                          No option values available
-                        </p>
-                      )}
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="price-input"
+                          className="block text-sm font-medium text-gray-300 mb-2"
+                        >
+                          Νέα Τιμή
+                        </label>
+                        <Input
+                          id="price-input"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={priceValue}
+                          onChange={(e) => setPriceValue(e.target.value)}
+                          placeholder="Εισάγετε νέα τιμή"
+                          className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-[var(--brand-border)] focus:border-[var(--brand-border)]"
+                        />
+                      </div>
+                      <Button
+                        onClick={handleUpdatePrice}
+                        disabled={isUpdatingPrice || !priceValue || parseFloat(priceValue) === selectedMenuItem.menu_price}
+                        className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isUpdatingPrice ? "Ενημέρωση..." : "Ενημέρωση Τιμής"}
+                      </Button>
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+// Remove force-dynamic to allow caching
+// export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   try {
     // Get cookies from the request
     const cookieHeader = request.headers.get("cookie") || "";
 
-    console.log("🔍 [Server] Fetching menu items from external API");
-    console.log("🔍 [Server] Cookie header present:", !!cookieHeader);
+    console.log("🔍 [CACHE] [GET /api/admin/menu-items] Request received at:", new Date().toISOString());
 
     // Forward the request to the external API with credentials
+    // Use Next.js fetch caching with a tag so we can invalidate when menu items change
+    // Note: Cache is based on URL only, not headers/cookies, so all users get the same cached data
+    const fetchStartTime = Date.now();
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/admin/helloworld/get-menu-items`,
       {
@@ -19,10 +23,19 @@ export async function GET(request: NextRequest) {
           Cookie: cookieHeader,
         },
         credentials: "include",
-        cache: "no-store",
+        // Enable data cache with a tag for invalidation on toggle
+        // Cache key is based on URL only, so cookies don't affect cache hits
+        next: { 
+          tags: ["admin-menu-items"],
+          revalidate: false, // Only invalidate via revalidateTag
+        },
       }
     );
+    const fetchDuration = Date.now() - fetchStartTime;
 
+    // If fetch was very fast (< 50ms), it's likely from cache
+    const likelyCacheHit = fetchDuration < 50;
+    console.log(`📦 [CACHE] Fetch duration: ${fetchDuration}ms ${likelyCacheHit ? "✅ (likely CACHE HIT)" : "🔄 (likely FRESH FETCH)"}`);
     console.log("🔍 [Server] External API response status:", response.status);
 
     if (!response.ok) {
@@ -35,11 +48,18 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
+    const totalDuration = Date.now() - startTime;
+    console.log(`✅ [CACHE] [GET /api/admin/menu-items] Total duration: ${totalDuration}ms`);
     console.log("✅ [Server] Menu items fetched successfully");
-    console.log("✅ [Server] Menu items data:", JSON.stringify(data, null, 2));
 
-    // Return the data as-is, preserving the structure (success, menuItems)
-    return NextResponse.json(data);
+    // Return the data with cache status header
+    return NextResponse.json(data, {
+      headers: {
+        "X-Cache-Status": likelyCacheHit ? "HIT" : "MISS",
+        "X-Fetch-Duration": `${fetchDuration}ms`,
+        "X-Total-Duration": `${totalDuration}ms`,
+      },
+    });
   } catch (error) {
     console.error("❌ [Server] Error fetching menu items:", error);
     return NextResponse.json(

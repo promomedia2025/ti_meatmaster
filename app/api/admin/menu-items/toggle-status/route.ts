@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,12 +74,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("✅ [toggle-menu-status] Menu status toggled successfully");
-    console.log("✅ [toggle-menu-status] Response status:", response.status);
-    console.log("✅ [toggle-menu-status] Response body:", {
-      rawResponse: responseText,
-      parsedData: data,
-      dataString: JSON.stringify(data, null, 2),
-    });
+
+    // Invalidate cached menu items so any cached pages using this data are updated
+    revalidateTag("admin-menu-items");
 
     return NextResponse.json({
       success: true,

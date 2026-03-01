@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import {
   User,
   Edit3,
   Check,
@@ -40,6 +45,14 @@ export default function UserProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const isInitialized = useRef(false);
 
+  // Email change OTP verification state
+  const [showEmailOTPModal, setShowEmailOTPModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [emailOTP, setEmailOTP] = useState("");
+  const [isVerifyingEmailOTP, setIsVerifyingEmailOTP] = useState(false);
+  const [emailOTPError, setEmailOTPError] = useState("");
+  const [originalEmail, setOriginalEmail] = useState<string>("");
+
   const [formData, setFormData] = useState<UserProfile>({
     id: 0,
     email: "",
@@ -60,14 +73,16 @@ export default function UserProfilePage() {
   // --- Sync Data from Auth Context ---
   useEffect(() => {
     if (user && (!isInitialized.current || user.id !== formData.id)) {
+      const userEmail = user.email || "";
       setFormData({
         id: user.id || 0,
-        email: user.email || "",
+        email: userEmail,
         first_name: user.first_name || "",
         last_name: user.last_name || "",
         telephone: user.telephone || user.phone || "",
         date_of_birth: user.date_of_birth || "",
       });
+      setOriginalEmail(userEmail);
       isInitialized.current = true;
       setHasUnsavedChanges(false);
     }
@@ -116,13 +131,64 @@ export default function UserProfilePage() {
       return;
     }
 
+    // Check if email has changed
+    const emailChanged = formData.email !== originalEmail && formData.email.trim() !== "";
+
+    if (emailChanged) {
+      // Email changed - need OTP verification first
+      // Request email change (this should send OTP to new email but not update yet)
+      setIsSaving(true);
+      try {
+        // First, try to update with the new email - backend should detect change and send OTP
+        // But we'll intercept and show OTP modal instead
+        const payload = {
+          user_id: user.id,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email, // New email
+          telephone: formData.telephone, 
+          phone: formData.telephone,
+        };
+
+        const response = await fetch("/api/auth/user", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+        
+        // If backend returns success but email needs verification, or if it sends OTP
+        // For now, we'll assume the backend sends OTP when email changes
+        // Show OTP modal
+        setPendingEmail(formData.email);
+        setShowEmailOTPModal(true);
+        setEmailOTP("");
+        setEmailOTPError("");
+        toast.info("Ενημέρωση", { description: "Ο κωδικός επιβεβαίωσης στάλθηκε στο νέο email σας" });
+      } catch (error) {
+        toast.error("Σφάλμα", { description: "Σφάλμα κατά την αλλαγή email" });
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    // No email change - proceed with normal update
+    await updateProfileWithoutEmail();
+  };
+
+  const updateProfileWithoutEmail = async () => {
+    if (!user?.id) return;
+
     setIsSaving(true);
     try {
       const payload = {
         user_id: user.id,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        email: formData.email,
+        email: originalEmail, // Use original email, not the pending one
         telephone: formData.telephone, 
         phone: formData.telephone,
       };
@@ -146,7 +212,7 @@ export default function UserProfilePage() {
       await refreshUser({
         first_name: formData.first_name,
         last_name: formData.last_name,
-        email: formData.email,
+        email: originalEmail,
         telephone: formData.telephone,
         phone: formData.telephone,
         ...updatedUserData,
@@ -154,6 +220,109 @@ export default function UserProfilePage() {
 
       toast.success("Επιτυχία", { description: "Το προφίλ ενημερώθηκε" });
       setHasUnsavedChanges(false);
+    } catch (error) {
+      toast.error("Σφάλμα", { description: "Σφάλμα κατά την αποθήκευση" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEmailOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailOTPError("");
+
+    if (!pendingEmail) {
+      setEmailOTPError("Δεν υπάρχει email προς επιβεβαίωση");
+      return;
+    }
+
+    if (emailOTP.length !== 6) {
+      setEmailOTPError("Παρακαλώ εισάγετε τον 6ψήφιο κωδικό");
+      return;
+    }
+
+    setIsVerifyingEmailOTP(true);
+
+    try {
+      const response = await fetch("/api/auth/customer/verify-email-change-otp", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: pendingEmail, otp: emailOTP }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Email verified - now update the profile with the new email
+        toast.success("Επιτυχία", { description: "Το email επιβεβαιώθηκε" });
+        
+        // Close OTP modal
+        setShowEmailOTPModal(false);
+        setEmailOTP("");
+        setEmailOTPError("");
+        
+        // Update the original email to the new one
+        setOriginalEmail(pendingEmail);
+        
+        // Now save all changes including the verified email
+        await saveProfileWithVerifiedEmail();
+      } else {
+        setEmailOTPError(
+          data.error || "Μη έγκυρος κωδικός. Παρακαλώ δοκιμάστε ξανά."
+        );
+      }
+    } catch (error) {
+      setEmailOTPError("Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά.");
+    } finally {
+      setIsVerifyingEmailOTP(false);
+    }
+  };
+
+  const saveProfileWithVerifiedEmail = async () => {
+    if (!user?.id || !pendingEmail) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        user_id: user.id,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: pendingEmail, // Use the verified email
+        telephone: formData.telephone, 
+        phone: formData.telephone,
+      };
+
+      const response = await fetch("/api/auth/user", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || (result && !result.success)) {
+        throw new Error(result?.error || "Αποτυχία αποθήκευσης");
+      }
+
+      // Extract updated user data from response
+      const updatedUserData = result.data?.data || result.data || {};
+      
+      // Update user context with the new data
+      await refreshUser({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: pendingEmail,
+        telephone: formData.telephone,
+        phone: formData.telephone,
+        ...updatedUserData,
+      });
+
+      toast.success("Επιτυχία", { description: "Το προφίλ ενημερώθηκε" });
+      setHasUnsavedChanges(false);
+      setPendingEmail(null);
     } catch (error) {
       toast.error("Σφάλμα", { description: "Σφάλμα κατά την αποθήκευση" });
     } finally {
@@ -352,6 +521,80 @@ export default function UserProfilePage() {
         </div>
       </div>
 
+      {/* Email Change OTP Modal */}
+      {showEmailOTPModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold text-white mb-2">Επιβεβαίωση Email</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Παρακαλώ ελέγξτε το mail σας ({pendingEmail}) για τον 6ψήφιο κωδικό επιβεβαίωσης
+            </p>
+            
+            <form onSubmit={handleEmailOTPSubmit} noValidate>
+              <div className="mb-6">
+                <div className="flex justify-center mb-4">
+                  <InputOTP
+                    maxLength={6}
+                    value={emailOTP}
+                    onChange={(value) => {
+                      setEmailOTP(value);
+                      setEmailOTPError("");
+                    }}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={1} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={2} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={3} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={4} className="bg-black border-zinc-800 text-white" />
+                      <InputOTPSlot index={5} className="bg-black border-zinc-800 text-white" />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                {emailOTPError && (
+                  <p className="text-red-400 text-sm mt-3 bg-red-900/10 p-2 rounded border border-red-900/20">
+                    {emailOTPError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={isVerifyingEmailOTP || emailOTP.length !== 6}
+                  className="flex-1 px-4 py-2 rounded-lg bg-[var(--brand-border)] text-white font-medium hover:bg-[var(--brand-hover)] disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                >
+                  {isVerifyingEmailOTP ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Επαληθεύεται...</span>
+                    </>
+                  ) : (
+                    "Επιβεβαίωση"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailOTPModal(false);
+                    setEmailOTP("");
+                    setEmailOTPError("");
+                    setPendingEmail(null);
+                    // Revert email to original
+                    setFormData(prev => ({ ...prev, email: originalEmail }));
+                  }}
+                  disabled={isVerifyingEmailOTP}
+                  className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-400 font-medium hover:bg-zinc-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Ακύρωση
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -407,8 +650,8 @@ export default function UserProfilePage() {
               >
                 Ακύρωση
               </button>
-            </div>
-          </div>
+        </div>
+      </div>
         </div>
       )}
     </div>

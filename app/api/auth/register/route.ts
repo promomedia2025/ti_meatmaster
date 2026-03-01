@@ -43,6 +43,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate phone number has exactly 10 digits
+    const phoneDigits = telephone.replace(/\D/g, "");
+    if (phoneDigits.length !== 10) {
+      return NextResponse.json(
+        { success: false, error: "Το τηλέφωνο πρέπει να έχει ακριβώς 10 ψηφία" },
+        { status: 400 }
+      );
+    }
+
     if (!password) {
       return NextResponse.json(
         { success: false, error: "Ο κωδικός πρόσβασης είναι υποχρεωτικός" },

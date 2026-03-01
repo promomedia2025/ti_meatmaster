@@ -595,9 +595,9 @@ export function AdminPrinterOptionsSidebar({
               >
                 Κλείσιμο
               </Button>
-            </div>
           </div>
         </div>
+      </div>
       )}
     </>
   );

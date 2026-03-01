@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { user_id, first_name, last_name, email, telephone } = body;
+    const { user_id, first_name, last_name, email, telephone, skip_email_verification } = body;
 
     // Validate required fields
     if (!user_id || !first_name || !last_name || !email || !telephone) {
@@ -102,6 +102,9 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // If skip_email_verification is true, it means email was already verified via OTP
+    // Otherwise, if email is being changed, backend should handle OTP sending
 
     // Get CSRF token first
     const csrfResponse = await fetch(

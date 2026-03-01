@@ -3,19 +3,35 @@
 import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const code = searchParams.get("code");
+  const testOtp = searchParams.get("testOtp") === "1";
+
+  // Extract language from pathname (e.g., /el/forgot-password -> el)
+  const lang = pathname?.split("/")[1] || "el";
 
   // Email form state
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+
+  // OTP state
+  const [otp, setOtp] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [otpError, setOtpError] = useState("");
 
   // Reset password form state (when code is present)
   const [password, setPassword] = useState("");
@@ -27,11 +43,14 @@ function ForgotPasswordForm() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess(false);
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/password-reset", {
+      const apiUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/api/auth/password-reset`
+          : "/api/auth/password-reset";
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -39,8 +58,10 @@ function ForgotPasswordForm() {
 
       const data = await response.json();
 
+      // Show OTP screen on success (our API returns { success: true } when external API returns 2xx)
       if (data.success) {
-        setSuccess(true);
+        setShowOTP(true);
+        setError("");
       } else {
         setError(
           data.error || "Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά."
@@ -50,6 +71,42 @@ function ForgotPasswordForm() {
       setError("Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOTPSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError("");
+
+    if (otp.length !== 6) {
+      setOtpError("Παρακαλώ εισάγετε τον 6ψήφιο κωδικό");
+      return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+      const response = await fetch("/api/auth/customer/verify-reset-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to reset-password with the code
+        const resetUrl = data.redirect_url || `/${lang}/forgot-password?code=${data.code}`;
+        router.push(resetUrl);
+      } else {
+        setOtpError(
+          data.error || "Μη έγκυρος κωδικός. Παρακαλώ δοκιμάστε ξανά."
+        );
+      }
+    } catch (error) {
+      setOtpError("Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -207,12 +264,79 @@ function ForgotPasswordForm() {
             του κωδικού πρόσβασης.
           </p>
 
-          {success ? (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-4">
-              <p className="text-green-400 text-sm">
-                Έχουμε στείλει οδηγίες επαναφοράς κωδικού στο email σας.
-              </p>
-            </div>
+          {showOTP ? (
+            <form onSubmit={handleOTPSubmit} className="space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+                <p className="text-blue-400 text-sm">
+                  Έχουμε στείλει 6ψήφιο κωδικό στο email σας. Παρακαλώ εισάγετε τον κωδικό παρακάτω.
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  value={otp}
+                  onChange={(value) => setOtp(value)}
+                  disabled={isVerifying}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot
+                      index={0}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                    <InputOTPSlot
+                      index={1}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                    <InputOTPSlot
+                      index={2}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                    <InputOTPSlot
+                      index={3}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                    <InputOTPSlot
+                      index={4}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                    <InputOTPSlot
+                      index={5}
+                      className="bg-black border-zinc-800 text-white focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
+                    />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              {otpError && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{otpError}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isVerifying || otp.length !== 6}
+                className="w-full h-12 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white font-bold transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
+              >
+                {isVerifying ? "Επαλήθευση..." : "Επαλήθευση"}
+              </Button>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => {
+                    setShowOTP(false);
+                    setOtp("");
+                    setOtpError("");
+                  }}
+                  className="text-sm text-zinc-400 hover:text-white transition-colors"
+                >
+                  Αλλαγή email
+                </Button>
+              </div>
+            </form>
           ) : (
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
@@ -240,6 +364,17 @@ function ForgotPasswordForm() {
               >
                 {isSubmitting ? "Αποστολή..." : "Αποστολή"}
               </Button>
+
+              {testOtp && email && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowOTP(true)}
+                  className="w-full h-10 text-xs text-zinc-400 border-zinc-700"
+                >
+                  Dev: Προχώρηση στο OTP
+                </Button>
+              )}
             </form>
           )}
 

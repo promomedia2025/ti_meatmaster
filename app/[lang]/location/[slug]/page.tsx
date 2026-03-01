@@ -15,7 +15,8 @@ import {
 } from "@/lib/types";
 import { favoriteLocation, unfavoriteLocation } from "./actions";
 
-export const dynamic = "force-dynamic";
+// Remove force-dynamic to allow caching of menu data
+// export const dynamic = "force-dynamic";
 
 // Server-side function to check favorite status
 async function getFavoriteStatus(
@@ -111,45 +112,88 @@ async function getLocationData(slug: string): Promise<Location | null> {
   }
 }
 
-// Correct final version: maintains original API shape
+// Fetch menu data using Next.js Data Cache with tags (stable API)
 async function getMenuData(locationId: number, categorySlug?: string) {
+  const startTime = Date.now();
+  
+  console.log(`🔍 [CACHE] [Location ${locationId}] Fetching menu data at:`, new Date().toISOString());
+
   try {
+    // Fetch all pages of menu items directly from external API with cache tags
     let page = 1;
     const perPage = 100;
     const allItems: any[] = [];
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const fetchStartTime = Date.now();
+    let totalFetchDuration = 0;
 
     while (true) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       let apiUrl = `${baseUrl}/api/locations/${locationId}/menu-items?page=${page}&per_page=${perPage}`;
 
       if (categorySlug) {
         apiUrl += `&category_slug=${categorySlug}`;
       }
 
-      const response = await fetch(apiUrl, { cache: "no-store" });
+      // Use Next.js Data Cache with tags (stable API) - same tag as admin route
+      const pageFetchStart = Date.now();
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Enable data cache with a tag for invalidation on toggle
+        // Cache key is based on URL only
+        next: { 
+          tags: ["admin-menu-items"],
+          revalidate: false, // Only invalidate via revalidateTag
+        },
+      });
+      const pageFetchDuration = Date.now() - pageFetchStart;
+      totalFetchDuration += pageFetchDuration;
+
       if (!response.ok) {
         throw new Error(`API responded with status: ${response.status}`);
       }
 
-      const json = await response.json();
-      allItems.push(...json.data.menu_items);
+      const data = await response.json();
+      allItems.push(...data.data.menu_items);
 
-      const { current_page, last_page } = json.data.pagination;
+      const { current_page, last_page } = data.data.pagination;
       if (current_page >= last_page) break;
 
       page++;
     }
 
+    const fetchDuration = totalFetchDuration;
+    // If fetch was very fast (< 50ms per page on average), it's likely from cache
+    const avgPageDuration = fetchDuration / page;
+    const likelyCacheHit = avgPageDuration < 50;
+    
+    console.log(`📦 [CACHE] [Location ${locationId}] Menu fetch: ${fetchDuration}ms (${page} pages, avg ${avgPageDuration.toFixed(1)}ms/page) ${likelyCacheHit ? "✅ (CACHE HIT)" : "🔄 (FRESH FETCH)"}`);
+    
+    const totalDuration = Date.now() - startTime;
+    console.log(`✅ [CACHE] [Location ${locationId}] Total duration: ${totalDuration}ms, Items: ${allItems.length}`);
+
     return {
       success: true,
       data: {
-        menu_items: allItems, // ← restore original shape
+        location: {
+          id: locationId,
+          name: "", // Will be filled by the component using locationData
+        },
+        menu_items: allItems,
       },
     };
   } catch (error) {
+    console.error(`❌ [CACHE] [Location ${locationId}] Error fetching menu data:`, error);
     return {
       success: false,
       data: {
+        location: {
+          id: locationId,
+          name: "",
+        },
         menu_items: [],
       },
     };
