@@ -1776,6 +1776,26 @@ function CheckoutPageContent() {
                       </span>
                     </div>
                   </label>
+                    {isCardPaymentEnabled && (
+                      <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "card" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="card"
+                          checked={paymentMethod === "card"}
+                          onChange={(e) =>
+                            setPaymentMethod(e.target.value as "cash" | "card")
+                          }
+                          className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
+                        />
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-5 h-5 text-zinc-400" />
+                          <span className="text-white font-medium text-sm">
+                            Πληρωμή με κάρτα 
+                          </span>
+                        </div>
+                      </label>
+                    )}
                   </div>
                 </Card>
 
