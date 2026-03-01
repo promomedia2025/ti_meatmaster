@@ -47,10 +47,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (response.ok && data.success) {
+      // Extract code from nested data structure if present
+      const code = data.data?.code || data.code;
+      const redirectUrl = data.data?.redirect_url || data.redirect_url;
+      
       return NextResponse.json({
         success: true,
-        code: data.code,
-        redirect_url: data.redirect_url,
+        code: code,
+        redirect_url: redirectUrl,
       });
     } else {
       return NextResponse.json(

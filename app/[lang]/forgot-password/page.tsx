@@ -94,9 +94,9 @@ function ForgotPasswordForm() {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Redirect to reset-password with the code
-        const resetUrl = data.redirect_url || `/${lang}/forgot-password?code=${data.code}`;
+      if (data.success && data.code) {
+        // Build the reset URL with the language prefix
+        const resetUrl = `/${lang}/forgot-password?code=${data.code}`;
         router.push(resetUrl);
       } else {
         setOtpError(
