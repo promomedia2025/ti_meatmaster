@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       amount,
       currency = "EUR",
       description,
+      tipAmount,
       customerEmail,
       customerName,
       customerPhone,
@@ -61,12 +62,18 @@ export async function POST(request: NextRequest) {
     const successUrl = `${baseUrl}/${language}/viva/authorize`;
     const failureUrl = `${baseUrl}/${language}/viva/authorize`;
 
+    // Parse tipAmount if provided
+    const tipAmountNum = tipAmount !== undefined && tipAmount !== null
+      ? parseFloat(tipAmount)
+      : undefined;
+
     // Create payment session
     const paymentSession = await createVivaPaymentSession({
       orderId: orderId.toString(),
       amount: amountNum,
       currency,
       description,
+      tipAmount: tipAmountNum && !isNaN(tipAmountNum) && tipAmountNum > 0 ? tipAmountNum : undefined,
       customerEmail,
       customerName,
       customerPhone,

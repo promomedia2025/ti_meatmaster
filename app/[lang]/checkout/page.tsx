@@ -1284,11 +1284,16 @@ function CheckoutPageContent() {
         // If card payment, initiate Viva Payments session
         if (paymentMethod === "card") {
           try {
-            // Calculate remaining amount after wallet discount (including tip)
-            const totalWithTip = locationCart.summary.total + tipAmount;
-            const remainingAmount = useWallet && walletBalance !== null && walletBalance > 0
-              ? Math.max(0, totalWithTip - Math.min(walletBalance, totalWithTip))
-              : totalWithTip;
+            // Calculate remaining amount after wallet discount (order amount WITHOUT tip)
+            const orderAmount = locationCart.summary.total;
+            const remainingOrderAmount = useWallet && walletBalance !== null && walletBalance > 0
+              ? Math.max(0, orderAmount - Math.min(walletBalance, orderAmount))
+              : orderAmount;
+
+            // According to Viva Payments docs: amount includes the tip, tipAmount is separate for tracking
+            // Example: Order 30 EUR + Tip 2 EUR -> amount: 3200 cents (32 EUR), tipAmount: 200 cents (2 EUR)
+            const totalAmountToCharge = remainingOrderAmount + tipAmount;
+            const tipAmountToSend = tipAmount > 0 ? tipAmount : undefined;
 
             const paymentResponse = await fetch("/api/viva/initiate", {
               method: "POST",
@@ -1297,7 +1302,8 @@ function CheckoutPageContent() {
               },
               body: JSON.stringify({
                 orderId: orderId.toString(),
-                amount: remainingAmount,
+                amount: totalAmountToCharge,
+                tipAmount: tipAmountToSend,
                 currency: "EUR",
                 description: `Order #${orderId}`,
                 customerEmail: user?.email || "",

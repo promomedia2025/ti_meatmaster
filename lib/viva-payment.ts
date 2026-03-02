@@ -21,6 +21,7 @@ export interface VivaPaymentRequest {
   amount: number;
   currency: string;
   description: string;
+  tipAmount?: number; // Tip amount as a separate field (in the same currency unit as amount)
   customerEmail?: string;
   customerName?: string;
   customerPhone?: string;
@@ -262,6 +263,12 @@ export async function createVivaPaymentSession(
       };
     }
 
+    // Convert tipAmount to cents if provided
+    let tipAmountInCents: number | undefined;
+    if (request.tipAmount !== undefined && request.tipAmount !== null && request.tipAmount > 0) {
+      tipAmountInCents = Math.round(request.tipAmount * 100);
+    }
+
     // Create payment order via Viva Payments Checkout v2 Orders API
     // Note: Ensure all required fields are present for Smart Checkout
     // Viva Payments requires numeric ISO 4217 currency code (e.g., 978 for EUR)
@@ -275,6 +282,11 @@ export async function createVivaPaymentSession(
       paymentTimeout: 1800, // 30 minutes
       currencyCode: currencyCode, // Use numeric ISO 4217 code (978 for EUR)
     };
+
+    // Add tipAmount as a separate field if provided
+    if (tipAmountInCents !== undefined && tipAmountInCents > 0) {
+      orderPayload.tipAmount = tipAmountInCents;
+    }
 
     // Add customer information if available (recommended for better conversion)
     // Only include customer object if we have at least email or name (avoid empty objects)
