@@ -207,6 +207,7 @@ export default function AdminDashboardPage() {
 
     // Check for common session cookie names
     const sessionCookieNames = [
+      "perfetta_session",
       "tastyigniter_session",
       "session",
       "laravel_session",

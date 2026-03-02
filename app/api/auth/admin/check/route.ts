@@ -6,18 +6,23 @@ export async function GET(request: NextRequest) {
   try {
     // Get cookies from the request
     const cookies = request.headers.get("cookie") || "";
+    
+    console.log("🔍 Admin check - Cookies received:", cookies);
 
     if (!cookies) {
+      console.log("⚠️ Admin check - No cookies found");
       return NextResponse.json(
         { success: false, authenticated: false, error: "No session found" },
         { status: 401 }
       );
     }
 
-    // Check if tastyigniter_session cookie exists
+    // Check if perfetta_session cookie exists
     const hasSessionCookie = cookies
       .toLowerCase()
-      .includes("tastyigniter_session=");
+      .includes("perfetta_session=");
+    
+    console.log("🔍 Admin check - Has perfetta_session:", hasSessionCookie);
 
     if (!hasSessionCookie) {
       return NextResponse.json(
