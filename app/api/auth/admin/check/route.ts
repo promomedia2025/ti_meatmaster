@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if perfetta_session cookie exists
+    // Check if tastyigniter_session cookie exists
     const hasSessionCookie = cookies
       .toLowerCase()
-      .includes("perfetta_session=");
+      .includes("tastyigniter_session=");
     
-    console.log("🔍 Admin check - Has perfetta_session:", hasSessionCookie);
+    console.log("🔍 Admin check - Has tastyigniter_session:", hasSessionCookie);
 
     if (!hasSessionCookie) {
       return NextResponse.json(

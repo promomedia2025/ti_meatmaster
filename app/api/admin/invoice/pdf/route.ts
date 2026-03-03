@@ -210,7 +210,14 @@ export async function POST(request: NextRequest) {
       // Set font immediately to prevent Helvetica initialization
       measureDoc.font("Roboto");
       
-      let measureY = 0; // Start from 0, no top margin
+      // Match the actual rendering starting position
+      // For thermal: contentPadding = 0, so y starts at 10px (contentPadding + 10)
+      // For standard: contentPadding = 20/30, so y starts at 30/40px (contentPadding + 10)
+      // But measurement doc has margins, so we need to account for that
+      // Actual doc: thermal has top margin 0, standard has top margin pagePadding
+      // So measurement should start at: thermal = 10px, standard = contentPadding + 10
+      const measureStartY = isThermal ? 10 : (isA5 ? 20 : 30) + 10; // Match actual y starting position
+      let measureY = measureStartY;
       const textWidth = measureDoc.page.width - measureDoc.page.margins.left - measureDoc.page.margins.right;
       
       // Track section heights for debugging
@@ -283,6 +290,18 @@ export async function POST(request: NextRequest) {
       
       let itemsTotalHeight = 0;
       if (order.order_menus && order.order_menus.length > 0) {
+        // Calculate table column widths (matching actual rendering)
+        const qtyWidth = isThermal ? (is58mm ? 20 : 25) : 30;
+        const priceWidth = isThermal ? 65 : 70;
+        // For measurement, we need to approximate availableContentWidth
+        // availableContentWidth = contentWidth - (contentPadding * 2) - 10
+        // contentWidth = textWidth (for measurement doc)
+        // contentPadding = 0 for thermal, 20/30 for standard
+        const measureContentPadding = isThermal ? 0 : (isA5 ? 20 : 30);
+        const measureAvailableWidth = textWidth - (measureContentPadding * 2) - 10;
+        const nameWidth = measureAvailableWidth - qtyWidth - priceWidth;
+        const measureOptionsWidth = nameWidth + priceWidth - 15; // Match actual rendering: name + price - 15px
+        
         order.order_menus.forEach((menu: any) => {
           const options: string[] = [];
           if (menu.menu_options && menu.menu_options.length > 0) {
@@ -298,10 +317,22 @@ export async function POST(request: NextRequest) {
           const menuText = sanitizeString(menu.name);
           const commentText = menu.comment ? sanitizeString(menu.comment) : "";
           const optionsText = options.length > 0 ? options.join("\n") : "";
-          const fullText = [menuText, optionsText, commentText].filter(Boolean).join("\n");
           
-          const rowHeight = measureDoc.heightOfString(fullText, { width: textWidth * 0.6, lineGap: 2 });
-          const itemRowHeight = Math.max(rowHeight, lineHeight) + 10; // Fixed 10px spacing between items
+          // Measure each component separately with correct widths (matching actual rendering)
+          const menuTextHeight = measureDoc.heightOfString(menuText, { width: nameWidth });
+          
+          const optionsFontSize = baseFontSize - (isThermal ? (is58mm ? 1.5 : 1) : 1);
+          const optionsHeight = optionsText 
+            ? measureDoc.font("Roboto").fontSize(optionsFontSize).heightOfString(optionsText, { width: measureOptionsWidth })
+            : 0;
+          
+          const commentFontSize = baseFontSize - (isThermal ? (is58mm ? 1.5 : 1) : 1);
+          const commentHeight = commentText
+            ? measureDoc.font("Roboto").fontSize(commentFontSize).heightOfString(commentText, { width: measureOptionsWidth })
+            : 0;
+          
+          // Total height = menu text + options + comment + spacing
+          const itemRowHeight = Math.max(menuTextHeight + optionsHeight + commentHeight, lineHeight) + 10; // Fixed 10px spacing between items
           itemsTotalHeight += itemRowHeight;
           measureY += itemRowHeight;
         });
@@ -344,14 +375,16 @@ export async function POST(request: NextRequest) {
       console.log("📏 [PDF] Content height breakdown:", {
         sections: sectionHeights,
         totalMeasured: totalMeasured,
+        measureStartY: measureStartY,
         measureY: measureY,
         pagePadding: pagePadding,
-        calculatedHeight: measureY + pagePadding,
+        contentPadding: isThermal ? 0 : (isA5 ? 20 : 30),
+        actualStartY: isThermal ? 10 : (isA5 ? 20 : 30) + 10,
       });
       
       // Calculate finalY equivalent (what finalY will be after rendering)
-      // finalY = y, where y includes 10px top padding, no bottom padding
-      // So: finalY = measureY
+      // finalY = y, where y includes starting position (contentPadding + 10), no bottom padding
+      // measureY already includes the starting position, so use it directly
       calculatedHeight = measureY;
       // Ensure minimum height
       if (calculatedHeight < 100) calculatedHeight = 100;
@@ -372,7 +405,8 @@ export async function POST(request: NextRequest) {
         
         // Re-measure with scaled fonts to get accurate height
         // This ensures the page height matches the actual scaled content
-        let remeasureY = 0; // Start from 0, no top margin
+        // Match the actual rendering starting position (same as initial measurement)
+        let remeasureY = measureStartY;
         remeasureY += measureDoc.heightOfString(`Παραγγελία #${sanitizeString(order.order_id)}`, { width: textWidth }) + sectionSpacing;
         
         // Re-measure customer info with actual text measurement
@@ -488,9 +522,12 @@ export async function POST(request: NextRequest) {
           remeasureY += lineHeight * totalsRowsCount;
         }
         
+        // Add thank you message height (matching the initial measurement)
+        remeasureY += rowSpacing + lineHeight; // Spacing + thank you message
+        
         // Calculate finalY equivalent (what finalY will be after rendering)
-        // finalY = y, where y includes 10px top padding, no bottom padding
-        // So: finalY = remeasureY
+        // finalY = y, where y includes starting position (contentPadding + 10), no bottom padding
+        // remeasureY already includes the starting position, so use it directly
         calculatedHeight = Math.min(maxHeight, remeasureY);
       } else {
         // Calculate finalY equivalent (what finalY will be after rendering)
@@ -521,18 +558,22 @@ export async function POST(request: NextRequest) {
       // 80mm = 226.77 points, 58mm = 164.41 points
       const thermalPageWidth = is80mm ? 226.77 : 164.41;
       // Use calculatedHeight directly (which is based on actual measured content)
+      // Add a small buffer at the bottom to ensure thank you message isn't cut off
       // Ensure minimum height to prevent landscape rotation
       const minPortraitHeight = thermalPageWidth;
-      pageHeightWithBuffer = calculatedHeight;
+      const bottomBuffer = lineHeight; // Add buffer equal to one line height
+      pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight + bottomBuffer);
       pageSize = [thermalPageWidth, pageHeightWithBuffer];
       contentWidth = thermalPageWidth;
     } else {
       // Standard paper sizes: A4 or A5
       // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
       // Use calculatedHeight directly (which is based on actual measured content)
+      // Add a small buffer at the bottom to ensure thank you message isn't cut off
       const minPortraitHeight = isA5 ? 419.53 : 595.28;
       const maxHeight = isA5 ? 595.28 : 842;
-      pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight));
+      const bottomBuffer = lineHeight; // Add buffer equal to one line height
+      pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight + bottomBuffer));
       const pageWidth = isA5 ? 419.53 : 595.28;
       pageSize = [pageWidth, pageHeightWithBuffer];
       contentWidth = pageWidth;

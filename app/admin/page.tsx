@@ -205,10 +205,10 @@ export default function AdminDashboardPage() {
       return null;
     };
 
-    // Check for common session cookie names
+    // Check for common session cookie names (admin uses tastyigniter_session)
     const sessionCookieNames = [
-      "perfetta_session",
       "tastyigniter_session",
+      "perfetta_session",
       "session",
       "laravel_session",
     ];
