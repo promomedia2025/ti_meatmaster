@@ -18,6 +18,7 @@ interface AdminOrder {
   order_date: string;
   order_time: string;
   order_total: string;
+  final_price?: string | null;
   currency: string;
   status_id: number;
   created_at: string;
@@ -117,6 +118,9 @@ const normalizeOrderPayload = (payload: any): AdminOrder | null => {
         minute: "2-digit",
       }),
     order_total: `${payload.order_total ?? payload.orderTotal ?? "0"}`,
+    final_price: payload.final_price !== undefined && payload.final_price !== null 
+      ? (typeof payload.final_price === 'string' ? payload.final_price : payload.final_price.toString())
+      : null,
     currency: payload.currency || "EUR",
     status_id: statusId,
     created_at: payload.created_at ?? new Date().toISOString(),
@@ -943,6 +947,14 @@ export default function AdminDashboardPage() {
             {order.order_total} {order.currency}
           </span>
         </div>
+        {order.final_price && (
+          <div className="flex justify-between text-white font-bold pt-2">
+            <span>Τελική τιμή:</span>
+            <span>
+              {order.final_price} {order.currency}
+            </span>
+          </div>
+        )}
       </div>
       {actions && (
         <div

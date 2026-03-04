@@ -12,6 +12,7 @@ interface AdminOrder {
   order_date: string;
   order_time: string;
   order_total: string;
+  final_price?: string | null;
   currency: string;
   status_id: number;
   created_at: string;
@@ -434,7 +435,18 @@ export default function AdminOrdersPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-white font-semibold">
-                            {order.order_total} {order.currency}
+                            {order.final_price ? (
+                              <div className="flex flex-col">
+                                <span className="line-through text-gray-500 text-sm">
+                                  {order.order_total} {order.currency}
+                                </span>
+                                <span className="font-bold">
+                                  {order.final_price} {order.currency}
+                                </span>
+                              </div>
+                            ) : (
+                              <span>{order.order_total} {order.currency}</span>
+                            )}
                           </td>
                         </tr>
                       );

@@ -68,12 +68,16 @@ export async function GET(request: NextRequest) {
           const tip_amount = attrs.tip_amount !== undefined && attrs.tip_amount !== null 
             ? (typeof attrs.tip_amount === 'string' ? parseFloat(attrs.tip_amount) : attrs.tip_amount)
             : null;
+          const final_price = attrs.final_price !== undefined && attrs.final_price !== null 
+            ? (typeof attrs.final_price === 'string' ? attrs.final_price : attrs.final_price.toString())
+            : null;
 
           return {
             order_id: attrs.order_id,
             order_date: attrs.order_date || attrs.created_at,
             order_time: attrs.order_time,
             order_total: attrs.order_total?.toString() || "0",
+            final_price: final_price,
             currency: attrs.currency || "EUR",
             status_id: attrs.status_id,
             created_at: attrs.created_at,

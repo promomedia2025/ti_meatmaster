@@ -247,18 +247,21 @@ export async function POST(request: NextRequest) {
         const isDelivery = order.order_type === "delivery" || order.order_type === "Delivery" || order.order_type === "DELIVERY";
         if (isDelivery) {
           h += rowSpacing + lineHeight; // "Διεύθυνση Παράδοσης" label
-          // Measure actual address height (may wrap to multiple lines)
-          const addressText = sanitizeString(order.location_name) || "N/A";
-          h += measureDoc.heightOfString(addressText, { 
-            width: leftColumnWidth
-          });
-          h += 15; // Fixed spacing after address (matching rendering)
-          // Floor, bell, and comments - use lineHeight for consistency
+          // Address is formatted as exactly 2 lines: street + postal code/area
+          h += lineHeight * 2; // Two lines for address
+          // Floor and bell with reduced spacing (half of rowSpacing, minimum 2px)
           if (order.floor) {
-            h += lineHeight;
+            h += Math.max(2, rowSpacing / 2) + lineHeight;
           }
           if (order.bell_name) {
+            if (!order.floor) {
+              h += Math.max(2, rowSpacing / 2); // Only add spacing if floor wasn't shown
+            }
             h += lineHeight;
+          }
+          // Add spacing before comments if floor/bell exist
+          if (order.comments && (order.floor || order.bell_name)) {
+            h += rowSpacing;
           }
           if (order.comments) {
             const commentsText = sanitizeString(order.comments);
@@ -355,9 +358,15 @@ export async function POST(request: NextRequest) {
       // Measure totals - right below order items (or comment if present)
       const totalsHeaderHeight = lineHeight + rowSpacing; // "Σύνοψη Παραγγελίας" header
       measureY += totalsHeaderHeight;
-      let totalsRowsCount = order.order_totals && order.order_totals.length > 0
-        ? order.order_totals.length
-        : 1;
+      // Filter out "total" from order_totals when counting
+      const filteredTotals = order.order_totals && order.order_totals.length > 0
+        ? order.order_totals.filter((total: any) => total.code !== "total")
+        : [];
+      let totalsRowsCount = filteredTotals.length;
+      // Add final_price row if it exists and is greater than 0
+      if (order.final_price !== null && order.final_price !== undefined && parseFloat(String(order.final_price)) > 0) {
+        totalsRowsCount += 1;
+      }
       // Add tip_amount row if it exists and is greater than 0
       if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
         totalsRowsCount += 1;
@@ -426,17 +435,21 @@ export async function POST(request: NextRequest) {
           const isDelivery = order.order_type === "delivery" || order.order_type === "Delivery" || order.order_type === "DELIVERY";
           if (isDelivery) {
             h += rowSpacing + lineHeight; // "Διεύθυνση Παράδοσης" label
-            const addressText = sanitizeString(order.location_name) || "N/A";
-            h += measureDoc.heightOfString(addressText, { 
-              width: remeasureLeftWidth
-            });
-            h += 15; // Fixed spacing after address (matching rendering)
-            // Floor, bell, and comments - use lineHeight for consistency
+            // Address is formatted as exactly 2 lines: street + postal code/area
+            h += lineHeight * 2; // Two lines for address
+            // Floor and bell with reduced spacing (half of rowSpacing, minimum 2px)
             if (order.floor) {
-              h += lineHeight;
+              h += Math.max(2, rowSpacing / 2) + lineHeight;
             }
             if (order.bell_name) {
+              if (!order.floor) {
+                h += Math.max(2, rowSpacing / 2); // Only add spacing if floor wasn't shown
+              }
               h += lineHeight;
+            }
+            // Add spacing before comments if floor/bell exist
+            if (order.comments && (order.floor || order.bell_name)) {
+              h += rowSpacing;
             }
             if (order.comments) {
               const commentsText = sanitizeString(order.comments);
@@ -506,21 +519,20 @@ export async function POST(request: NextRequest) {
         
         // Re-measure totals - right below order items (or comment if present)
         remeasureY += lineHeight + rowSpacing;
-        if (order.order_totals && order.order_totals.length > 0) {
-          let totalsRowsCount = order.order_totals.length;
-          // Add tip_amount row if it exists and is greater than 0
-          if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
-            totalsRowsCount += 1;
-          }
-          remeasureY += lineHeight * totalsRowsCount;
-        } else {
-          let totalsRowsCount = 1; // "Σύνολο" row
-          // Add tip_amount row if it exists and is greater than 0
-          if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
-            totalsRowsCount += 1;
-          }
-          remeasureY += lineHeight * totalsRowsCount;
+        // Filter out "total" from order_totals when counting
+        const remeasureFilteredTotals = order.order_totals && order.order_totals.length > 0
+          ? order.order_totals.filter((total: any) => total.code !== "total")
+          : [];
+        let totalsRowsCount = remeasureFilteredTotals.length;
+        // Add final_price row if it exists and is greater than 0
+        if (order.final_price !== null && order.final_price !== undefined && parseFloat(String(order.final_price)) > 0) {
+          totalsRowsCount += 1;
         }
+        // Add tip_amount row if it exists and is greater than 0
+        if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
+          totalsRowsCount += 1;
+        }
+        remeasureY += lineHeight * totalsRowsCount;
         
         // Add thank you message height (matching the initial measurement)
         remeasureY += rowSpacing + lineHeight; // Spacing + thank you message
@@ -558,10 +570,11 @@ export async function POST(request: NextRequest) {
       // 80mm = 226.77 points, 58mm = 164.41 points
       const thermalPageWidth = is80mm ? 226.77 : 164.41;
       // Use calculatedHeight directly (which is based on actual measured content)
-      // Add a small buffer at the bottom to ensure thank you message isn't cut off
+      // Add a buffer at the bottom to ensure thank you message isn't cut off
       // Ensure minimum height to prevent landscape rotation
       const minPortraitHeight = thermalPageWidth;
-      const bottomBuffer = lineHeight; // Add buffer equal to one line height
+      // Buffer should account for: rowSpacing before thank you + lineHeight of thank you + safety margin
+      const bottomBuffer = rowSpacing + lineHeight + (lineHeight * 1.5); // Extra safety margin
       pageHeightWithBuffer = Math.max(minPortraitHeight, calculatedHeight + bottomBuffer);
       pageSize = [thermalPageWidth, pageHeightWithBuffer];
       contentWidth = thermalPageWidth;
@@ -569,11 +582,16 @@ export async function POST(request: NextRequest) {
       // Standard paper sizes: A4 or A5
       // A4 = 595.28 x 842 points, A5 = 419.53 x 595.28 points
       // Use calculatedHeight directly (which is based on actual measured content)
-      // Add a small buffer at the bottom to ensure thank you message isn't cut off
+      // Add a buffer at the bottom to ensure thank you message isn't cut off
       const minPortraitHeight = isA5 ? 419.53 : 595.28;
       const maxHeight = isA5 ? 595.28 : 842;
-      const bottomBuffer = lineHeight; // Add buffer equal to one line height
-      pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight, calculatedHeight + bottomBuffer));
+      // Increase buffer significantly to ensure thank you message is always visible
+      // Buffer should account for: rowSpacing before thank you + lineHeight of thank you + safety margin
+      const bottomBuffer = rowSpacing + lineHeight + (lineHeight * 1.5); // Extra safety margin
+      // Calculate required height: content + buffer
+      const requiredHeight = calculatedHeight + bottomBuffer;
+      // Use required height, but don't exceed maxHeight too much (allow up to maxHeight + small buffer)
+      pageHeightWithBuffer = Math.max(minPortraitHeight, Math.min(maxHeight + (lineHeight * 0.5), requiredHeight));
       const pageWidth = isA5 ? 419.53 : 595.28;
       pageSize = [pageWidth, pageHeightWithBuffer];
       contentWidth = pageWidth;
@@ -756,26 +774,67 @@ export async function POST(request: NextRequest) {
         .text(protectWords("Διεύθυνση Παράδοσης"), contentX, y);
       y += lineHeight;
 
-      // Address with proper wrapping
+      // Address formatted as two lines: street on line 1, postal code + area on line 2
       const addressText = sanitizeString(order.location_name) || "N/A";
+      // Parse address: format is typically "Street, PostalCode, Area Name"
+      const addressParts = addressText.split(',').map(part => part.trim()).filter(part => part);
+      let streetLine = addressParts[0] || addressText; // First part is street
+      let postalAreaLine = '';
+      
+      if (addressParts.length >= 2) {
+        // Second part is postal code, third+ parts are area name
+        const postalCode = addressParts[1];
+        const areaName = addressParts.slice(2).join(', ');
+        postalAreaLine = areaName ? `${postalCode}, ${areaName}` : postalCode;
+      } else if (addressParts.length === 1) {
+        // If no comma, try to split by space to find postal code pattern (numbers)
+        const words = addressText.split(' ');
+        const postalCodeIndex = words.findIndex(word => /^\d{3}\s?\d{2,3}$/.test(word));
+        if (postalCodeIndex > 0) {
+          streetLine = words.slice(0, postalCodeIndex).join(' ');
+          postalAreaLine = words.slice(postalCodeIndex).join(' ');
+        }
+      }
+      
+      // Render address as two lines
       doc.font("Roboto")
         .fontSize(baseFontSize)
-        .text(addressText, contentX, y, {
+        .text(streetLine, contentX, y, {
           width: leftColumnWidth,
         });
-      y += 15; // Move past the address text
-      // Use lineHeight for consistent spacing (same as floor/bell/comments)
-
-      // Floor - consistent spacing
+      y += lineHeight;
+      
+      if (postalAreaLine) {
+        doc.font("Roboto")
+          .fontSize(baseFontSize)
+          .text(postalAreaLine, contentX, y, {
+            width: leftColumnWidth,
+          });
+        y += lineHeight;
+      } else {
+        // If we couldn't parse, just use the original text
+        y += lineHeight;
+      }
+      
+      // Floor - reduced spacing to bring it closer to address
       if (order.floor) {
+        y += Math.max(2, rowSpacing / 2); // Reduced spacing (half of rowSpacing, minimum 2px)
         doc.text(`Όροφος: ${sanitizeString(order.floor)}`, contentX, y);
         y += lineHeight;
       }
 
-      // Bell name - consistent spacing
+      // Bell name - reduced spacing
       if (order.bell_name) {
+        if (!order.floor) {
+          y += Math.max(2, rowSpacing / 2); // Only add spacing if floor wasn't shown
+        }
         doc.text(`Κουδούνι: ${sanitizeString(order.bell_name)}`, contentX, y);
         y += lineHeight;
+      }
+      
+      // Add spacing after floor/bell before comments (if comments exist)
+      if (order.comments && (order.floor || order.bell_name)) {
+        y += rowSpacing;
       }
 
       // Comments - consistent spacing
@@ -1086,17 +1145,15 @@ export async function POST(request: NextRequest) {
     if (order.order_totals && order.order_totals.length > 0) {
       order.order_totals
         .sort((a: any, b: any) => a.priority - b.priority)
+        .filter((total: any) => total.code !== "total") // Filter out "Total"
         .forEach((total: any) => {
-          const isTotal = total.code === "total";
-          const fontSize = isTotal ? baseFontSize + 1 : baseFontSize;
-
-          doc.font(isTotal && fonts.bold ? "Roboto-Bold" : "Roboto")
-            .fontSize(fontSize)
+          doc.font("Roboto")
+            .fontSize(baseFontSize)
             .text(protectWords(sanitizeString(total.title)), contentX, y);
 
           const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
-          doc.font(isTotal && fonts.bold ? "Roboto-Bold" : "Roboto")
-            .fontSize(fontSize)
+          doc.font("Roboto")
+            .fontSize(baseFontSize)
             .text(
               `${formatCurrency(total.value)} ${currencyDisplay}`,
               totalsPriceX,
@@ -1106,6 +1163,25 @@ export async function POST(request: NextRequest) {
 
           y += lineHeight;
         });
+      
+      // Add final_price if it exists (after totals but before tip)
+      if (order.final_price !== null && order.final_price !== undefined && parseFloat(String(order.final_price)) > 0) {
+        const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
+        doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+          .fontSize(baseFontSize + 1)
+          .text(protectWords("Τελική τιμή"), contentX, y);
+        
+        doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+          .fontSize(baseFontSize + 1)
+          .text(
+            `${formatCurrency(order.final_price)} ${currencyDisplay}`,
+            totalsPriceX,
+            y,
+            { width: totalsPriceWidth, align: "right" }
+          );
+        
+        y += lineHeight;
+      }
       
       // Add tip amount if it exists and is greater than 0
       if (order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0) {
@@ -1145,25 +1221,29 @@ export async function POST(request: NextRequest) {
         y += lineHeight;
       }
       
-      doc.font("Roboto")
-        .fontSize(baseFontSize)
-        .text(protectWords("Σύνολο"), contentX, y);
-
-      const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
-      doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
-        .fontSize(baseFontSize + 1)
-        .text(
-          `${formatCurrency(order.order_total || 0)} ${currencyDisplay}`,
-          totalsPriceX,
-          y,
-          { width: totalsPriceWidth, align: "right" }
-        );
-
-      y += lineHeight;
+      // Add final_price if it exists (no "Total" row - removed)
+      if (order.final_price !== null && order.final_price !== undefined && parseFloat(String(order.final_price)) > 0) {
+        const currencyDisplay = (sanitizeString(order.currency) || "EUR") === "EUR" ? "€" : sanitizeString(order.currency);
+        doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+          .fontSize(baseFontSize + 1)
+          .text(protectWords("Τελική τιμή"), contentX, y);
+        
+        doc.font(fonts.bold ? "Roboto-Bold" : "Roboto")
+          .fontSize(baseFontSize + 1)
+          .text(
+            `${formatCurrency(order.final_price)} ${currencyDisplay}`,
+            totalsPriceX,
+            y,
+            { width: totalsPriceWidth, align: "right" }
+          );
+        
+        y += lineHeight;
+      }
     }
 
     // Add thank you message at the bottom
     y += rowSpacing; // Add spacing before thank you message
+    const thankYouY = y; // Store Y position before thank you message
     doc.font("Roboto")
       .fontSize(baseFontSize)
       .fillColor("#000000")
@@ -1172,11 +1252,25 @@ export async function POST(request: NextRequest) {
         align: "center",
       });
     y += lineHeight;
+    const finalYAfterThankYou = y; // Final Y after thank you message
 
     // Verify final Y position and ensure page height is sufficient
-    // Note: y already includes the 10px top padding, no bottom padding
-    const finalY = y;
+    // Note: y already includes the starting position (contentPadding + 10), no bottom padding
+    const finalY = finalYAfterThankYou;
     const currentPageHeight = doc.page.height;
+    
+    // Ensure page height is sufficient - if finalY exceeds page height, we need to adjust
+    // This is a safety check to ensure thank you message is visible
+    if (finalY > currentPageHeight - 20) {
+      console.warn("⚠️ [PDF] Final Y position exceeds page height:", {
+        finalY,
+        currentPageHeight,
+        difference: finalY - currentPageHeight,
+        thankYouY,
+        calculatedHeight,
+        pageHeightWithBuffer,
+      });
+    }
     
     // Log for debugging (can be removed in production)
     console.log("📏 [PDF] Final measurements:", {
@@ -1185,6 +1279,10 @@ export async function POST(request: NextRequest) {
       calculatedHeight,
       pageHeightWithBuffer,
       hasTotals: !!(order.order_totals?.length || order.order_total),
+      hasFinalPrice: !!(order.final_price && parseFloat(String(order.final_price)) > 0),
+      thankYouMessageY: thankYouY, // Y position where thank you message starts
+      thankYouMessageHeight: lineHeight,
+      buffer: currentPageHeight - finalY,
     });
     
     // Finalize PDF

@@ -36,6 +36,7 @@ interface AdminOrder {
   order_date: string;
   order_time: string;
   order_total: string;
+  final_price?: string | null;
   currency: string;
   status_id: number;
   created_at: string;
@@ -666,23 +667,27 @@ export function AdminOrderDetailsModal({
                   <>
                     {order.order_totals
                     .sort((a, b) => a.priority - b.priority)
+                    .filter((total) => total.code !== "total") // Filter out "Total"
                     .map((total) => (
                       <div
                         key={total.order_total_id}
                           className="flex justify-between items-center py-2 border-b border-gray-700"
                       >
                         <span className="text-gray-300">{total.title}:</span>
-                        <span
-                          className={`font-semibold ${
-                            total.code === "total"
-                              ? "text-white text-lg"
-                              : "text-gray-300"
-                          }`}
-                        >
+                        <span className="text-gray-300 font-semibold">
                           {parseFloat(total.value).toFixed(2)} {order.currency}
                         </span>
                       </div>
                       ))}
+                    {/* Display final_price if it exists and is greater than 0 */}
+                    {order.final_price !== null && order.final_price !== undefined && parseFloat(String(order.final_price)) > 0 && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700">
+                        <span className="text-white font-semibold">Τελική τιμή:</span>
+                        <span className="text-white font-bold text-lg">
+                          {parseFloat(order.final_price).toFixed(2)} {order.currency}
+                        </span>
+                      </div>
+                    )}
                     {/* Display tip amount if it exists and is greater than 0 */}
                     {order.tip_amount !== null && order.tip_amount !== undefined && parseFloat(String(order.tip_amount)) > 0 && (
                       <div className="flex justify-between items-center py-2 border-b border-gray-700">
@@ -703,13 +708,15 @@ export function AdminOrderDetailsModal({
                         </span>
                       </div>
                     )}
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-300">Σύνολο:</span>
-                    <span className="text-white font-semibold text-lg">
-                      {parseFloat(order.order_total).toFixed(2)}{" "}
-                      {order.currency}
-                    </span>
-                  </div>
+                  {order.final_price && (
+                    <div className="flex justify-between items-center py-2 border-t border-gray-700 mt-2 pt-2">
+                      <span className="text-white font-semibold">Τελική τιμή:</span>
+                      <span className="text-white font-bold text-lg">
+                        {parseFloat(order.final_price).toFixed(2)}{" "}
+                        {order.currency}
+                      </span>
+                    </div>
+                  )}
                   </>
                 )}
               </div>
