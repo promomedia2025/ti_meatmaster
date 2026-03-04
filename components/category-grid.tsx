@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchTags } from "@/lib/use-search-tags";
+import { WalletWidget } from "@/components/wallet-widget"; // <-- Imported Wallet Widget
 
 import image1 from "@/public/categories/classic_ham.png";
 import image2 from "@/public/categories/club_sand.png";
@@ -136,18 +137,30 @@ export function CategoryGrid() {
         </div>
       </div>
 
-      {/* Desktop header */}
-      {hasMoreItems && (
-        <div className="hidden lg:flex justify-between mt-6">
+      {/* Desktop header with Wallet Widget */}
+      <div className="hidden lg:flex items-center justify-between mt-6 mb-2">
+        {/* Left side: Fixed width to keep middle centered */}
+        <div className="w-48">
           <h1 className="text-2xl font-bold">Παράγγειλε σε 1΄</h1>
-          <button
-            onClick={toggleExpanded}
-            className="px-6 py-3 border rounded-full"
-          >
-            {isExpanded ? "Λιγότερα" : "Περισσότερα"}
-          </button>
         </div>
-      )}
+
+        {/* Middle: Centered Wallet Widget */}
+        <div className="flex-1 flex justify-center">
+          <WalletWidget variant="desktop" />
+        </div>
+
+        {/* Right side: Fixed width to keep middle centered */}
+        <div className="w-48 flex justify-end">
+          {hasMoreItems && (
+            <button
+              onClick={toggleExpanded}
+              className="px-6 py-2 border rounded-full text-sm hover:bg-white/5 transition-colors"
+            >
+              {isExpanded ? "Λιγότερα" : "Περισσότερα"}
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Desktop grid */}
       <div className="hidden lg:block p-2">
