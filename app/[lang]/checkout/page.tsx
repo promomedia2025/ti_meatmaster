@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { GooglePayButton } from "@/components/google-pay-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft,
@@ -248,6 +249,16 @@ function CheckoutPageContent() {
   const [useWallet, setUseWallet] = useState(false);
   const [selectedTip, setSelectedTip] = useState<"0.50" | "1" | "2" | "5" | "custom" | null>(null);
   const [customTipAmount, setCustomTipAmount] = useState("");
+
+  // Calculate tip amount for use in components (e.g., Google Pay button)
+  const tipAmount = useMemo(() => {
+    if (selectedTip === "custom" && customTipAmount) {
+      return parseFloat(customTipAmount) || 0;
+    } else if (selectedTip && selectedTip !== "custom") {
+      return parseFloat(selectedTip) || 0;
+    }
+    return 0;
+  }, [selectedTip, customTipAmount]);
 
   const handleRemoveItem = async (item: CartItem) => {
     if (!locationCart) return;
@@ -1783,24 +1794,41 @@ function CheckoutPageContent() {
                     </div>
                   </label>
                     {isCardPaymentEnabled && (
-                      <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "card" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="card"
-                          checked={paymentMethod === "card"}
-                          onChange={(e) =>
-                            setPaymentMethod(e.target.value as "cash" | "card")
-                          }
-                          className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
-                        />
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-5 h-5 text-zinc-400" />
-                          <span className="text-white font-medium text-sm">
-                            Πληρωμή με κάρτα 
-                          </span>
-                        </div>
-                      </label>
+                      <div className="space-y-3">
+                        <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-transparent transition-all ${paymentMethod === "card" ? "bg-black border-zinc-800 ring-1 ring-[var(--brand-border)]" : "hover:bg-black hover:border-zinc-800"}`}>
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="card"
+                            checked={paymentMethod === "card"}
+                            onChange={(e) =>
+                              setPaymentMethod(e.target.value as "cash" | "card")
+                            }
+                            className="w-4 h-4 accent-[#7C2429] bg-zinc-800 border-zinc-600 focus:ring-[#7C2429]"
+                          />
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-zinc-400" />
+                            <span className="text-white font-medium text-sm">
+                              Πληρωμή με κάρτα 
+                            </span>
+                          </div>
+                        </label>
+                        {paymentMethod === "card" && (
+                          <>
+                            {/* Debug: Log when Google Pay button should render */}
+                            {console.log("🔵 Rendering Google Pay button:", {
+                              paymentMethod,
+                              isCardPaymentEnabled,
+                              amount: locationCart.summary.total + tipAmount,
+                              tipAmount,
+                            })}
+                            <GooglePayButton
+                              amount={locationCart.summary.total + tipAmount}
+                              disabled={isSubmitting}
+                            />
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </Card>
