@@ -23,9 +23,10 @@ import { useTranslations } from "@/lib/i18n/translations-provider";
 import { BetterNavbar } from "@/components/ui/small_comp/betternavbar";
 import { useAuth } from "@/lib/auth-context"; // Import Auth Context
 import Link from "next/link";
+import { WalletWidget } from "@/components/wallet-widget"; // <-- Added WalletWidget import
 
 const featuredMenuIds = [395, 404, 397, 415, 510, 410, 345, 341, 346, 411, 372, 388, 404, 287, 419, 508, 373, 284];
-const featuredDiscountIds = [527,528,529,530,531,532,533,534,535,536];
+const featuredDiscountIds = [527, 528, 529, 530, 531, 532, 533, 534, 535, 536];
 
 export default function HomePage() {
   // --- MAINTENANCE TOGGLE ---
@@ -218,10 +219,12 @@ export default function HomePage() {
           <CategoryGrid />
         </Suspense>
 
+        {/* --- MOBILE WALLET BANNER --- */}
+        <WalletWidget variant="mobile" />
+
         <div className="mb-8">
           <HeroVideoCarousel />
         </div>
-
 
         <h2 className="text-2xl font-bold mb-4 text-white">Δείτε το μενού</h2>
 
