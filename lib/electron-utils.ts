@@ -46,7 +46,7 @@ export function focusElectronWindow(): void {
       window.electron.focus();
     } else if (window.electron?.ipcRenderer?.invoke) {
       console.log(
-        "✅ focusElectronWindow: Using ipcRenderer.invoke('focus-window')"
+        "✅ focusElectronWindow: Using ipcRenderer.invoke('focus-window')",
       );
       // Use IPC to communicate with main process to focus/restore window
       // Try "focus-window" first (matches your handler), fallback to "window-focus"
@@ -58,7 +58,7 @@ export function focusElectronWindow(): void {
         .catch((error) => {
           console.warn(
             "⚠️ focusElectronWindow: Failed to invoke 'focus-window', trying 'window-focus'",
-            error
+            error,
           );
           // Fallback to alternative channel name
           return window.electron?.ipcRenderer
@@ -66,13 +66,13 @@ export function focusElectronWindow(): void {
             .then((result) => {
               console.log(
                 "✅ focusElectronWindow: IPC invoke 'window-focus' success",
-                result
+                result,
               );
             })
             .catch((fallbackError) => {
               console.warn(
                 "⚠️ focusElectronWindow: Both IPC channels failed, using window.focus()",
-                fallbackError
+                fallbackError,
               );
               // Fallback to standard window focus
               window.focus();
@@ -80,7 +80,7 @@ export function focusElectronWindow(): void {
         });
     } else if (window.electron?.ipcRenderer?.send) {
       console.log(
-        "✅ focusElectronWindow: Using ipcRenderer.send('focus-window')"
+        "✅ focusElectronWindow: Using ipcRenderer.send('focus-window')",
       );
       // Alternative IPC method (fire and forget)
       // Try "focus-window" first, fallback to "window-focus"
@@ -90,23 +90,23 @@ export function focusElectronWindow(): void {
       } catch (sendError) {
         console.warn(
           "⚠️ focusElectronWindow: send('focus-window') failed, trying 'window-focus'",
-          sendError
+          sendError,
         );
         try {
           window.electron.ipcRenderer.send("window-focus");
           console.log(
-            "✅ focusElectronWindow: IPC send('window-focus') called"
+            "✅ focusElectronWindow: IPC send('window-focus') called",
           );
         } catch (fallbackError) {
           console.warn(
             "⚠️ focusElectronWindow: Both send channels failed",
-            fallbackError
+            fallbackError,
           );
         }
       }
     } else {
       console.warn(
-        "⚠️ focusElectronWindow: No Electron API methods found, using window.focus()"
+        "⚠️ focusElectronWindow: No Electron API methods found, using window.focus()",
       );
       // Fallback: try to use window.focus() which works in some Electron setups
       window.focus();
@@ -120,7 +120,7 @@ export function focusElectronWindow(): void {
     } catch (fallbackError) {
       console.error(
         "❌ focusElectronWindow: Fallback window.focus() also failed",
-        fallbackError
+        fallbackError,
       );
     }
   }
@@ -173,12 +173,12 @@ export function playNotificationSound(): void {
   // Focus and restore Electron window when notification sound plays
   if (electronDetected) {
     console.log(
-      "🔔 [playNotificationSound] Electron detected, calling focusElectronWindow()"
+      "🔔 [playNotificationSound] Electron detected, calling focusElectronWindow()",
     );
     focusElectronWindow();
   } else {
     console.log(
-      "ℹ️ [playNotificationSound] Electron not detected, skipping window focus"
+      "ℹ️ [playNotificationSound] Electron not detected, skipping window focus",
     );
   }
 
@@ -192,7 +192,7 @@ export function playNotificationSound(): void {
     } catch (error) {
       console.warn(
         "🔇 [playNotificationSound] Electron API failed, falling back to browser",
-        error
+        error,
       );
     }
   }
@@ -205,12 +205,14 @@ export function playNotificationSound(): void {
     audio
       .play()
       .then(() => {
-        console.log("✅ [playNotificationSound] Browser audio playback started");
+        console.log(
+          "✅ [playNotificationSound] Browser audio playback started",
+        );
       })
       .catch((error) => {
         console.warn(
           "🔇 [playNotificationSound] Failed to play notification sound",
-          error
+          error,
         );
       });
   } catch (error) {

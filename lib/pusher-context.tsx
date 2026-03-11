@@ -30,9 +30,12 @@ export function PusherProvider({ children }: PusherProviderProps) {
 
   useEffect(() => {
     // Initialize Pusher client
-    const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
-      encrypted: true,
+    const key = process.env.NEXT_PUBLIC_PUSHER_KEY || "";
+    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu";
+
+    const pusherClient = new Pusher(key, {
+      cluster,
+      forceTLS: true,
       authEndpoint: "/api/pusher/auth", // For private channels if needed
     });
 
@@ -45,7 +48,7 @@ export function PusherProvider({ children }: PusherProviderProps) {
       setIsConnected(false);
     });
 
-    pusherClient.connection.bind("error", (error: any) => {
+    pusherClient.connection.bind("error", () => {
       setIsConnected(false);
     });
 
@@ -65,7 +68,7 @@ export function PusherProvider({ children }: PusherProviderProps) {
 
       return pusher.subscribe(channelName);
     },
-    [pusher]
+    [pusher],
   );
 
   const unsubscribe = useCallback(
@@ -76,7 +79,7 @@ export function PusherProvider({ children }: PusherProviderProps) {
 
       pusher.unsubscribe(channelName);
     },
-    [pusher]
+    [pusher],
   );
 
   const value: PusherContextType = useMemo(
@@ -86,7 +89,7 @@ export function PusherProvider({ children }: PusherProviderProps) {
       subscribe,
       unsubscribe,
     }),
-    [pusher, isConnected, subscribe, unsubscribe]
+    [pusher, isConnected, subscribe, unsubscribe],
   );
 
   return (
@@ -122,8 +125,8 @@ export function useRestaurantUpdates() {
           prev.map((restaurant) =>
             restaurant.id === data.restaurantId
               ? { ...restaurant, ...data.updates }
-              : restaurant
-          )
+              : restaurant,
+          ),
         );
       });
 
@@ -137,7 +140,7 @@ export function useRestaurantUpdates() {
       channel.bind("restaurant-removed", (data: any) => {
         console.log("🍽️ Restaurant removed:", data);
         setRestaurants((prev) =>
-          prev.filter((restaurant) => restaurant.id !== data.restaurantId)
+          prev.filter((restaurant) => restaurant.id !== data.restaurantId),
         );
       });
 
@@ -148,8 +151,8 @@ export function useRestaurantUpdates() {
           prev.map((restaurant) =>
             restaurant.id === data.restaurantId
               ? { ...restaurant, menu: data.menu }
-              : restaurant
-          )
+              : restaurant,
+          ),
         );
       });
     }
@@ -181,8 +184,8 @@ export function useOrderUpdates() {
           prev.map((order) =>
             order.id === data.orderId
               ? { ...order, status: data.status, ...data.updates }
-              : order
-          )
+              : order,
+          ),
         );
       });
 

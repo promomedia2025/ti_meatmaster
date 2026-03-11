@@ -12,13 +12,11 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { playNotificationSound } from "@/lib/electron-utils";
 
-
 interface AdminOrder {
   order_id: number;
   order_date: string;
   order_time: string;
   order_total: string;
-  final_price?: string | null;
   currency: string;
   status_id: number;
   created_at: string;
@@ -37,9 +35,8 @@ interface AdminOrder {
   total_items?: number;
   bell_name?: string | null;
   floor?: string | null;
-  comments?: string | null;
   address_id?: number | null;
-  tip_amount?: number | string | null;
+  final_price?: string | null;
 }
 
 const PENDING_STATUS_ID = 2;
@@ -100,7 +97,7 @@ const normalizeOrderPayload = (payload: any): AdminOrder | null => {
 
   const statusId = toNumber(
     payload.status_id ?? payload.statusId,
-    PENDING_STATUS_ID
+    PENDING_STATUS_ID,
   );
 
   return {
@@ -118,9 +115,6 @@ const normalizeOrderPayload = (payload: any): AdminOrder | null => {
         minute: "2-digit",
       }),
     order_total: `${payload.order_total ?? payload.orderTotal ?? "0"}`,
-    final_price: payload.final_price !== undefined && payload.final_price !== null 
-      ? (typeof payload.final_price === 'string' ? payload.final_price : payload.final_price.toString())
-      : null,
     currency: payload.currency || "EUR",
     status_id: statusId,
     created_at: payload.created_at ?? new Date().toISOString(),
@@ -143,13 +137,13 @@ const normalizeOrderPayload = (payload: any): AdminOrder | null => {
     total_items: payload.total_items ?? payload.totalItems,
     bell_name: payload.bell_name || payload.bellName || null,
     floor: payload.floor || null,
-    comments: payload.comments || null,
-    address_id: payload.address_id ?? payload.addressId ?? null,
+    address_id: payload.address_id || payload.addressId || null,
+    final_price: payload.final_price || payload.finalPrice || null,
   };
 };
 
 const normalizeStatusNameToValue = (
-  statusName?: string
+  statusName?: string,
 ): OrderStatusValue | "" => {
   if (!statusName) {
     return "";
@@ -177,6 +171,11 @@ export default function AdminDashboardPage() {
   const selectedOrderRef = useRef<AdminOrder | null>(null);
   const [locationStatus, setLocationStatus] = useState<{
     is_open: boolean;
+    status_source?: string | null;
+    manual_status?: number | null;
+    status_message?: string;
+    pickup_available?: boolean;
+    delivery_available?: boolean;
   } | null>(null);
   const [locationStatusLoading, setLocationStatusLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -185,6 +184,7 @@ export default function AdminDashboardPage() {
   const [deliveryTimeModalOrderId, setDeliveryTimeModalOrderId] = useState<
     number | null
   >(null);
+  const [isScheduleHelpOpen, setIsScheduleHelpOpen] = useState(false);
   const [activeList, setActiveList] = useState<"pending" | "other">("pending");
   // Debounce timer for order created events (batch multiple orders into one fetch)
   const orderCreatedDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -209,10 +209,9 @@ export default function AdminDashboardPage() {
       return null;
     };
 
-    // Check for common session cookie names (admin uses perfetta_session)
+    // Check for common session cookie names
     const sessionCookieNames = [
-      "perfetta_session",
-      "tastyigniter_session",
+      "cocofino_session",
       "session",
       "laravel_session",
     ];
@@ -306,7 +305,6 @@ export default function AdminDashboardPage() {
           cache: "no-store",
         });
 
-
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -321,7 +319,7 @@ export default function AdminDashboardPage() {
         } else {
           setOrdersError(
             result.error ||
-              "Failed to fetch orders - invalid response structure"
+              "Failed to fetch orders - invalid response structure",
           );
         }
       } catch (error) {
@@ -330,7 +328,7 @@ export default function AdminDashboardPage() {
         setOrdersLoading(false);
       }
     },
-    [isAuthenticated]
+    [isAuthenticated],
   );
 
   useEffect(() => {
@@ -342,6 +340,8 @@ export default function AdminDashboardPage() {
 
     try {
       setLocationStatusLoading(true);
+      // Small delay so the Electron app has time to push its schedule state
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const response = await fetch("/api/admin/location-status", {
         method: "GET",
         credentials: "include",
@@ -350,8 +350,14 @@ export default function AdminDashboardPage() {
       const result = await response.json();
 
       if (result.success && result.data?.status) {
+        const status = result.data.status;
         setLocationStatus({
-          is_open: result.data.status.is_open,
+          is_open: status.is_open,
+          status_source: status.status_source,
+          manual_status: status.manual_status,
+          status_message: status.status_message,
+          pickup_available: status.pickup_available,
+          delivery_available: status.delivery_available,
         });
       }
     } catch (error) {
@@ -367,6 +373,30 @@ export default function AdminDashboardPage() {
     }
   }, [isAuthenticated, fetchLocationStatus]);
 
+  // Refresh location status when admin window/tab becomes active again,
+  // so schedule-based changes are reflected without a full reload.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchLocationStatus();
+      }
+    };
+
+    const handleFocus = () => {
+      void fetchLocationStatus();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isAuthenticated, fetchLocationStatus]);
+
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     // Clear remembered credentials on manual logout
@@ -379,7 +409,12 @@ export default function AdminDashboardPage() {
   const handleOpenStore = async () => {
     // Optimistic update - update UI immediately
     const previousStatus = locationStatus;
-    setLocationStatus({ is_open: true });
+    setLocationStatus((current) => ({
+      ...(current || {}),
+      is_open: true,
+      status_source: "override",
+      manual_status: 1,
+    }));
 
     try {
       const response = await fetch("/api/admin/toggle-schedule", {
@@ -419,7 +454,12 @@ export default function AdminDashboardPage() {
   const handleCloseStore = async () => {
     // Optimistic update - update UI immediately
     const previousStatus = locationStatus;
-    setLocationStatus({ is_open: false });
+    setLocationStatus((current) => ({
+      ...(current || {}),
+      is_open: false,
+      status_source: "override",
+      manual_status: 0,
+    }));
 
     try {
       const response = await fetch("/api/admin/toggle-schedule", {
@@ -451,6 +491,44 @@ export default function AdminDashboardPage() {
       if (previousStatus) {
         setLocationStatus(previousStatus);
       }
+      toast.error("Σφάλμα κατά την ενημέρωση");
+    }
+  };
+
+  const handleScheduleBased = async () => {
+    try {
+      const response = await fetch("/api/admin/toggle-schedule", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: 2,
+          location_id: process.env.NEXT_PUBLIC_LOCATION_ID,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // When switching to schedule-based, reflect that in local state;
+        // the follow-up fetch will align all fields with the backend.
+        setLocationStatus((current) =>
+          current
+            ? {
+                ...current,
+                status_source: "schedule",
+                manual_status: null,
+              }
+            : current,
+        );
+
+        toast.success("Ρυθμίστηκε βάσει ωραρίου");
+        await fetchLocationStatus();
+      } else {
+        toast.error(result.error || "Σφάλμα κατά την ενημέρωση");
+      }
+    } catch (error) {
       toast.error("Σφάλμα κατά την ενημέρωση");
     }
   };
@@ -535,16 +613,16 @@ export default function AdminDashboardPage() {
         duration: 6000,
       });
     },
-    [openOrderModal]
+    [openOrderModal],
   );
 
   const handleStatusChange = (
     orderId: number,
     statusValue: OrderStatusValue,
-    options?: { silent?: boolean }
+    options?: { silent?: boolean },
   ) => {
     const statusOption = ORDER_STATUS_OPTIONS.find(
-      (item) => item.value === statusValue
+      (item) => item.value === statusValue,
     );
 
     if (!statusOption) {
@@ -563,8 +641,8 @@ export default function AdminDashboardPage() {
               status_id: statusOption.statusId ?? order.status_id,
               status_name: statusOption.label,
             }
-          : order
-      )
+          : order,
+      ),
     );
 
     setStatusSelections((prev) => ({
@@ -612,7 +690,7 @@ export default function AdminDashboardPage() {
           }
           throw new Error(
             errorData.error ||
-              `API request failed with status: ${response.status}`
+              `API request failed with status: ${response.status}`,
           );
         }
 
@@ -628,8 +706,8 @@ export default function AdminDashboardPage() {
         if (previousOrder) {
           setOrders((prev) =>
             prev.map((order) =>
-              order.order_id === orderId ? previousOrder : order
-            )
+              order.order_id === orderId ? previousOrder : order,
+            ),
           );
         }
         toast.error("Σφάλμα κατά την ενημέρωση της κατάστασης");
@@ -643,7 +721,10 @@ export default function AdminDashboardPage() {
   const handleAcceptOrder = async (orderId: number) => {
     try {
       // Stop notification sound when order is accepted
-      if (typeof window !== "undefined" && window.electron?.stopNotificationSound) {
+      if (
+        typeof window !== "undefined" &&
+        window.electron?.stopNotificationSound
+      ) {
         try {
           await window.electron.stopNotificationSound();
         } catch (err) {
@@ -667,10 +748,6 @@ export default function AdminDashboardPage() {
         toast.success("Αποδοχή Παραγγελίας", {
           description: `Παραγγελία #${orderId} αποδέχθηκε`,
         });
-
-        // Open delivery time modal
-        setDeliveryTimeModalOrderId(orderId);
-        setIsDeliveryTimeModalOpen(true);
 
         // Find the order and open modal with auto-print
         const acceptedOrder = orders.find((o) => o.order_id === orderId);
@@ -696,7 +773,7 @@ export default function AdminDashboardPage() {
 
   const handleUpdateDeliveryTime = async (
     orderId: number,
-    estimatedTime: number
+    estimatedTime: number,
   ) => {
     try {
       // Call API endpoint to update delivery time (server will broadcast via Pusher)
@@ -733,7 +810,10 @@ export default function AdminDashboardPage() {
   const handleRejectOrder = async (orderId: number) => {
     try {
       // Stop notification sound when order is rejected
-      if (typeof window !== "undefined" && window.electron?.stopNotificationSound) {
+      if (
+        typeof window !== "undefined" &&
+        window.electron?.stopNotificationSound
+      ) {
         try {
           await window.electron.stopNotificationSound();
         } catch (err) {
@@ -827,7 +907,7 @@ export default function AdminDashboardPage() {
 
     const orderCreatedEvents = ["order.created", "orderCreated"];
     orderCreatedEvents.forEach((eventName) =>
-      channel.bind(eventName, handleOrderCreated)
+      channel.bind(eventName, handleOrderCreated),
     );
 
     const handleOrderUpdated = (data: any) => {
@@ -858,7 +938,7 @@ export default function AdminDashboardPage() {
       if (data.order_id) {
         setOrders((prev) => {
           const filtered = prev.filter(
-            (order) => order.order_id !== data.order_id
+            (order) => order.order_id !== data.order_id,
           );
           return filtered;
         });
@@ -878,7 +958,7 @@ export default function AdminDashboardPage() {
 
     return () => {
       orderCreatedEvents.forEach((eventName) =>
-        channel.unbind(eventName, handleOrderCreated)
+        channel.unbind(eventName, handleOrderCreated),
       );
       channel.unbind("order.updated", handleOrderUpdated);
       channel.unbind("order.status.changed", handleOrderStatusChanged);
@@ -913,7 +993,7 @@ export default function AdminDashboardPage() {
   }) => (
     <div
       onClick={() => handleOrderClick(order)}
-      className={`bg-[#1a1a1a] rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:border-[#009DE0] transition-all duration-500 cursor-pointer ${
+      className={`bg-[#1a1a1a] rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:border-[var(--brand-border)] transition-all duration-500 cursor-pointer ${
         isRemoving ? "opacity-0 -translate-x-full" : "opacity-100 translate-x-0"
       }`}
     >
@@ -928,7 +1008,7 @@ export default function AdminDashboardPage() {
             </p>
           )}
         </div>
-        <span className="bg-[#3D3D3D]/20 text-[#FFFFF] px-3 py-1 rounded-full text-xs font-medium">
+        <span className="bg-[var(--brand-border)]/20 text-[var(--brand-border)] px-3 py-1 rounded-full text-xs font-medium">
           {order.status_name}
         </span>
       </div>
@@ -942,19 +1022,13 @@ export default function AdminDashboardPage() {
           <span>{formatTime(order.order_time)}</span>
         </div>
         <div className="flex justify-between text-white font-semibold pt-2 border-t border-gray-700">
-          <span>Σύνολο:</span>
+          <span>Τελική τιμή:</span>
           <span>
-            {order.order_total} {order.currency}
+            {order.final_price !== null && order.final_price !== undefined
+              ? `${order.final_price} ${order.currency}`
+              : `${order.order_total} ${order.currency}`}
           </span>
         </div>
-        {order.final_price && (
-          <div className="flex justify-between text-white font-bold pt-2">
-            <span>Τελική τιμή:</span>
-            <span>
-              {order.final_price} {order.currency}
-            </span>
-          </div>
-        )}
       </div>
       {actions && (
         <div
@@ -1045,13 +1119,12 @@ export default function AdminDashboardPage() {
               <div className="flex gap-2">
                 <Button
                   onClick={handleLogout}
-                  variant="outline"
-                  className="bg-[var(--brand-border)] border-gray-600 text-white hover:bg-[var(--brand-border)]"
+                  className="px-6 py-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-900 font-semibold rounded-full border border-zinc-400 shadow-md"
                 >
-                  Logout
+                  Αποσύνδεση
                 </Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
                 <Button
                   onClick={handleOpenStore}
                   className={`${
@@ -1074,6 +1147,25 @@ export default function AdminDashboardPage() {
                 >
                   Κλειστό
                 </Button>
+                <Button
+                  onClick={handleScheduleBased}
+                  className={`${
+                    locationStatus?.status_source === "schedule"
+                      ? "bg-[#ff9328] hover:bg-[#915316] text-white ring-2 ring-[#ff9328] ring-offset-2 ring-offset-[#1a1a1a] shadow-lg shadow-[#ff9328]/30 border border-[#ff9328]/80"
+                      : "bg-[#ff9328]/40 hover:bg-[#915316]/60 text-white/80 border border-[#ff9328]/40"
+                  }`}
+                  disabled={locationStatusLoading}
+                >
+                  Βάσει Ωραρίου
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleHelpOpen(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full border border-[#ff9328]/60 text-[#ff9328] bg-[#1f1a14] hover:bg-[#2a2118] hover:border-[#ff9328] text-xs font-semibold shadow-sm"
+                  aria-label="Πληροφορίες ωραρίου"
+                >
+                  ?
+                </button>
               </div>
             </div>
           </div>
@@ -1205,7 +1297,7 @@ export default function AdminDashboardPage() {
                                     onClick={(event) => {
                                       event.stopPropagation();
                                       setDeliveryTimeModalOrderId(
-                                        order.order_id
+                                        order.order_id,
                                       );
                                       setIsDeliveryTimeModalOpen(true);
                                     }}
@@ -1281,23 +1373,23 @@ export default function AdminDashboardPage() {
                                         option.value === "RECEIVED" ||
                                         option.value === "PREPARATION" ||
                                         option.value === "DELIVERY" ||
-                                        option.value === "PICK_UP"
+                                        option.value === "PICK_UP",
                                     );
 
                                     // Second row: COMPLETED, CANCELLED
                                     const secondRow = availableStatuses.filter(
                                       (option) =>
                                         option.value === "COMPLETED" ||
-                                        option.value === "CANCELLED"
+                                        option.value === "CANCELLED",
                                     );
 
                                     const renderButton = (
-                                      option: (typeof ORDER_STATUS_OPTIONS)[number]
+                                      option: (typeof ORDER_STATUS_OPTIONS)[number],
                                     ) => {
                                       const isActive =
                                         (statusSelections[order.order_id] ||
                                           normalizeStatusNameToValue(
-                                            order.status_name
+                                            order.status_name,
                                           )) === option.value;
 
                                       // Special colors for completed and cancelled
@@ -1325,7 +1417,7 @@ export default function AdminDashboardPage() {
                                             event.stopPropagation();
                                             handleStatusChange(
                                               order.order_id,
-                                              option.value
+                                              option.value,
                                             );
                                           }}
                                         >
@@ -1408,7 +1500,7 @@ export default function AdminDashboardPage() {
                                       onClick={(event) => {
                                         event.stopPropagation();
                                         setDeliveryTimeModalOrderId(
-                                          order.order_id
+                                          order.order_id,
                                         );
                                         setIsDeliveryTimeModalOpen(true);
                                       }}
@@ -1451,7 +1543,7 @@ export default function AdminDashboardPage() {
                                     onClick={(event) => {
                                       event.stopPropagation();
                                       setDeliveryTimeModalOrderId(
-                                        order.order_id
+                                        order.order_id,
                                       );
                                       setIsDeliveryTimeModalOpen(true);
                                     }}
@@ -1476,7 +1568,7 @@ export default function AdminDashboardPage() {
                                               return isPickupOrder(order);
                                             }
                                             return true;
-                                          }
+                                          },
                                         );
 
                                       // First row: RECEIVED, PREPARATION, DELIVERY/PICK_UP
@@ -1485,7 +1577,7 @@ export default function AdminDashboardPage() {
                                           option.value === "RECEIVED" ||
                                           option.value === "PREPARATION" ||
                                           option.value === "DELIVERY" ||
-                                          option.value === "PICK_UP"
+                                          option.value === "PICK_UP",
                                       );
 
                                       // Second row: COMPLETED, CANCELLED
@@ -1493,16 +1585,16 @@ export default function AdminDashboardPage() {
                                         availableStatuses.filter(
                                           (option) =>
                                             option.value === "COMPLETED" ||
-                                            option.value === "CANCELLED"
+                                            option.value === "CANCELLED",
                                         );
 
                                       const renderButton = (
-                                        option: (typeof ORDER_STATUS_OPTIONS)[number]
+                                        option: (typeof ORDER_STATUS_OPTIONS)[number],
                                       ) => {
                                         const isActive =
                                           (statusSelections[order.order_id] ||
                                             normalizeStatusNameToValue(
-                                              order.status_name
+                                              order.status_name,
                                             )) === option.value;
 
                                         // Special colors for completed and cancelled
@@ -1532,7 +1624,7 @@ export default function AdminDashboardPage() {
                                               event.stopPropagation();
                                               handleStatusChange(
                                                 order.order_id,
-                                                option.value
+                                                option.value,
                                               );
                                             }}
                                           >
@@ -1569,6 +1661,63 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Schedule Help Modal */}
+      {isScheduleHelpOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
+          onClick={() => setIsScheduleHelpOpen(false)}
+        >
+          <div
+            className="bg-[#111111] rounded-xl w-full max-w-2xl shadow-2xl border border-zinc-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">
+                Πώς λειτουργεί το ωράριο
+              </h2>
+              <button
+                onClick={() => setIsScheduleHelpOpen(false)}
+                className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-800 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-3 text-sm text-zinc-200">
+              <p>
+                <span className="font-semibold text-[#ff9328]">
+                  Αναμμένο πορτοκαλί κουμπί
+                </span>
+                : το μαγαζί ανοίγει και κλείνει αυτόματα με βάση το ωράριο.
+              </p>
+              <p>
+                <span className="font-semibold text-[#ff9328]">
+                  Σβηστό πορτοκαλί κουμπί
+                </span>
+                : το μαγαζί παραμένει ανοιχτό ή κλειστό{" "}
+                <span className="font-semibold">ανεξάρτητα από το ωράριο</span>.
+              </p>
+              <p>
+                Όταν κλείνει η εφαρμογή, το μαγαζί{" "}
+                <span className="font-semibold">κλείνει αυτόματα</span>{" "}
+                ανεξάρτητα από το ωράριο {<br />}
+                <span className="font-semibold text-[#ff9328]">
+                  (σβηστό πορτοκαλί κουμπί)
+                </span>
+                .
+              </p>
+              <p>
+                Όταν ανοίγει η εφαρμογή, το μαγαζί λειτουργεί{" "}
+                <span className="font-semibold">βάσει ωραρίου</span> <br />
+                <span className="font-semibold text-[#ff9328]">
+                  (ανάβει το πορτοκαλί κουμπί αυτόματα)
+                </span>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Details Modal */}
       <AdminOrderDetailsModal
