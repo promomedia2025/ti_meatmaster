@@ -1814,19 +1814,10 @@ function CheckoutPageContent() {
                           </div>
                         </label>
                         {paymentMethod === "card" && (
-                          <>
-                            {/* Debug: Log when Google Pay button should render */}
-                            {console.log("🔵 Rendering Google Pay button:", {
-                              paymentMethod,
-                              isCardPaymentEnabled,
-                              amount: locationCart.summary.total + tipAmount,
-                              tipAmount,
-                            })}
-                            <GooglePayButton
-                              amount={locationCart.summary.total + tipAmount}
-                              disabled={isSubmitting}
-                            />
-                          </>
+                          <GooglePayButton
+                            amount={locationCart.summary.total + tipAmount}
+                            disabled={isSubmitting}
+                          />
                         )}
                       </div>
                     )}

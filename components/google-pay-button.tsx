@@ -229,18 +229,32 @@ export function GooglePayButton({ amount, disabled }: GooglePayButtonProps) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isButtonDisabled}
-      className="w-full h-11 mt-3 inline-flex items-center justify-center rounded-md bg-black border border-zinc-800 text-white font-medium text-sm hover:bg-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isProcessing 
-        ? "Επεξεργασία Google Pay..." 
-        : !isReady 
-        ? "Φόρτωση Google Pay..." 
-        : "Πληρωμή με Google Pay"}
-    </button>
+    <div className="w-full mt-3">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isButtonDisabled}
+        className="w-full h-12 min-h-[48px] mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-white border border-zinc-200 text-zinc-800 font-medium text-sm hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        aria-label={isReady ? "Πληρωμή με Google Pay" : "Φόρτωση Google Pay"}
+      >
+        {isProcessing ? (
+          <span className="animate-pulse">Επεξεργασία...</span>
+        ) : !isReady ? (
+          <span className="animate-pulse">Φόρτωση Google Pay...</span>
+        ) : (
+          <>
+            <img
+              src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg"
+              alt=""
+              width={80}
+              height={32}
+              className="h-8 w-auto object-contain"
+            />
+            <span className="sr-only sm:not-sr-only sm:inline">Πληρωμή με Google Pay</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 
