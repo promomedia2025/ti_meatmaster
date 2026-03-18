@@ -24,7 +24,7 @@ interface AuthModalProps {
 type AuthMode = "login" | "register";
 
 export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
-  const { login, register, isLoading, user, refreshUser } = useAuth();
+  const { login, register, isLoading } = useAuth();
   const [currentMode, setCurrentMode] = useState<AuthMode>(mode);
 
   // Login fields
@@ -48,13 +48,6 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
   const [otp, setOtp] = useState("");
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
   const [otpError, setOtpError] = useState("");
-
-  // Phone prompt state (after successful login when telephone is missing)
-  const [showPhonePrompt, setShowPhonePrompt] = useState(false);
-  const [phoneValue, setPhoneValue] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [isSavingPhone, setIsSavingPhone] = useState(false);
-  const [phoneUserData, setPhoneUserData] = useState<any | null>(null);
 
   // Validation Helpers
   const isValidEmail = (email: string) => {
@@ -103,53 +96,6 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
     try {
       const result = await login(email, password, remember);
       if (result.success) {
-        // After successful login, fetch full user data to check telephone
-        try {
-          const userResponse = await fetch("/api/auth/user", {
-            method: "GET",
-            credentials: "include",
-          });
-
-          const userData = await userResponse.json();
-
-          if (userData.success && userData.data?.user) {
-            const verifiedUser = userData.data.user;
-
-            // Update auth context with latest user data
-            await refreshUser({
-              id: verifiedUser.id,
-              email: verifiedUser.email,
-              name: verifiedUser.name,
-              first_name: verifiedUser.first_name,
-              last_name: verifiedUser.last_name,
-              phone: verifiedUser.phone || verifiedUser.telephone,
-              telephone: verifiedUser.telephone,
-              date_of_birth: verifiedUser.date_of_birth,
-              address: verifiedUser.address,
-              city: verifiedUser.city,
-              postcode: verifiedUser.postcode,
-              created_at: verifiedUser.created_at,
-              updated_at: verifiedUser.updated_at,
-            });
-
-            const existingTelephone =
-              verifiedUser.telephone || verifiedUser.phone || "";
-
-            if (!existingTelephone) {
-              // No phone on file – prompt user to add it
-              setPhoneUserData(verifiedUser);
-              setPhoneValue("");
-              setPhoneError("");
-              setShowPhonePrompt(true);
-              // Keep modal open and do NOT reset the whole form yet
-              return;
-            }
-          }
-        } catch (err) {
-          // If fetching user fails, just proceed without phone prompt
-          console.error("Error fetching user after login:", err);
-        }
-
         onClose();
         resetForm();
       } else {
@@ -159,82 +105,6 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
       setError("Παρουσιάστηκε απροσδόκητο σφάλμα");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handlePhoneSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPhoneError("");
-
-    const trimmed = phoneValue.trim();
-    if (!trimmed) {
-      setPhoneError("Το τηλέφωνο είναι υποχρεωτικό");
-      return;
-    }
-
-    if (!isValidPhone(trimmed)) {
-      setPhoneError("Παρακαλώ εισάγετε έγκυρο αριθμό τηλεφώνου (10 ψηφία)");
-      return;
-    }
-
-    if (!phoneUserData?.id) {
-      setPhoneError(
-        "Δεν ήταν δυνατή η ενημέρωση του τηλεφώνου. Παρακαλώ δοκιμάστε ξανά.",
-      );
-      return;
-    }
-
-    setIsSavingPhone(true);
-    try {
-      const response = await fetch("/api/auth/user", {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: phoneUserData.id,
-          first_name: phoneUserData.first_name || "",
-          last_name: phoneUserData.last_name || "",
-          email: phoneUserData.email,
-          telephone: trimmed,
-          skip_email_verification: true,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        const message =
-          result.error ||
-          result.message ||
-          "Αποτυχία ενημέρωσης τηλεφώνου. Παρακαλώ δοκιμάστε ξανά.";
-        setPhoneError(message);
-        return;
-      }
-
-      // Update auth context with new phone
-      await refreshUser({
-        telephone: trimmed,
-        phone: trimmed,
-      });
-
-      toast.success("Το τηλέφωνό σας ενημερώθηκε με επιτυχία.");
-
-      setShowPhonePrompt(false);
-      setPhoneUserData(null);
-      setPhoneValue("");
-      setPhoneError("");
-
-      onClose();
-      resetForm();
-    } catch (error) {
-      console.error("Error updating phone:", error);
-      setPhoneError(
-        "Παρουσιάστηκε σφάλμα κατά την ενημέρωση του τηλεφώνου. Παρακαλώ δοκιμάστε ξανά.",
-      );
-    } finally {
-      setIsSavingPhone(false);
     }
   };
 
@@ -446,43 +316,7 @@ export function AuthModal({ isOpen, onClose, mode = "login" }: AuthModalProps) {
           </h2>
         </div>
 
-        {showPhonePrompt ? (
-          <form onSubmit={handlePhoneSave} noValidate>
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-white mb-2">
-                Προσθέστε το τηλέφωνό σας
-              </h3>
-              <p className="text-sm text-zinc-400 mb-4">
-                Για να ολοκληρώσετε τη σύνδεσή σας και να λαμβάνετε ενημερώσεις
-                για τις παραγγελίες σας, παρακαλώ προσθέστε έναν έγκυρο αριθμό
-                τηλεφώνου.
-              </p>
-              <div className="space-y-4">
-                <Input
-                  type="tel"
-                  placeholder="Τηλέφωνο (10 ψηφία)"
-                  value={phoneValue}
-                  onChange={(e) => setPhoneValue(e.target.value)}
-                  className="bg-black border-zinc-800 text-white placeholder:text-zinc-600 h-12 focus-visible:ring-[var(--brand-border)] focus-visible:border-[var(--brand-border)]"
-                />
-                {phoneError && (
-                  <p className="text-red-400 text-sm mt-1 bg-red-900/10 p-2 rounded border border-red-900/20 animate-in fade-in slide-in-from-top-1">
-                    {phoneError}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Button
-                type="submit"
-                disabled={isSavingPhone}
-                className="w-full bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-white h-12 disabled:opacity-50 font-bold shadow-lg shadow-red-900/10 transition-all active:scale-[0.98]"
-              >
-                {isSavingPhone ? "Αποθήκευση..." : "Αποθήκευση τηλεφώνου"}
-              </Button>
-            </div>
-          </form>
-        ) : currentMode === "login" && !showOTPModal ? (
+        {currentMode === "login" && !showOTPModal ? (
           <>
             <div className="space-y-3 mb-6">
               <form onSubmit={handleLoginSubmit} noValidate>

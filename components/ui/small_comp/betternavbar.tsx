@@ -20,6 +20,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { User, X, Package } from "lucide-react";
 import Link from "next/link";
 import LocationCartCTA from "@/components/LocationCartCTA";
+import { PhoneRequiredModal } from "@/components/phone-required-modal";
 
 interface BetterNavbarProps {
   lang: Locale;
@@ -346,6 +347,7 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
 
   return (
     <>
+      <PhoneRequiredModal />
       {/* Blur overlay for entire screen when search is expanded */}
       {isSearchExpanded && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30" />
