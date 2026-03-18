@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Printer } from "lucide-react";
+import { Menu, X, Printer, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,18 @@ export function AdminSidebar() {
               }`}
             >
               Χρόνος παραγγελίας
+            </Link>
+            <Link
+              href="/admin/sound-settings"
+              onClick={() => setIsSidebarOpen(false)}
+              className={`block w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-2 ${
+                isActive("/admin/sound-settings")
+                  ? "bg-[var(--brand-border)] text-white"
+                  : "text-white hover:bg-[#3a3a3a]"
+              }`}
+            >
+              <Volume2 className="w-5 h-5" />
+              Ρυθμισεις ήχου
             </Link>
             <button
               onClick={() => {

@@ -196,26 +196,20 @@ export function playNotificationSound(): void {
       );
     }
   }
+}
 
-  // Fallback to browser audio
-  try {
-    console.log("🔔 [playNotificationSound] Playing browser audio");
-    const audio = new Audio("/phone-ringtone-normal-444775.mp3");
-    audio.volume = 0.7; // Set volume to 70%
-    audio
-      .play()
-      .then(() => {
-        console.log(
-          "✅ [playNotificationSound] Browser audio playback started",
-        );
-      })
-      .catch((error) => {
-        console.warn(
-          "🔇 [playNotificationSound] Failed to play notification sound",
-          error,
-        );
-      });
-  } catch (error) {
-    console.warn("🔇 [playNotificationSound] Error creating audio", error);
+/**
+ * Stops the currently playing notification sound.
+ * In Electron this stops the looping ringtone; in browser it's a no-op.
+ */
+export function stopNotificationSound(): void {
+  if (typeof window === "undefined") return;
+  const anyWindow = window as any;
+  if (anyWindow.electron?.stopNotificationSound) {
+    try {
+      anyWindow.electron.stopNotificationSound();
+    } catch {
+      // ignore
+    }
   }
 }
