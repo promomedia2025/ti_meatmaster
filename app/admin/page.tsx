@@ -969,7 +969,8 @@ export default function AdminDashboardPage() {
         clearTimeout(orderCreatedDebounceTimerRef.current);
         orderCreatedDebounceTimerRef.current = null;
       }
-      unsubscribe(channelName);
+      // Do not unsubscribe here: AdminGlobalNotifications also uses this channel
+      // and must remain active across admin route changes for sound/focus alerts.
     };
   }, [
     isAuthenticated,

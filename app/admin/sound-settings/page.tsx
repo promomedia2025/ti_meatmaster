@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   isElectron,
-  playNotificationSound,
-  stopNotificationSound,
+  playTestNotificationSound,
+  stopTestNotificationSound,
 } from "@/lib/electron-utils";
 
 export default function AdminSoundSettingsPage() {
@@ -152,14 +152,18 @@ export default function AdminSoundSettingsPage() {
 
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => playNotificationSound()}
+              onClick={() => {
+                void playTestNotificationSound(selectedId || undefined);
+              }}
               disabled={!isElectronEnv}
               className="bg-[var(--brand-border)] hover:opacity-90 text-white"
             >
               Δοκιμή ήχου
             </Button>
             <Button
-              onClick={() => stopNotificationSound()}
+              onClick={() => {
+                void stopTestNotificationSound();
+              }}
               disabled={!isElectronEnv}
               variant="outline"
               className="border-gray-600 text-white hover:bg-[#3a3a3a]"

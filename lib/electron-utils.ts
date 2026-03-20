@@ -213,3 +213,52 @@ export function stopNotificationSound(): void {
     }
   }
 }
+
+/**
+ * Plays test notification sound in Electron settings context.
+ * This should never interfere with production order-notification audio.
+ */
+export async function playTestNotificationSound(
+  deviceId?: string,
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  const anyWindow = window as any;
+
+  if (anyWindow.electron?.playTestNotificationSound) {
+    try {
+      await anyWindow.electron.playTestNotificationSound(deviceId);
+      return;
+    } catch (error) {
+      console.warn(
+        "⚠️ [playTestNotificationSound] Electron test API failed, falling back",
+        error,
+      );
+    }
+  }
+
+  // Fallback to normal playback only if test API is unavailable.
+  playNotificationSound();
+}
+
+/**
+ * Stops only the test notification sound in Electron settings context.
+ * Falls back to global stop only if test stop API is unavailable.
+ */
+export async function stopTestNotificationSound(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const anyWindow = window as any;
+
+  if (anyWindow.electron?.stopTestNotificationSound) {
+    try {
+      await anyWindow.electron.stopTestNotificationSound();
+      return;
+    } catch (error) {
+      console.warn(
+        "⚠️ [stopTestNotificationSound] Electron test stop API failed, falling back",
+        error,
+      );
+    }
+  }
+
+  stopNotificationSound();
+}
