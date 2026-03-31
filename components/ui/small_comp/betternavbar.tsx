@@ -385,9 +385,9 @@ export function BetterNavbar({ lang, dict }: BetterNavbarProps) {
               <Image
                 src="/logo.png"
                 alt="Logo"
-                width={90}
-                height={50}
-                className="w-[90px] h-[50px] scale-100"
+                width={160}
+                height={75}
+                className="w-[160px] h-[75px] scale-100"
               />
             </Link>
             {!isScrolled && !isSearchExpanded && (

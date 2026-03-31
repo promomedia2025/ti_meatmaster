@@ -21,7 +21,7 @@ export async function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
-  title: "Perfetta | Online Delivery - Κορυδαλλός , Νίκαια , Κερατσίνι , Δραπετσώνα ,Κάτω Αιγάλεω",
+  title: "The Meat Master | Online Delivery - Ζωγράφου - Αθήνα, Αττική",
   description: "Παραγγείλετε φαγητό από τα αγαπημένα σας εστιατόρια",
   generator: "v0.app",
 };

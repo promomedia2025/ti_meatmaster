@@ -211,7 +211,7 @@ export default function AdminDashboardPage() {
 
     // Check for common session cookie names
     const sessionCookieNames = [
-      "cocofino_session",
+      "meat_master_session",
       "session",
       "laravel_session",
     ];

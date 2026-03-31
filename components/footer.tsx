@@ -18,7 +18,7 @@ export function Footer({ lang, dict }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
           {/* Logo and App Downloads */}
           <div className="md:col-span-1">
-            <div className="text-2xl font-bold text-white mb-6">Perfetta</div>
+            <div className="text-2xl font-bold text-white mb-6">The Meat Masters</div>
             <div className="space-y-3"></div>
           </div>
 
@@ -68,17 +68,12 @@ export function Footer({ lang, dict }: FooterProps) {
             <h3 className="text-white font-semibold mb-4">Ακολουθήστε μας</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="https://www.instagram.com/perfettapizzarestaurant/" className="hover:text-white transition-colors">
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a href="https://www.facebook.com/perfettapizza/?locale=el_GR" className="hover:text-white transition-colors">
+                <a href="https://www.facebook.com/meatmasters.gr" className="hover:text-white transition-colors">
                   Facebook
                 </a>
               </li>
               <li>
-                <a href="https://g.page/r/CTCxJGBBMECMEBE/review" className="hover:text-white transition-colors">
+                <a href="https://share.google/NqHO9G8fseecJt2AP" className="hover:text-white transition-colors">
                   Google Reviews
                 </a>
               </li>
@@ -128,7 +123,7 @@ export function Footer({ lang, dict }: FooterProps) {
             </div>
 
             {/* Right: Copyright */}
-            <div className="text-sm text-gray-400">© Perfetta 2026</div>
+            <div className="text-sm text-gray-400">© The Meat Masters 2026</div>
           </div>
         </div>
       </div>

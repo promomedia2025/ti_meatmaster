@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if perfetta_session cookie exists
+    // Check if meat_master_session cookie exists
     const hasSessionCookie = cookies
       .toLowerCase()
-      .includes("perfetta_session=");
+      .includes("meat_master_session=");
     
-    console.log("🔍 Admin check - Has perfetta_session:", hasSessionCookie);
+    console.log("🔍 Admin check - Has meat_master_session:", hasSessionCookie);
 
     if (!hasSessionCookie) {
       return NextResponse.json(

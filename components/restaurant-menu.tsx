@@ -262,7 +262,7 @@ export default function RestaurantMenu({ restaurant }: RestaurantMenuProps) {
       {/* Sticky Nav */}
       <div
         ref={navigationRef}
-        className={`sticky top-[60px] w-full border-b border-gray-800 z-30 shadow-lg transition-colors duration-200 ${
+        className={`sticky top-[80px] w-full border-b border-gray-800 z-30 shadow-lg transition-colors duration-200 ${
           isSticky ? "bg-[#242424]" : "bg-black"
         }`}
       >
