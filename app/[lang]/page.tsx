@@ -238,16 +238,6 @@ export default function HomePage() {
           <RestaurantGrid radius={radius} />
         </Suspense>
 
-        <h2 className="text-2xl font-bold mb-4 mt-8 text-white">
-          Προσφορές
-        </h2>
-
-        <FeaturedMenuCarousel
-          featuredMenuIds={featuredDiscountIds}
-          locale={lang}
-          locationSlug={process.env.NEXT_PUBLIC_LOCATION_SLUG}
-        />
-
         <div className="w-full my-8 rounded-xl overflow-hidden shadow-lg border border-white/10">
           <video
             className="w-full h-auto object-cover"
