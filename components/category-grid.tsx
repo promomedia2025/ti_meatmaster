@@ -7,22 +7,23 @@ import Link from "next/link";
 import { useSearchTags } from "@/lib/use-search-tags";
 import { WalletWidget } from "@/components/wallet-widget"; // <-- Imported Wallet Widget
 
-import image1 from "@/public/categories/classic_ham.png";
-import image2 from "@/public/categories/club_sand.png";
-import image3 from "@/public/categories/kids_menu.png";
-import image4 from "@/public/categories/spaghetti.png";
-import image5 from "@/public/categories/italian_pizza.png";
-import image6 from "@/public/categories/s_pizza.png";
-import image7 from "@/public/categories/soft_drinks.png";
-import image8 from "@/public/categories/pannacotta.png";
-import image9 from "@/public/categories/mix_grill.png";
-import image10 from "@/public/categories/beers.png";
-import image11 from "@/public/categories/garlic_bread.png";
-import image12 from "@/public/categories/stick_fried.png";
-import image13 from "@/public/categories/pern_ground_beef.png";
-import image14 from "@/public/categories/rissoto_white.png";
-import image15 from "@/public/categories/ceasars_salad.png";
-import image16 from "@/public/categories/sk_cheese_tom.png";
+import beef from "@/public/categories/beef.png";
+import black_angus from "@/public/categories/black_angus.png";
+import buffalo from "@/public/categories/buffalo.png";
+import chicken from "@/public/categories/chicken.png";
+import delic from "@/public/categories/delic.png";
+import dry_aged from "@/public/categories/dry_aged.png";
+import goat from "@/public/categories/goat.png";
+import lamb from "@/public/categories/lamb.png";
+import products from "@/public/categories/products.png";
+import rabbit from "@/public/categories/rabbit.png";
+import raw_pork from "@/public/categories/raw_pork.png";
+import rice from "@/public/categories/rice.png";
+import sheep from "@/public/categories/sheep.png";
+import spices from "@/public/categories/spices.png";
+import turkey from "@/public/categories/turkey.png";
+import wine from "@/public/categories/wine.png";
+import black_pork from "@/public/categories/black_pork.png";
 
 interface Category {
   id: number;
@@ -31,25 +32,31 @@ interface Category {
 }
 
 /* 🔥 ONE LINK FOR ALL CATEGORIES */
-const CATEGORY_LINK = "/location/Perfetta-1";
+const CATEGORY_LINK = `/location/${process.env.NEXT_PUBLIC_LOCATION_SLUG}`;
 
 const categoryImageMap: Record<string, any> = {
-  Burger: image1,
-  "Club sandwich": image2,
-  "Kids menu": image3,
-  Pasta: image4,
-  Pizza: image5,
-  "Sweet pizza": image6,
-  Αναψυκτικά: image7,
-  Γλυκά: image8,
-  "Μερίδες κρεατικών": image9,
-  "Μπύρες - Ποτά": image10,
-  Ορεκτικά: image11,
-  Πατάτες: image12,
-  "Πεϊνιρλί": image13,
-  Ριζότο: image14,
-  Σαλάτες: image15,
-  Σκεπαστές: image16,
+  "Μοσχάρι": beef,
+  "Χοιρινό": raw_pork,
+  "Αρνί": lamb,
+  "Κατσίκι": goat,
+  "Πρόβειο": sheep,
+  "Κοτόπουλο": chicken,
+  "Γαλοπούλα": turkey,
+  "Βουβάλι": buffalo,
+  "Κουνέλι": rabbit,
+  "Μαύρος χοίρος": rabbit,
+
+  "Black Angus": black_angus,
+  "Μαύρος χοίρος": black_pork, // fallback (no separate image yet)
+
+  "Ξηράς ωρίμανσης": dry_aged,
+
+  "Παρασκευάσματα": products, // or products.png if you want generic
+  "Delicatessen": delic,
+
+  "Ρύζια / όσπρια": rice,
+  "Μπαχαρικά / σάλτσες": spices,
+  "Κάβα": wine,
 };
 
 export function CategoryGrid() {
