@@ -25,8 +25,7 @@ import { useAuth } from "@/lib/auth-context"; // Import Auth Context
 import Link from "next/link";
 import { WalletWidget } from "@/components/wallet-widget"; // <-- Added WalletWidget import
 
-const featuredMenuIds = [395, 404, 397, 415, 510, 410, 345, 341, 346, 411, 372, 388, 404, 287, 419, 508, 373, 284];
-const featuredDiscountIds = [527, 528, 529, 530, 531, 532, 533, 534, 535, 536];
+const featuredMenuIds = [359, 371, 460, 411, 466, 369, 372, 380];
 
 export default function HomePage() {
   // --- MAINTENANCE TOGGLE ---
