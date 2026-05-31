@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function PrivacyPolicyPage() {
   return (
     <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
-      
+
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
@@ -35,12 +35,12 @@ export default function PrivacyPolicyPage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-12 text-lg leading-relaxed text-zinc-400 space-y-12">
-        
+
         <section className="space-y-6">
           <p>
-            Η ομόρρυθμη εταιρεία{" "}
-            <strong className="text-zinc-200">ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ</strong>, ΑΦΜ{" "}
-            <strong className="text-[var(--brand-border)]">101136205</strong>, σας ευχαριστεί για την επίσκεψή σας στην
+            Η επιχείρηση{" "}
+            <strong className="text-zinc-200">ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ</strong>, ΑΦΜ{" "}
+            <strong className="text-[var(--brand-border)]">030619796</strong>, σας ευχαριστεί για την επίσκεψή σας στην
             ιστοσελίδα και για το ενδιαφέρον σας στις υπηρεσίες και προσφορές μας.
           </p>
 
@@ -88,23 +88,23 @@ export default function PrivacyPolicyPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-4 shadow-xl">
             <div className="space-y-1">
               <p className="text-[var(--brand-border)] font-black text-lg tracking-tight">
-                ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ
+                ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ
               </p>
-              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 101136205</p>
+              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 030619796</p>
             </div>
-            
+
             <div className="grid gap-2 text-zinc-300">
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Διεύθυνση: Φιλικής Εταιρείας 13, Κορυδαλλός, 18120, Αττική
+                Διεύθυνση: Λεωφ. Στρ. Αλεξάνδρου Παπάγου 80α, Ζωγράφου 157 72, Αθήνα
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Τηλέφωνο: 210 4952489
+                Τηλέφωνο: 21 0748 8000
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-[var(--brand-border)]">•</span>
-                Email: <a href="mailto:perfetta@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">perfetta@gmail.com</a>
+                Email: <a href="mailto:themeatmaster@gmail.com" className="hover:text-[var(--brand-border)] transition-colors underline underline-offset-4 decoration-[var(--brand-border)]/30">themeatmaster@gmail.com</a>
               </p>
             </div>
           </div>

@@ -4,8 +4,6 @@ import Link from "next/link";
 import {
   Store,
   ArrowLeft,
-  UtensilsCrossed,
-  Bike,
   Award,
   MapPin,
   Phone,
@@ -13,44 +11,44 @@ import {
   Clock,
   Map,
   CheckCircle2,
-  ChefHat,
+  Truck,
+  ShieldCheck,
+  Star
 } from "lucide-react";
 
 export default function AboutUsPage() {
   const deliveryAreas = [
-    "Κορυδαλλός",
-    "Νίκαια",
-    "Κερατσίνι",
-    "Δραπετσώνα",
-    "Κάτω Αιγάλεω"
+    "Ζωγράφου",
+    "Ιλίσια",
+    "Γουδί",
+    "Καισαριανή",
+    "Αμπελόκηποι"
   ];
 
   const openingHours = [
-    { days: "Δευτέρα", hours: "Κλειστά" },
-    { days: "Τρίτη, Τετάρτη & Πέμπτη", hours: "4:00 μ.μ. – 12:00 π.μ." },
-    { days: "Παρασκευή, Σάββατο & Κυριακή", hours: "12:00 μ.μ. – 12:00 π.μ." },
+    { days: "Δευτέρα - Κυριακή", hours: "08:00 - 20:00" },
   ];
 
   const features = [
     {
-      icon: UtensilsCrossed,
-      title: "Αυθεντική Ιταλική Γεύση",
-      desc: "Πίτσες Trattoria με ισορροπημένες γεύσεις, προσεγμένα υλικά και σωστή τεχνική.",
-    },
-    {
-      icon: ChefHat,
-      title: "Ζύμη που ξεχωρίζει",
-      desc: "Καθημερινή προετοιμασία και σωστή ωρίμανση για ελαφριά, τραγανή βάση και πλούσιο άρωμα.",
-    },
-    {
       icon: Award,
-      title: "Ποιότητα σε κάθε επιλογή",
-      desc: "Επιλέγουμε υλικά που “δένουν” σωστά μεταξύ τους, για γεύση που μένει σταθερή κάθε φορά.",
+      title: "Master στο Κρέας",
+      desc: "Εξειδίκευση στα μυστικά του κρέατος. Γνωρίζουμε πώς να αξιοποιούμε με τον νοστιμότερο τρόπο και την τελευταία ίνα ενός πολύτιμου σφάγιου.",
     },
     {
-      icon: Bike,
-      title: "Delivery με συνέπεια",
-      desc: "Online παραγγελίες και γρήγορη εξυπηρέτηση στις γύρω περιοχές, με προσοχή στη συσκευασία.",
+      icon: Star,
+      title: "Εκλεκτές Κοπές",
+      desc: "Ελιά και οσομπούκο όπως δεν τα έχεις ξαναφάει, αλλά και αυθεντικό Black Angus από Αμερική, Αργεντινή και Ουρουγουάη.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Ελευθέρας Βοσκής",
+      desc: "Από τα καλύτερα βοσκοτόπια, με αδιαπραγμάτευτη αγάπη για το ελευθέρας βοσκής μοσχαράκι και το ποιοτικό αμνοερίφιο.",
+    },
+    {
+      icon: Truck,
+      title: "Άμεση Εξυπηρέτηση",
+      desc: "Παράδοση στο χώρο σας με απόλυτη ασφάλεια και προσοχή στη συσκευασία, διατηρώντας την αναλλοίωτη ποιότητα των προϊόντων μας.",
     },
   ];
 
@@ -75,7 +73,7 @@ export default function AboutUsPage() {
               Σχετικά με εμάς
             </h1>
             <p className="text-zinc-400 text-sm">
-              Λίγα λόγια για την Perfetta Pizza Trattoria
+              Λίγα λόγια για το The Meat Master
             </p>
           </div>
         </div>
@@ -87,24 +85,17 @@ export default function AboutUsPage() {
           <h2 className="text-3xl font-bold text-white">Η ιστορία μας</h2>
           <div className="text-lg leading-relaxed text-zinc-400 space-y-4">
             <p>
-              Η{" "}
+              Το{" "}
               <span className="text-[var(--brand-border)] font-bold">
-                Perfetta Pizza Trattoria
+                The Meat Master
               </span>{" "}
-              δημιουργήθηκε με έναν απλό στόχο: να προσφέρει αυθεντική ιταλική
-              πίτσα και ποιοτικές γεύσεις, φτιαγμένες με αγνά υλικά και σωστή
-              τεχνική.
+              άνοιξε το 2015 στου Ζωγράφου και πρόκειται για ένα project που έχει κάνει το κρέας σπουδή. Έχουμε πάρει master κι εξειδίκευση στα μυστικά του και ξέρουμε πώς να αξιοποιούμε με τον νοστιμότερο και πιο ευειδή τρόπο και την τελευταία ίνα ενός πολύτιμου σφάγιου.
             </p>
             <p>
-              Δίνουμε ιδιαίτερη σημασία στη ζύμη μας — προετοιμάζεται καθημερινά
-              και ωριμάζει σωστά ώστε να είναι ελαφριά, τραγανή και γευστική. Οι
-              σάλτσες, τα τυριά και τα υπόλοιπα υλικά επιλέγονται προσεκτικά, για
-              να δίνουν ισορροπία και σταθερή ποιότητα σε κάθε παραγγελία.
+              Από τα βοσκοτόπια στο πιο μπουτίκ κρεοπωλείο της περιοχής, τρέφουμε την ίδια αγάπη για το ελευθέρας βοσκής μοσχαράκι και το αμνοερίφιο.
             </p>
             <p>
-              Είτε μας επισκεφθείτε στο κατάστημα, είτε παραγγείλετε online,
-              φροντίζουμε κάθε γεύμα να φτάνει όπως πρέπει: ζεστό, προσεγμένο και
-              με το “Perfetta” αποτέλεσμα.
+              Σε εμάς θα βρείτε ελιά και οσομπούκο όπως δεν τα έχετε ξαναφάει, καθώς και εξαιρετικής ποιότητας Black Angus από την Αμερική, την Αργεντινή και την Ουρουγουάη. Στόχος μας είναι να σας προσφέρουμε κρέας που δέχεται συγχαρητήρια σε κάθε τραπέζωμα.
             </p>
           </div>
         </section>
@@ -136,8 +127,7 @@ export default function AboutUsPage() {
         {/* Quote */}
         <section className="bg-gradient-to-r from-[var(--brand-border)]/10 to-transparent border-l-4 border-[var(--brand-border)] p-6 rounded-r-xl">
           <p className="text-lg text-zinc-200 italic leading-relaxed">
-            "Στην Perfetta Pizza Trattoria η πίτσα δεν είναι απλώς ένα γεύμα —
-            είναι εμπειρία."
+            "Από τα βοσκοτόπια στο πιο μπουτίκ κρεοπωλείο της περιοχής — κρέας που δέχεται συγχαρητήρια σε κάθε τραπέζωμα."
           </p>
         </section>
 
@@ -159,11 +149,10 @@ export default function AboutUsPage() {
                 </div>
                 <div>
                   <p className="font-bold text-white mb-1">
-                    Perfetta Pizza Trattoria
+                    The Meat Master
                   </p>
                   <p className="text-sm">
-                    {/* ΒΑΛΕ ΕΔΩ ΤΗΝ ΠΡΑΓΜΑΤΙΚΗ ΔΙΕΥΘΥΝΣΗ */}
-                    Φιλικής Εταιρείας 13, Κορυδαλλός, 18120, Αττική
+                    Λεωφόρος Στρατάρχου Αλεξάνδρου Παπάγου 80α, Ζωγράφου, 15772, Αθήνα
                   </p>
                 </div>
               </li>
@@ -172,7 +161,7 @@ export default function AboutUsPage() {
                 <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 group-hover:border-[var(--brand-border)]/50 transition-colors">
                   <Phone className="w-5 h-5 text-[var(--brand-border)]" />
                 </div>
-                <p className="font-medium text-white">210 4952489</p>
+                <p className="font-medium text-white">21 0748 8000</p>
               </li>
 
               <li className="flex items-center gap-4 text-zinc-400 group">
@@ -180,7 +169,7 @@ export default function AboutUsPage() {
                   <Mail className="w-5 h-5 text-[var(--brand-border)]" />
                 </div>
                 <p className="font-medium text-white break-all">
-                  perfetta@gmail.com
+                  themeatmaster@gmail.com
                 </p>
               </li>
             </ul>
@@ -191,14 +180,13 @@ export default function AboutUsPage() {
                 Τηλεφωνικές Παραγγελίες
               </h4>
               <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
-                Για παραγγελίες και πληροφορίες, καλέστε μας — θα χαρούμε να σας
-                εξυπηρετήσουμε.
+                Για παραγγελίες και πληροφορίες κοπών, καλέστε μας — θα χαρούμε να σας εξυπηρετήσουμε.
               </p>
               <a
-                href="tel:2104952489"
+                href="tel:2107488000"
                 className="inline-flex items-center justify-center w-full py-4 px-4 rounded-xl bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-black hover:text-white font-black transition-all shadow-lg shadow-[var(--brand-border)]/10 hover:scale-[1.02]"
               >
-                ΚΑΛΕΣΤΕ ΣΤΟ 210 4952489
+                ΚΑΛΕΣΤΕ ΣΤΟ 210 748 8000
               </a>
             </div>
           </div>
@@ -209,7 +197,7 @@ export default function AboutUsPage() {
             <div>
               <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
                 <Map className="w-5 h-5 text-[var(--brand-border)]" />
-                Περιοχές Παράδοσης
+                Περιοχές Εξυπηρέτησης
               </h3>
 
               <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 shadow-inner shadow-black">

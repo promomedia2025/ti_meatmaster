@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function TermsOfUsePage() {
   return (
     <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
-      
+
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
@@ -35,7 +35,7 @@ export default function TermsOfUsePage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-12 text-lg leading-relaxed text-zinc-400 space-y-12">
-        
+
         {/* Introduction */}
         <section className="space-y-4">
           <h2 className="text-xl font-bold text-white border-l-4 border-[var(--brand-border)] pl-4">Εισαγωγή</h2>
@@ -53,11 +53,11 @@ export default function TermsOfUsePage() {
             <ul className="space-y-4">
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
-                <span><strong className="text-zinc-200">Εταιρεία:</strong> ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ, ΑΦΜ 101136205</span>
+                <span><strong className="text-zinc-200">Επιχείρηση:</strong> ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ, ΑΦΜ 030619796</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
-                <span><strong className="text-zinc-200">Ιστοσελίδα:</strong> Το ηλεκτρονικό κατάστημα Perfetta.gr (www.Perfetta.gr)</span>
+                <span><strong className="text-zinc-200">Ιστοσελίδα:</strong> Το ηλεκτρονικό κατάστημα themeatmaster.gr (www.themeatmaster.gr)</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--brand-border)] font-bold">•</span>
@@ -75,20 +75,20 @@ export default function TermsOfUsePage() {
           </h2>
           <p>
             Ιδιοκτήτης και φορέας εκμετάλλευσης του ηλεκτρονικού καταστήματος είναι
-            η Εταιρεία:
+            η Επιχείρηση:
           </p>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-4 shadow-xl">
             <div className="space-y-1">
               <p className="text-[var(--brand-border)] font-black text-lg tracking-tight">
-                ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ
+                ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ
               </p>
-              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 101136205</p>
+              <p className="text-zinc-500 text-sm font-medium">ΑΦΜ: 030619796</p>
             </div>
             <div className="text-sm space-y-1 text-zinc-300">
-              <p>Φιλικής Εταιρείας 13, Κορυδαλλός, 18120, Αττική</p>
-              <p>Τηλ.: 210 4952489</p>
-              <p>Email: perfetta@gmail.com</p>
+              <p>Λεωφ. Στρ. Αλεξάνδρου Παπάγου 80α, Ζωγράφου 157 72, Αθήνα</p>
+              <p>Τηλ.: 21 0748 8000</p>
+              <p>Email: themeatmaster@gmail.com</p>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export default function TermsOfUsePage() {
             Παρεχόμενες Πληροφορίες & Προϊόντα
           </h2>
           <p>
-            Η Εταιρεία καταβάλλει κάθε δυνατή προσπάθεια για την ακρίβεια και
+            Η Επιχείρηση καταβάλλει κάθε δυνατή προσπάθεια για την ακρίβεια και
             πληρότητα των πληροφοριών που παρατίθενται στην Ιστοσελίδα. Οι τιμές
             των προϊόντων περιλαμβάνουν Φ.Π.Α., με την επιφύλαξη τυπογραφικών ή
             τεχνικών λαθών.
@@ -120,12 +120,12 @@ export default function TermsOfUsePage() {
           </h2>
           <div className="space-y-4 bg-zinc-900/30 p-6 rounded-xl border border-zinc-800">
             <p>
-              Η Εταιρεία δεν ευθύνεται για τεχνικά προβλήματα που οφείλονται στη
+              Η Επιχείρηση δεν ευθύνεται για τεχνικά προβλήματα που οφείλονται στη
               συμβατότητα του εξοπλισμού ή του λογισμικού του Χρήστη.
             </p>
             <p>
               Σύνδεσμοι προς τρίτες ιστοσελίδες παρέχονται αποκλειστικά για
-              διευκόλυνση και η Εταιρεία δεν φέρει ευθύνη για το περιεχόμενο ή τις
+              διευκόλυνση και η Επιχείρηση δεν φέρει ευθύνη για το περιεχόμενο ή τις
               πολιτικές τους.
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function TermsOfUsePage() {
             Newsletter & Επικοινωνία
           </h2>
           <p>
-            Η Εταιρεία δύναται να αποστέλλει ενημερωτικά και προωθητικά μηνύματα.
+            Η Επιχείρηση δύναται να αποστέλλει ενημερωτικά και προωθητικά μηνύματα.
             Ο Χρήστης μπορεί οποτεδήποτε να ανακαλέσει τη συγκατάθεσή του μέσω των
             σχετικών επιλογών.
           </p>

@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function RefundPolicyPage() {
   return (
     <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
-      
+
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
@@ -35,7 +35,7 @@ export default function RefundPolicyPage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-12 text-lg leading-relaxed text-zinc-400 space-y-12">
-        
+
         <section className="bg-[var(--brand-border)]/5 border border-[var(--brand-border)]/20 rounded-2xl p-8 space-y-6">
           <p>
             Σε περίπτωση που δεν εξυπηρετηθεί η παραγγελία σας και έχετε πληρώσει με
@@ -43,9 +43,9 @@ export default function RefundPolicyPage() {
           </p>
 
           <p>
-            Η επιστροφή χρημάτων πραγματοποιείται από την ομόρρυθμη εταιρεία{" "}
-            <strong className="text-white">ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ</strong> (ΑΦΜ{" "}
-            <strong className="text-[var(--brand-border)]">101136205</strong>), η οποία φέρει τη μοναδική ευθύνη για την
+            Η επιστροφή χρημάτων πραγματοποιείται από την επιχείρηση{" "}
+            <strong className="text-white">ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ</strong> (ΑΦΜ{" "}
+            <strong className="text-[var(--brand-border)]">030619796</strong>), η οποία φέρει τη μοναδική ευθύνη για την
             επιστροφή των χρημάτων στην κάρτα που χρησιμοποιήθηκε για τη συναλλαγή.
             <span className="block mt-4 text-[var(--brand-border)] font-bold italic">
               Ο καταναλωτής δεν επιβαρύνεται σε καμία περίπτωση με έξοδα επιστροφής.
@@ -81,9 +81,9 @@ export default function RefundPolicyPage() {
               </h3>
               <p className="text-sm leading-relaxed text-zinc-400">
                 Η διαδικασία πληρωμής είναι απολύτως ασφαλής. Η πληρωμή δεν
-                πραγματοποιείται απευθείας στην ομόρρυθμη εταιρεία ΓΕΝΙΤΣΑΡΙΔΟΥ ΒΑΣΙΛΙΚΗ ΛΑΖΑΡΟΣ, 
-                αλλά ο χρήστης μεταφέρεται σε ασφαλές περιβάλλον της{" "}
-                <strong className="text-zinc-200">Τράπεζας Πειραιώς</strong>.
+                πραγματοποιείται απευθείας στην επιχείρηση ΑΛΑΦΟΓΙΑΝΝΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ ΔΡΟΣΟΣ,
+                αλλά ο χρήστης μεταφέρεται στο ασφαλές περιβάλλον της{" "}
+                <strong className="text-zinc-200">Viva.com</strong>.
               </p>
             </div>
 
@@ -101,7 +101,7 @@ export default function RefundPolicyPage() {
                   πρόσωπο.
                 </p>
                 <div className="bg-black p-3 rounded-lg border border-zinc-800 shrink-0">
-                   <ShieldCheck className="w-8 h-8 text-[var(--brand-border)]" />
+                  <ShieldCheck className="w-8 h-8 text-[var(--brand-border)]" />
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function RefundPolicyPage() {
         <section className="pt-8 text-center">
           <p className="text-sm text-zinc-500">
             Για οποιαδήποτε απορία σχετικά με την παραγγελία σας, καλέστε μας στο{" "}
-            <a href="tel:2104952489" className="text-[var(--brand-border)] font-bold hover:underline">210 4952489</a>.
+            <a href="tel:2107488000" className="text-[var(--brand-border)] font-bold hover:underline">21 0748 8000</a>.
           </p>
         </section>
 

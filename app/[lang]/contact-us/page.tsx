@@ -1,36 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { 
-  MapPin, 
-  Mail, 
-  Phone, 
-  ArrowLeft, 
-  Navigation2, 
-  Clock, 
-  Map, 
-  CheckCircle2 
+import {
+  MapPin,
+  Mail,
+  Phone,
+  ArrowLeft,
+  Navigation2,
+  Clock,
+  Map,
+  CheckCircle2
 } from "lucide-react";
 
 export default function ContactPage() {
-  
+
   const deliveryAreas = [
-    "Κορυδαλλός",
-    "Νίκαια",
-    "Κερατσίνι",
-    "Δραπετσώνα",
-    "Κάτω Αιγάλεω"
+    "Ζωγράφου",
+    "Ιλίσια",
+    "Γουδί",
+    "Καισαριανή",
+    "Αμπελόκηποι"
   ];
-  
+
   const openingHours = [
-    { days: "Δευτέρα", hours: "Κλειστά" },
-    { days: "Τρίτη, Τετάρτη & Πέμπτη", hours: "4:00 μ.μ. – 12:00 π.μ." },
-    { days: "Παρασκευή, Σάββατο & Κυριακή", hours: "12:00 μ.μ. – 12:00 π.μ." },
+    { days: "Δευτέρα - Κυριακή", hours: "08:00 - 20:00" },
   ];
 
   return (
     <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-[var(--brand-border)]/30">
-      
+
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 top-0 z-1">
         <div className="max-w-4xl mx-auto px-4 py-8 flex items-center gap-6">
@@ -51,41 +49,41 @@ export default function ContactPage() {
               Επικοινωνία
             </h1>
             <p className="text-zinc-400 text-sm">
-              Βρείτε μας στον Κορυδαλλό ή καλέστε μας
+              Βρείτε μας στου Ζωγράφου ή καλέστε μας
             </p>
           </div>
         </div>
       </div>
 
       <main className="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-8">
-        
+
         {/* --- MAP SECTION --- */}
         <div className="w-full h-[400px] md:h-[450px] rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 relative group">
           <iframe
             width="100%"
             height="100%"
-            style={{ 
-              border: 0, 
+            style={{
+              border: 0,
               filter: "grayscale(100%) invert(90%) contrast(85%) brightness(80%)",
-              pointerEvents: "none" 
-            }} 
+              pointerEvents: "none"
+            }}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            src="https://www.openstreetmap.org/export/embed.html?bbox=23.6416,37.9733,23.6516,37.9833&layer=mapnik"
-            title="Perfetta Location"
-            className="w-full h-full scale-[1.1]" 
+            src="https://www.openstreetmap.org/export/embed.html?bbox=23.764587,37.972981,23.774587,37.982981&layer=mapnik"
+            title="The Meat Master Location"
+            className="w-full h-full scale-[1.1]"
           ></iframe>
-          
+
           {/* Animated Map Pin */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[85%] flex flex-col items-center z-10">
-             <MapPin className="w-12 h-12 text-[var(--brand-border)] fill-[var(--brand-border)]/20 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]" />
-             <div className="w-2 h-2 bg-[var(--brand-border)] rounded-full mt-[-6px] shadow-[0_0_15px_var(--brand-border)]" />
+            <MapPin className="w-12 h-12 text-[var(--brand-border)] fill-[var(--brand-border)]/20 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]" />
+            <div className="w-2 h-2 bg-[var(--brand-border)] rounded-full mt-[-6px] shadow-[0_0_15px_var(--brand-border)]" />
           </div>
 
           {/* Navigation Button */}
-          <a 
-            href="https://maps.app.goo.gl/E4icM2L8PyAhRPFz9"
-            target="_blank" 
+          <a
+            href="https://www.google.com/maps/dir/?api=1&destination=37.977981012663385,23.769587733522147"
+            target="_blank"
             rel="noopener noreferrer"
             className="absolute bottom-6 right-6 bg-[var(--brand-border)] hover:bg-[var(--brand-hover)] text-black hover:text-white px-6 py-3 rounded-xl font-black flex items-center gap-2.5 shadow-xl transition-all hover:scale-105 active:scale-95 z-20 group/btn"
           >
@@ -97,7 +95,7 @@ export default function ContactPage() {
 
         {/* --- CONTACT CARDS --- */}
         <div className="grid md:grid-cols-3 gap-4 md:gap-6">
-          
+
           {/* Address */}
           <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 hover:border-[var(--brand-border)]/50 transition-all duration-300 group flex flex-col items-center text-center gap-4">
             <div className="p-4 bg-black rounded-full text-[var(--brand-border)] group-hover:bg-[var(--brand-border)] group-hover:text-black transition-colors duration-300 border border-zinc-800">
@@ -105,7 +103,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Διεύθυνση</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">Φιλικής Εταιρείας 13, <br /> Κορυδαλλός 181 20</p>
+              <p className="text-zinc-400 text-sm leading-relaxed">Λεωφ. Στρ. Αλεξάνδρου Παπάγου 80α, <br /> Ζωγράφου 157 72</p>
             </div>
           </div>
 
@@ -116,7 +114,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Τηλέφωνο</h3>
-              <p className="text-zinc-400 text-sm">210 4952489</p>
+              <p className="text-zinc-400 text-sm">21 0748 8000</p>
             </div>
           </div>
 
@@ -127,21 +125,21 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="text-white font-bold mb-1">Email</h3>
-              <p className="text-zinc-400 text-sm break-all">perfetta@gmail.com</p>
+              <p className="text-zinc-400 text-sm break-all">themeatmaster@gmail.com</p>
             </div>
           </div>
         </div>
 
         {/* --- DELIVERY & HOURS SECTION --- */}
         <div className="grid md:grid-cols-2 gap-6">
-          
+
           {/* Delivery Areas */}
           <div className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 hover:border-[var(--brand-border)]/30 transition-all group">
             <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-black rounded-xl text-[var(--brand-border)] border border-zinc-800 group-hover:bg-[var(--brand-border)] group-hover:text-black transition-all">
                 <Map className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-white">Περιοχές Παράδοσης</h3>
+              <h3 className="text-xl font-bold text-white">Περιοχές Εξυπηρέτησης</h3>
             </div>
             <ul className="grid grid-cols-2 gap-y-4 gap-x-4">
               {deliveryAreas.map((area) => (

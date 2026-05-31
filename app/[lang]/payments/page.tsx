@@ -26,7 +26,7 @@ export default function PaymentMethodsPage() {
               Τρόποι Πληρωμής
             </h1>
             <p className="text-zinc-400 text-sm">
-              Ενημερωθείτε για τις επιλογές ασφαλών συναλλαγών στο perfetta.gr
+              Ενημερωθείτε για τις επιλογές ασφαλών συναλλαγών στο themeatmaster.gr
             </p>
           </div>
         </div>
@@ -37,7 +37,7 @@ export default function PaymentMethodsPage() {
 
         <section className="space-y-6">
           <p>
-            Πραγματοποιώντας την online παραγγελία σου από το <strong className="text-white">perfetta.gr</strong> μπορείς να επιλέξεις έναν από τους παρακάτω τρόπους πληρωμής:
+            Πραγματοποιώντας την online παραγγελία σου από το <strong className="text-white">themeatmaster.gr</strong> μπορείς να επιλέξεις έναν από τους παρακάτω τρόπους πληρωμής:
           </p>
         </section>
 
@@ -49,7 +49,7 @@ export default function PaymentMethodsPage() {
           </h2>
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <p>
-              Ο κλασικός τρόπος πληρωμής κατά την διάρκεια της παράδοσης. Για να είμαστε σίγουροι πως οι διανομείς μας θα επιστρέψουν στο μαγαζί πάντα με ασφάλεια, <strong className="text-zinc-200">δεν μεταφέρουν ποτέ πάνω από 50€</strong>. Για το λόγο αυτό, αν τυχόν θέλετε ρέστα από χαρτονόμισμα των 50€, είναι επιθυμητό να μας το αναφέρετε <span className="italic text-zinc-300 underline underline-offset-8 decoration-[var(--brand-border)]/50">στα σχόλια της παραγγελίας σας</span>.
+              Ο κλασικός τρόπος πληρωμής κατά την διάρκεια της παράδοσης. Για να είμαστε σίγουροι πως οι διανομείς μας θα επιστρέψουν στο κατάστημα πάντα με ασφάλεια, <strong className="text-zinc-200">δεν μεταφέρουν ποτέ πάνω από 50€</strong>. Για το λόγο αυτό, αν τυχόν θέλετε ρέστα από χαρτονόμισμα των 50€, είναι επιθυμητό να μας το αναφέρετε <span className="italic text-zinc-300 underline underline-offset-8 decoration-[var(--brand-border)]/50">στα σχόλια της παραγγελίας σας</span>.
             </p>
           </div>
         </section>
@@ -61,7 +61,7 @@ export default function PaymentMethodsPage() {
             Με πιστωτική κάρτα
           </h2>
           <p>
-            Η online παραγγελία και η πληρωμή μέσω πιστωτικής κάρτας στο perfetta.gr είναι τόσο απολαυστική όσο και τα φαγητά του Perfetta! Παράλληλα, συνεργαζόμαστε με τη <strong className="text-white">Viva.com</strong>, την πρώτη Tech Bank στην Ευρώπη, διασφαλίζοντας τις συναλλαγές σας με τις πιο σύγχρονες μεθόδους προστασίας.
+            Η online παραγγελία και η πληρωμή μέσω πιστωτικής κάρτας στο themeatmaster.gr είναι τόσο ασφαλής όσο και τα εκλεκτά κρέατα του The Meat Master! Παράλληλα, συνεργαζόμαστε με τη <strong className="text-white">Viva.com</strong>, την πρώτη Tech Bank στην Ευρώπη, διασφαλίζοντας τις συναλλαγές σας με τις πιο σύγχρονες μεθόδους προστασίας.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -155,7 +155,7 @@ export default function PaymentMethodsPage() {
             {/* Inner box with better contrast */}
             <div className="mt-4 p-4 bg-black/60 rounded-lg border border-zinc-800/80 text-sm italic">
               <strong className="text-[var(--brand-border)] not-italic block mb-1">Ασφάλεια Δεδομένων:</strong>
-              Το perfetta.gr δεν αποθηκεύει ποτέ κανένα στοιχείο της κάρτας σας. Η συναλλαγή ολοκληρώνεται αποκλειστικά στο ασφαλές περιβάλλον της Viva.com.
+              Το themeatmaster.gr δεν αποθηκεύει ποτέ κανένα στοιχείο της κάρτας σας. Η συναλλαγή ολοκληρώνεται αποκλειστικά στο ασφαλές περιβάλλον της Viva.com.
             </div>
           </div>
         </section>
